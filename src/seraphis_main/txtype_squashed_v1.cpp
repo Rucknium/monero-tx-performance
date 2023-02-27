@@ -242,6 +242,7 @@ void get_sp_tx_squashed_v1_txid(const SpTxSquashedV1 &tx, rct::key &tx_id_out)
     transcript.append("prefix", tx_proposal_prefix);
     transcript.append("artifacts", tx_artifacts_merkle_root);
 
+    assert(transcript.size() <= 128 && "sp squashed v1 tx id must fit within one blake2b block (128 bytes).");
     sp_hash_to_32(transcript.data(), transcript.size(), tx_id_out.bytes);
 }
 //-------------------------------------------------------------------------------------------------------------------
