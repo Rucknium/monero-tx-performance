@@ -56,7 +56,7 @@ extern "C"
 
 namespace sp
 {
-namespace detail
+namespace composition_proof_detail
 {
 //-------------------------------------------------------------------------------------------------------------------
 // Fiat-Shamir challenge message
@@ -152,7 +152,7 @@ void compute_K_t1_for_proof(const crypto::secret_key &y, const rct::key &K, rct:
     memwipe(inv_y.bytes, 32);  //try to clean up the lingering bytes
 }
 //-------------------------------------------------------------------------------------------------------------------
-} //namespace detail
+} //namespace composition_proof_detail
 
 
 //-------------------------------------------------------------------------------------------------------------------
@@ -198,7 +198,7 @@ void make_sp_composition_proof(const rct::key &message,
     /// make K_t1 and KI
 
     // K_t1 = (1/8) * (1/y) * K
-    detail::compute_K_t1_for_proof(y, K, proof_out.K_t1);
+    composition_proof_detail::compute_K_t1_for_proof(y, K, proof_out.K_t1);
 
     // KI = (z / y) * U
     const crypto::key_image KI{
@@ -228,12 +228,12 @@ void make_sp_composition_proof(const rct::key &message,
 
 
     /// compute proof challenge
-    const rct::key m{detail::compute_challenge_message(message, K, KI, proof_out.K_t1)};
-    proof_out.c = detail::compute_challenge(m, alpha_t1_pub, alpha_t2_pub, alpha_ki_pub);
+    const rct::key m{composition_proof_detail::compute_challenge_message(message, K, KI, proof_out.K_t1)};
+    proof_out.c = composition_proof_detail::compute_challenge(m, alpha_t1_pub, alpha_t2_pub, alpha_ki_pub);
 
 
     /// responses
-    detail::compute_responses(proof_out.c,
+    composition_proof_detail::compute_responses(proof_out.c,
         rct::sk2rct(alpha_t1),
         rct::sk2rct(alpha_t2),
         rct::sk2rct(alpha_ki),
@@ -259,7 +259,7 @@ bool verify_sp_composition_proof(const SpCompositionProof &proof,
 
 
     /// challenge message
-    const rct::key m{detail::compute_challenge_message(message, K, KI, proof.K_t1)};
+    const rct::key m{composition_proof_detail::compute_challenge_message(message, K, KI, proof.K_t1)};
 
 
     /// challenge pieces
@@ -311,7 +311,7 @@ bool verify_sp_composition_proof(const SpCompositionProof &proof,
 
 
     /// compute nominal challenge
-    const rct::key challenge_nom{detail::compute_challenge(m, part_t1, part_t2, part_ki)};
+    const rct::key challenge_nom{composition_proof_detail::compute_challenge(m, part_t1, part_t2, part_ki)};
 
 
     /// validate proof

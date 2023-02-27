@@ -151,7 +151,7 @@ bool verify_sp_composition_proof(const SpCompositionProof &proof,
 // detail namespace for internal proof computations
 // - these are needed for e.g. multisig
 ///
-namespace detail
+namespace composition_proof_detail
 {
 
 rct::key compute_challenge_message(const rct::key &message,
@@ -174,5 +174,5 @@ void compute_responses(const rct::key &challenge,
     rct::key &r_ki_out);
 void compute_K_t1_for_proof(const crypto::secret_key &y, const rct::key &K, rct::key &K_t1_out);
 
-} //namespace detail
+} //namespace composition_proof_detail
 } //namespace sp

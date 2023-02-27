@@ -751,7 +751,7 @@ static bool multisig_framework_composition_proof_test(const std::uint32_t thresh
             proof_privkeys_z_multiplier.emplace_back(rct::rct2sk(rct::identity()));
 
             rct::key K_t1;
-            sp::detail::compute_K_t1_for_proof(y, K, K_t1);
+            sp::composition_proof_detail::compute_K_t1_for_proof(y, K, K_t1);
             mapped_proof_keys[K_t1] = K;
             mapped_KI[K] = KI;
             proof_contexts[K] = message;

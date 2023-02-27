@@ -186,13 +186,13 @@ void make_sp_composition_multisig_partial_sig(const SpCompositionProofMultisigPr
     partial_sig_out.KI      = proposal.KI;
 
     // make K_t1 = (1/8) * (1/y) * K
-    sp::detail::compute_K_t1_for_proof(y, proposal.K, partial_sig_out.K_t1);
+    sp::composition_proof_detail::compute_K_t1_for_proof(y, proposal.K, partial_sig_out.K_t1);
 
 
     /// challenge message and binonce merge factor
     // rho = H_n(m, {alpha_ki_1_e * U}, {alpha_ki_2_e * U})   (binonce merge factor)
     const rct::key m{
-            sp::detail::compute_challenge_message(partial_sig_out.message,
+            sp::composition_proof_detail::compute_challenge_message(partial_sig_out.message,
                 partial_sig_out.K,
                 partial_sig_out.KI,
                 partial_sig_out.K_t1)
@@ -232,7 +232,7 @@ void make_sp_composition_multisig_partial_sig(const SpCompositionProofMultisigPr
 
 
     /// compute proof challenge
-    partial_sig_out.c = sp::detail::compute_challenge(m, alpha_t1_pub, alpha_t2_pub, alpha_ki_pub);
+    partial_sig_out.c = sp::composition_proof_detail::compute_challenge(m, alpha_t1_pub, alpha_t2_pub, alpha_ki_pub);
 
 
     /// responses
@@ -242,7 +242,7 @@ void make_sp_composition_multisig_partial_sig(const SpCompositionProofMultisigPr
         binonce_merge_factor.bytes,
         to_bytes(local_nonce_1_priv));
 
-    sp::detail::compute_responses(partial_sig_out.c,
+    sp::composition_proof_detail::compute_responses(partial_sig_out.c,
             rct::sk2rct(proposal.signature_nonce_K_t1),
             rct::sk2rct(proposal.signature_nonce_K_t2),
             rct::sk2rct(merged_nonce_KI_priv),  //for partial signature
