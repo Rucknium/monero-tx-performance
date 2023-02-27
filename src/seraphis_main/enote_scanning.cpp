@@ -35,7 +35,7 @@
 #include "enote_scanning_context.h"
 #include "enote_store_updater.h"
 #include "ringct/rctTypes.h"
-#include "seraphis_crypto/sp_crypto_utils.h"
+#include "seraphis_crypto/math_utils.h"
 
 //third party headers
 #include <boost/optional/optional.hpp>
@@ -170,7 +170,7 @@ static std::uint64_t get_reorg_avoidance_depth(const std::uint64_t default_reorg
         "refresh ledger for enote store: tried more than one fullscan with zero reorg avoidance depth.");
 
     // 3. 10 ^ (fullscan attempts) * default depth
-    return uint_pow(10, completed_fullscan_attempts - 1) * default_reorg_avoidance_depth;
+    return math::uint_pow(10, completed_fullscan_attempts - 1) * default_reorg_avoidance_depth;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------

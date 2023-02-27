@@ -39,6 +39,7 @@
 #include "seraphis_core/discretized_fee.h"
 #include "seraphis_core/tx_extra.h"
 #include "seraphis_crypto/bulletproofs_plus2.h"
+#include "seraphis_crypto/math_utils.h"
 #include "seraphis_crypto/grootle.h"
 #include "seraphis_crypto/sp_composition_proof.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
@@ -221,7 +222,7 @@ bool validate_sp_semantics_sp_reference_sets_v1(const SemanticConfigSpRefSetV1 &
     for (const SpMembershipProofV1 &sp_proof : sp_membership_proofs)
     {
         // proof ref set decomposition (n^m) should match number of referenced enotes
-        const std::size_t ref_set_size{uint_pow(sp_proof.ref_set_decomp_n, sp_proof.ref_set_decomp_m)};
+        const std::size_t ref_set_size{math::uint_pow(sp_proof.ref_set_decomp_n, sp_proof.ref_set_decomp_m)};
 
         if (ref_set_size != reference_set_size(sp_proof.binned_reference_set))
             return false;

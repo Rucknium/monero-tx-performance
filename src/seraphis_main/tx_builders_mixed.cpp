@@ -44,6 +44,7 @@
 #include "seraphis_core/sp_core_enote_utils.h"
 #include "seraphis_core/sp_ref_set_index_mapper_flat.h"
 #include "seraphis_crypto/bulletproofs_plus2.h"
+#include "seraphis_crypto/math_utils.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "seraphis_crypto/sp_hash_functions.h"
 #include "seraphis_crypto/sp_legacy_proof_helpers.h"
@@ -226,7 +227,7 @@ static void prepare_sp_membership_proof_prep_for_tx_simulation_v1(const rct::key
     SpMembershipProofPrepV1 &prep_out)
 {
     /// checks and initialization
-    const std::size_t ref_set_size{uint_pow(ref_set_decomp_n, ref_set_decomp_m)};  //n^m
+    const std::size_t ref_set_size{math::uint_pow(ref_set_decomp_n, ref_set_decomp_m)};  //n^m
 
     CHECK_AND_ASSERT_THROW_MES(simulated_ledger_squashed_enotes.size() > 0,
         "prepare sp membership proof prep v1 (tx simulation): insufficient reference elements.");

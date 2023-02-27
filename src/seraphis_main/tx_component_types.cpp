@@ -37,7 +37,7 @@
 #include "seraphis_core/binned_reference_set.h"
 #include "seraphis_core/jamtis_support_types.h"
 #include "seraphis_core/sp_core_types.h"
-#include "seraphis_crypto/sp_crypto_utils.h"
+#include "seraphis_crypto/math_utils.h"
 #include "seraphis_crypto/sp_legacy_proof_helpers.h"
 #include "seraphis_crypto/sp_transcript.h"
 
@@ -176,7 +176,7 @@ std::size_t sp_membership_proof_v1_size_bytes(const std::size_t n,
     const std::size_t m,
     const std::size_t num_bin_members)
 {
-    const std::size_t ref_set_size{uint_pow(n, m)};
+    const std::size_t ref_set_size{math::uint_pow(n, m)};
 
     return grootle_size_bytes(n, m) +
         (num_bin_members > 0
@@ -189,7 +189,7 @@ std::size_t sp_membership_proof_v1_size_bytes_compact(const std::size_t n,
     const std::size_t m,
     const std::size_t num_bin_members)
 {
-    const std::size_t ref_set_size{uint_pow(n, m)};
+    const std::size_t ref_set_size{math::uint_pow(n, m)};
 
     return grootle_size_bytes(n, m) +
         (num_bin_members > 0

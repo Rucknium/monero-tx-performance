@@ -40,13 +40,10 @@ extern "C"
 #include "multisig_kex_msg.h"
 #include "multisig_signer_set_filter.h"
 #include "ringct/rctOps.h"
-
-#include <boost/math/special_functions/binomial.hpp>
+#include "seraphis_crypto/math_utils.h"
 
 #include <algorithm>
-#include <cmath>
 #include <cstdint>
-#include <limits>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
@@ -441,28 +438,6 @@ namespace multisig
       "Number of unique other signers does not equal number of other signers that recommended pubkeys.");
 
     // 3. each origin should recommend a precise number of pubkeys
-
-    // TODO: move to a 'math' library, with unit tests
-    auto n_choose_k_f =
-      [](const std::uint32_t n, const std::uint32_t k) -> std::uint32_t
-      {
-        static_assert(std::numeric_limits<std::int32_t>::digits <= std::numeric_limits<double>::digits,
-          "n_choose_k requires no rounding issues when converting between int32 <-> double.");
-
-        if (n < k)
-          return 0;
-
-        double fp_result = boost::math::binomial_coefficient<double>(n, k);
-
-        if (fp_result < 0)
-          return 0;
-
-        if (fp_result > std::numeric_limits<std::int32_t>::max())  // note: std::round() returns std::int32_t
-          return 0;
-
-        return static_cast<std::uint32_t>(std::round(fp_result));
-      };
-
     // other signers: (N - 2) choose (msg_round_num - 1)
       // - Each signer recommends keys they share with other signers.
       // - In each round, a signer shares a key with 'round num - 1' other signers.
@@ -472,10 +447,10 @@ namespace multisig
       // - Each origin should have a shared key with each group of size 'round - 1'.
       // Note: Keys shared with local are ignored to facilitate kex round boosting, where one or more signers may
       //       have boosted the local signer (implying they didn't have access to the local signer's previous round msg).
-    const std::uint32_t expected_recommendations_others = n_choose_k_f(signers.size() - 2, round - 1);
+    const std::uint32_t expected_recommendations_others = sp::math::n_choose_k(signers.size() - 2, round - 1);
 
     // local: (N - 1) choose (msg_round_num - 1)
-    const std::uint32_t expected_recommendations_self = n_choose_k_f(signers.size() - 1, round - 1);
+    const std::uint32_t expected_recommendations_self = sp::math::n_choose_k(signers.size() - 1, round - 1);
 
     // note: expected_recommendations_others would be 0 in the last round of 1-of-N, but we return early for that case
     CHECK_AND_ASSERT_THROW_MES(expected_recommendations_self > 0 && expected_recommendations_others > 0,

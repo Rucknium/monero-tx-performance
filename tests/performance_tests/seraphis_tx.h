@@ -32,6 +32,7 @@
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_core/binned_reference_set.h"
+#include "seraphis_crypto/math_utils.h"
 #include "seraphis_main/txtype_squashed_v1.h"
 #include "seraphis_mocks/seraphis_mocks.h"
 
@@ -310,10 +311,10 @@ public:
                 tx_params.bin_config =
                     sp::SpBinnedReferenceSetConfigV1{
                         .bin_radius = static_cast<sp::ref_set_bin_dimension_v1_t>(
-                                sp::uint_pow(params.n, params.m) / 2
+                                sp::math::uint_pow(params.n, params.m) / 2
                             ),
                         .num_bin_members = static_cast<sp::ref_set_bin_dimension_v1_t>(
-                                sp::uint_pow(params.n, params.m / 2)
+                                sp::math::uint_pow(params.n, params.m / 2)
                             )
                     };  //bin config must be compatible with n^m
 
@@ -345,7 +346,7 @@ public:
         report += std::string{"outputs: "} + std::to_string(params.out_count) + " || ";
         report += std::string{"legacy ring size: "} + std::to_string(params.legacy_ring_size) + " || ";
         report += std::string{"sp ref set size ("} + std::to_string(params.n) + "^" + std::to_string(params.m) + "): ";
-        report += std::to_string(sp::uint_pow(params.n, params.m));
+        report += std::to_string(sp::math::uint_pow(params.n, params.m));
 
         std::cout << report << '\n';
 
@@ -366,7 +367,7 @@ public:
             report_csv += std::to_string(params.legacy_ring_size) + separator;
             report_csv += std::to_string(params.n) + separator;
             report_csv += std::to_string(params.m) + separator;
-            report_csv += std::to_string(sp::uint_pow(params.n, params.m));
+            report_csv += std::to_string(sp::math::uint_pow(params.n, params.m));
 
             params.core_params.td->add(report_csv.c_str(), null_instance);
         }

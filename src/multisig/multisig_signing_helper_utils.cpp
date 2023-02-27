@@ -41,10 +41,10 @@
 #include "multisig_signing_helper_types.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
+#include "seraphis_crypto/math_utils.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 
 //third party headers
-#include <boost/math/special_functions/binomial.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 
 //standard headers
@@ -57,27 +57,6 @@
 
 namespace multisig
 {
-//----------------------------------------------------------------------------------------------------------------------
-// TODO: move to a 'math' library, with unit tests
-//----------------------------------------------------------------------------------------------------------------------
-static std::uint32_t n_choose_k(const std::uint32_t n, const std::uint32_t k)
-{
-    static_assert(std::numeric_limits<std::int32_t>::digits <= std::numeric_limits<double>::digits,
-        "n_choose_k requires no rounding issues when converting between int32 <-> double.");
-
-    if (n < k)
-        return 0;
-
-    double fp_result = boost::math::binomial_coefficient<double>(n, k);
-
-    if (fp_result < 0)
-        return 0;
-
-    if (fp_result > std::numeric_limits<std::int32_t>::max())  // note: std::round() returns std::int32_t
-        return 0;
-
-    return static_cast<std::uint32_t>(std::round(fp_result));
-}
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static void prepare_multisig_init_set_collections_v1(const std::uint32_t threshold,
@@ -344,7 +323,7 @@ static void make_v1_multisig_partial_sig_sets_v1(const multisig_account &signer_
 
     // make partial signatures for each filter permutation
     const std::uint32_t expected_num_partial_sig_sets{
-            n_choose_k(num_available_signers - 1, signer_account.get_threshold() - 1)
+            sp::math::n_choose_k(num_available_signers - 1, signer_account.get_threshold() - 1)
         };
     partial_sig_sets_out.clear();
     partial_sig_sets_out.reserve(expected_num_partial_sig_sets);
@@ -477,7 +456,7 @@ void check_v1_multisig_init_set_semantics_v1(const MultisigProofInitSetV1 &init_
     // - remove our init's signer, then choose 'threshold - 1' signers from the remaining 'num signers requested - 1' to
     //   get the number of permutations that include our init's signer
     const std::uint32_t num_sets_with_signer_expected(
-            n_choose_k(get_num_flags_set(init_set.aggregate_signer_set_filter) - 1, threshold - 1)
+            sp::math::n_choose_k(get_num_flags_set(init_set.aggregate_signer_set_filter) - 1, threshold - 1)
         );
 
     CHECK_AND_ASSERT_THROW_MES(init_set.inits.size() == num_sets_with_signer_expected,
@@ -679,7 +658,7 @@ void make_v1_multisig_init_set_v1(const std::uint32_t threshold,
 
     // 2. prepare init nonce map
     const std::uint32_t num_sets_with_signer_expected{
-            n_choose_k(get_num_flags_set(aggregate_signer_set_filter) - 1, threshold - 1)
+            sp::math::n_choose_k(get_num_flags_set(aggregate_signer_set_filter) - 1, threshold - 1)
         };
 
     init_set_out.inits.clear();

@@ -29,6 +29,7 @@
 set(seraphis_crypto_sources
   bulletproofs_plus2.cpp
   grootle.cpp
+  math_utils.cpp
   matrix_proof.cpp
   sp_composition_proof.cpp
   sp_crypto_utils.cpp

@@ -32,15 +32,13 @@
 //local headers
 #include "crypto/crypto.h"
 #include "misc_log_ex.h"
+#include "seraphis_crypto/math_utils.h"
 
 //third party headers
-#include <boost/math/special_functions/binomial.hpp>
 
 //standard headers
 #include <algorithm>
-#include <cmath>
 #include <cstdint>
-#include <limits>
 #include <vector>
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
@@ -58,27 +56,6 @@ static bool check_multisig_config_for_filter(const std::uint32_t threshold, cons
         return false;
 
     return true;
-}
-//----------------------------------------------------------------------------------------------------------------------
-// TODO: move to a 'math' library, with unit tests
-//----------------------------------------------------------------------------------------------------------------------
-static std::uint32_t n_choose_k(const std::uint32_t n, const std::uint32_t k)
-{
-    static_assert(std::numeric_limits<std::int32_t>::digits <= std::numeric_limits<double>::digits,
-        "n_choose_k requires no rounding issues when converting between int32 <-> double.");
-
-    if (n < k)
-        return 0;
-
-    const double fp_result{boost::math::binomial_coefficient<double>(n, k)};
-
-    if (fp_result < 0)
-        return 0;
-
-    if (fp_result > std::numeric_limits<std::int32_t>::max())  // note: std::round() returns std::int32_t
-        return 0;
-
-    return static_cast<std::uint32_t>(std::round(fp_result));
 }
 //----------------------------------------------------------------------------------------------------------------------
 //----------------------------------------------------------------------------------------------------------------------
@@ -212,7 +189,7 @@ void aggregate_multisig_signer_set_filter_to_permutations(const std::uint32_t th
             num_flags_set >= threshold,
         "Invalid aggregate multisig signer set filter when getting filter permutations.");
 
-    const std::uint32_t expected_num_permutations(n_choose_k(num_flags_set, threshold));
+    const std::uint32_t expected_num_permutations(sp::math::n_choose_k(num_flags_set, threshold));
     filter_permutations_out.clear();
     filter_permutations_out.reserve(expected_num_permutations);
 

@@ -42,7 +42,7 @@
 #include "seraphis_core/jamtis_support_types.h"
 #include "seraphis_core/legacy_core_utils.h"
 #include "seraphis_core/sp_core_enote_utils.h"
-#include "seraphis_crypto/sp_crypto_utils.h"
+#include "seraphis_crypto/math_utils.h"
 #include "seraphis_main/enote_record_types.h"
 #include "seraphis_main/enote_record_utils.h"
 #include "seraphis_main/tx_builder_types.h"
@@ -290,7 +290,7 @@ struct ParamsShuttleScannerClient final : public ParamsShuttle
 class test_remote_scanner_client_scan_sp
 {
 public:
-    static const size_t num_records = sp::uint_pow(2, sp::jamtis::ADDRESS_TAG_HINT_BYTES * 8);
+    static const size_t num_records = sp::math::uint_pow(2, sp::jamtis::ADDRESS_TAG_HINT_BYTES * 8);
     static const size_t loop_count = 256000 / num_records + 20;
 
     bool init(const ParamsShuttleScannerClient &params)
