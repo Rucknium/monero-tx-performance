@@ -62,15 +62,15 @@ namespace sp
 struct LegacyBasicEnoteRecord final
 {
     /// original enote
-    LegacyEnoteVariant m_enote;
+    LegacyEnoteVariant enote;
     /// the enote's ephemeral pubkey
-    rct::key m_enote_ephemeral_pubkey;
+    rct::key enote_ephemeral_pubkey;
     /// i: legacy address index (if true, then it's owned by a subaddress)
-    boost::optional<cryptonote::subaddress_index> m_address_index;
+    boost::optional<cryptonote::subaddress_index> address_index;
     /// t: the enote's index in its transaction
-    std::uint64_t m_tx_output_index;
+    std::uint64_t tx_output_index;
     /// u: the enote's unlock time
-    std::uint64_t m_unlock_time;
+    std::uint64_t unlock_time;
 };
 
 ////
@@ -80,21 +80,21 @@ struct LegacyBasicEnoteRecord final
 struct LegacyIntermediateEnoteRecord final
 {
     /// original enote
-    LegacyEnoteVariant m_enote;
+    LegacyEnoteVariant enote;
     /// the enote's ephemeral pubkey
-    rct::key m_enote_ephemeral_pubkey;
+    rct::key enote_ephemeral_pubkey;
     /// enote view privkey = [address: Hn(r K^v, t)] [subaddress (i): Hn(r K^{v,i}, t) + Hn(k^v, i)]
-    crypto::secret_key m_enote_view_extension;
+    crypto::secret_key enote_view_extension;
     /// a: amount
-    rct::xmr_amount m_amount;
+    rct::xmr_amount amount;
     /// x: amount blinding factor
-    crypto::secret_key m_amount_blinding_factor;
+    crypto::secret_key amount_blinding_factor;
     /// i: legacy address index (if true, then it's owned by a subaddress)
-    boost::optional<cryptonote::subaddress_index> m_address_index;
+    boost::optional<cryptonote::subaddress_index> address_index;
     /// t: the enote's index in its transaction
-    std::uint64_t m_tx_output_index;
+    std::uint64_t tx_output_index;
     /// u: the enote's unlock time
-    std::uint64_t m_unlock_time;
+    std::uint64_t unlock_time;
 };
 
 ////
@@ -104,23 +104,23 @@ struct LegacyIntermediateEnoteRecord final
 struct LegacyEnoteRecord final
 {
     /// original enote
-    LegacyEnoteVariant m_enote;
+    LegacyEnoteVariant enote;
     /// the enote's ephemeral pubkey
-    rct::key m_enote_ephemeral_pubkey;
+    rct::key enote_ephemeral_pubkey;
     /// enote view privkey = [address: Hn(r K^v, t)] [subaddress (i): Hn(r K^{v,i}, t) + Hn(k^v, i)]
-    crypto::secret_key m_enote_view_extension;
+    crypto::secret_key enote_view_extension;
     /// a: amount
-    rct::xmr_amount m_amount;
+    rct::xmr_amount amount;
     /// x: amount blinding factor
-    crypto::secret_key m_amount_blinding_factor;
+    crypto::secret_key amount_blinding_factor;
     /// KI: key image
-    crypto::key_image m_key_image;
+    crypto::key_image key_image;
     /// i: legacy address index (if true, then it's owned by a subaddress)
-    boost::optional<cryptonote::subaddress_index> m_address_index;
+    boost::optional<cryptonote::subaddress_index> address_index;
     /// t: the enote's index in its transaction
-    std::uint64_t m_tx_output_index;
+    std::uint64_t tx_output_index;
     /// u: the enote's unlock time
-    std::uint64_t m_unlock_time;
+    std::uint64_t unlock_time;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -134,13 +134,13 @@ struct LegacyEnoteRecord final
 struct SpBasicEnoteRecordV1 final
 {
     /// original enote
-    SpEnoteVariant m_enote;
+    SpEnoteVariant enote;
     /// the enote's ephemeral pubkey
-    crypto::x25519_pubkey m_enote_ephemeral_pubkey;
+    crypto::x25519_pubkey enote_ephemeral_pubkey;
     /// context of the tx input(s) associated with this enote
-    rct::key m_input_context;
+    rct::key input_context;
     /// t'_addr: nominal address tag
-    jamtis::address_tag_t m_nominal_address_tag;
+    jamtis::address_tag_t nominal_address_tag;
 };
 
 ////
@@ -150,17 +150,17 @@ struct SpBasicEnoteRecordV1 final
 struct SpIntermediateEnoteRecordV1 final
 {
     /// original enote
-    SpEnoteVariant m_enote;
+    SpEnoteVariant enote;
     /// the enote's ephemeral pubkey
-    crypto::x25519_pubkey m_enote_ephemeral_pubkey;
+    crypto::x25519_pubkey enote_ephemeral_pubkey;
     /// context of the tx input(s) associated with this enote
-    rct::key m_input_context;
+    rct::key input_context;
     /// a: amount
-    rct::xmr_amount m_amount;
+    rct::xmr_amount amount;
     /// x: amount blinding factor
-    crypto::secret_key m_amount_blinding_factor;
+    crypto::secret_key amount_blinding_factor;
     /// j: jamtis address index
-    jamtis::address_index_t m_address_index;
+    jamtis::address_index_t address_index;
 };
 
 ////
@@ -170,27 +170,27 @@ struct SpIntermediateEnoteRecordV1 final
 struct SpEnoteRecordV1 final
 {
     /// original enote
-    SpEnoteVariant m_enote;
+    SpEnoteVariant enote;
     /// the enote's ephemeral pubkey
-    crypto::x25519_pubkey m_enote_ephemeral_pubkey;
+    crypto::x25519_pubkey enote_ephemeral_pubkey;
     /// context of the tx input(s) associated with this enote
-    rct::key m_input_context;
+    rct::key input_context;
     /// k_{g, sender} + k_{g, address}: enote view extension for G component
-    crypto::secret_key m_enote_view_extension_g;
+    crypto::secret_key enote_view_extension_g;
     /// k_{x, sender} + k_{x, address}: enote view extension for X component (excludes k_vb)
-    crypto::secret_key m_enote_view_extension_x;
+    crypto::secret_key enote_view_extension_x;
     /// k_{u, sender} + k_{u, address}: enote view extension for U component (excludes k_m)
-    crypto::secret_key m_enote_view_extension_u;
+    crypto::secret_key enote_view_extension_u;
     /// a: amount
-    rct::xmr_amount m_amount;
+    rct::xmr_amount amount;
     /// x: amount blinding factor
-    crypto::secret_key m_amount_blinding_factor;
+    crypto::secret_key amount_blinding_factor;
     /// KI: key image
-    crypto::key_image m_key_image;
+    crypto::key_image key_image;
     /// j: jamtis address index
-    jamtis::address_index_t m_address_index;
+    jamtis::address_index_t address_index;
     /// jamtis enote type
-    jamtis::JamtisEnoteType m_type;
+    jamtis::JamtisEnoteType type;
 };
 
 } //namespace sp

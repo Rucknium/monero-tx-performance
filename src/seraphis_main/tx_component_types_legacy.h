@@ -59,9 +59,9 @@ namespace sp
 struct LegacyEnoteImageV2 final
 {
     /// masked commitment (aka 'pseudo-output commitment')
-    rct::key m_masked_commitment;
+    rct::key masked_commitment;
     /// legacy key image
-    crypto::key_image m_key_image;
+    crypto::key_image key_image;
 };
 inline const boost::string_ref container_name(const LegacyEnoteImageV2&) { return "LegacyEnoteImageV2"; }
 void append_to_transcript(const LegacyEnoteImageV2 &container, SpTranscriptBuilder &transcript_inout);
@@ -91,9 +91,9 @@ inline std::size_t legacy_enote_image_v2_size_bytes() { return 32 + 32; }
 struct LegacyRingSignatureV4 final
 {
     /// a clsag proof
-    rct::clsag m_clsag_proof;
+    rct::clsag clsag_proof;
     /// on-chain indices of the proof's ring members
-    std::vector<std::uint64_t> m_reference_set;
+    std::vector<std::uint64_t> reference_set;
 };
 inline const boost::string_ref container_name(const LegacyRingSignatureV4&) { return "LegacyRingSignatureV4"; }
 void append_to_transcript(const LegacyRingSignatureV4 &container, SpTranscriptBuilder &transcript_inout);

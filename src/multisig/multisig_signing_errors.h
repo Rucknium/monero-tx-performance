@@ -65,19 +65,19 @@ struct MultisigSigningErrorBadInitSet final
     };
 
     /// error code
-    ErrorCode m_error_code;
+    ErrorCode error_code;
 
     /// all multisig signers allowed to participate in signature attempts
-    multisig::signer_set_filter m_aggregate_signer_set_filter;
+    multisig::signer_set_filter aggregate_signer_set_filter;
     /// id of signer who made this proof initializer set
-    crypto::public_key m_signer_id;
+    crypto::public_key signer_id;
     /// message to be signed by the multisig proofs
-    rct::key m_proof_message;
+    rct::key proof_message;
     /// main proof key to be signed by the multisig proofs
-    rct::key m_proof_key;
+    rct::key proof_key;
 
     /// optional error message (e.g. for exceptions)
-    std::string m_error_message;
+    std::string error_message;
 };
 
 struct MultisigSigningErrorBadInitSetCollection final
@@ -92,13 +92,13 @@ struct MultisigSigningErrorBadInitSetCollection final
     };
 
     /// error code
-    ErrorCode m_error_code;
+    ErrorCode error_code;
 
     /// id of signer who supposedly made this collection of proof initializer sets
-    crypto::public_key m_signer_id;
+    crypto::public_key signer_id;
 
     /// optional error message (e.g. for exceptions)
-    std::string m_error_message;
+    std::string error_message;
 };
 
 struct MultisigSigningErrorAvailableSigners final
@@ -109,15 +109,15 @@ struct MultisigSigningErrorAvailableSigners final
     };
 
     /// error code
-    ErrorCode m_error_code;
+    ErrorCode error_code;
 
     /// signers that are allowed to participate in a given multisig signing ceremony but are missing
-    multisig::signer_set_filter m_missing_signers;
+    multisig::signer_set_filter missing_signers;
     /// signers that are not allowed to participate in a given multisig signing ceremony but are present anyway
-    multisig::signer_set_filter m_unexpected_available_signers;
+    multisig::signer_set_filter unexpected_available_signers;
 
     /// optional error message (e.g. for exceptions)
-    std::string m_error_message;
+    std::string error_message;
 };
 
 struct MultisigSigningErrorBadPartialSig final
@@ -130,15 +130,15 @@ struct MultisigSigningErrorBadPartialSig final
     };
 
     /// error code
-    ErrorCode m_error_code;
+    ErrorCode error_code;
 
     /// main proof key of the partial sig
-    rct::key m_proof_key;
+    rct::key proof_key;
     /// proof message of the partial sig
-    rct::key m_proof_message;
+    rct::key proof_message;
 
     /// optional error message (e.g. for exceptions)
-    std::string m_error_message;
+    std::string error_message;
 };
 
 struct MultisigSigningErrorMakePartialSigSet final
@@ -152,13 +152,13 @@ struct MultisigSigningErrorMakePartialSigSet final
     };
 
     /// error code
-    ErrorCode m_error_code;
+    ErrorCode error_code;
 
     /// set of multisig signers the partial signature set corresponds to
-    multisig::signer_set_filter m_signature_set_filter;
+    multisig::signer_set_filter signature_set_filter;
 
     /// optional error message (e.g. for exceptions)
-    std::string m_error_message;
+    std::string error_message;
 };
 
 struct MultisigSigningErrorBadPartialSigSet final
@@ -170,15 +170,15 @@ struct MultisigSigningErrorBadPartialSigSet final
     };
 
     /// error code
-    ErrorCode m_error_code;
+    ErrorCode error_code;
 
     /// set of multisig signers the partial signature set corresponds to
-    multisig::signer_set_filter m_signature_set_filter;
+    multisig::signer_set_filter signature_set_filter;
     /// signer that produced this partial sig set
-    crypto::public_key m_signer_id;
+    crypto::public_key signer_id;
 
     /// optional error message (e.g. for exceptions)
-    std::string m_error_message;
+    std::string error_message;
 };
 
 struct MultisigSigningErrorBadSigAssembly final
@@ -190,13 +190,13 @@ struct MultisigSigningErrorBadSigAssembly final
     };
 
     /// error code
-    ErrorCode m_error_code;
+    ErrorCode error_code;
 
     /// set of multisig signers the partial signature set corresponds to
-    multisig::signer_set_filter m_signer_set_filter;
+    multisig::signer_set_filter signer_set_filter;
 
     /// optional error message (e.g. for exceptions)
-    std::string m_error_message;
+    std::string error_message;
 };
 
 struct MultisigSigningErrorBadSigSet final
@@ -207,10 +207,10 @@ struct MultisigSigningErrorBadSigSet final
     };
 
     /// error code
-    ErrorCode m_error_code;
+    ErrorCode error_code;
 
     /// optional error message (e.g. for exceptions)
-    std::string m_error_message;
+    std::string error_message;
 };
 
 ////

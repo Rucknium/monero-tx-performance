@@ -47,14 +47,14 @@ namespace sp
 //-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const LegacyEnoteImageV2 &container, SpTranscriptBuilder &transcript_inout)
 {
-    transcript_inout.append("C_masked", container.m_masked_commitment);
-    transcript_inout.append("KI", container.m_key_image);
+    transcript_inout.append("C_masked", container.masked_commitment);
+    transcript_inout.append("KI", container.key_image);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const LegacyRingSignatureV4 &container, SpTranscriptBuilder &transcript_inout)
 {
-    append_clsag_to_transcript(container.m_clsag_proof, transcript_inout);
-    transcript_inout.append("reference_set", container.m_reference_set);
+    append_clsag_to_transcript(container.clsag_proof, transcript_inout);
+    transcript_inout.append("reference_set", container.reference_set);
 }
 //-------------------------------------------------------------------------------------------------------------------
 std::size_t legacy_ring_signature_v4_size_bytes(const std::size_t num_ring_members)
@@ -64,15 +64,15 @@ std::size_t legacy_ring_signature_v4_size_bytes(const std::size_t num_ring_membe
 //-------------------------------------------------------------------------------------------------------------------
 std::size_t legacy_ring_signature_v4_size_bytes(const LegacyRingSignatureV4 &ring_signature)
 {
-    CHECK_AND_ASSERT_THROW_MES(ring_signature.m_clsag_proof.s.size() == ring_signature.m_reference_set.size(),
+    CHECK_AND_ASSERT_THROW_MES(ring_signature.clsag_proof.s.size() == ring_signature.reference_set.size(),
         "legacy ring signature v4 size: clsag proof doesn't match reference set size.");
 
-    return legacy_ring_signature_v4_size_bytes(ring_signature.m_reference_set.size());
+    return legacy_ring_signature_v4_size_bytes(ring_signature.reference_set.size());
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool compare_KI(const LegacyEnoteImageV2 &a, const LegacyEnoteImageV2 &b)
 {
-    return a.m_key_image < b.m_key_image;
+    return a.key_image < b.key_image;
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace sp

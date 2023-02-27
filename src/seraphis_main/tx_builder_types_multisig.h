@@ -70,13 +70,13 @@ namespace sp
 struct LegacyMultisigRingSignaturePrepV1 final
 {
     /// ledger indices of legacy enotes referenced by the proof
-    std::vector<std::uint64_t> m_reference_set;
+    std::vector<std::uint64_t> reference_set;
     /// the referenced enotes ({Ko, C}((legacy)) representation)
-    rct::ctkeyV m_referenced_enotes;
+    rct::ctkeyV referenced_enotes;
     /// the index of the real enote being referenced within the reference set
-    std::uint64_t m_real_reference_index;
+    std::uint64_t real_reference_index;
     /// key image of the real reference
-    crypto::key_image m_key_image;
+    crypto::key_image key_image;
 };
 
 ////
@@ -86,21 +86,21 @@ struct LegacyMultisigRingSignaturePrepV1 final
 struct LegacyMultisigInputProposalV1 final
 {
     /// the enote to spend
-    LegacyEnoteVariant m_enote;
+    LegacyEnoteVariant enote;
     /// the enote's key image
-    crypto::key_image m_key_image;
+    crypto::key_image key_image;
     /// the enote's ephemeral pubkey
-    rct::key m_enote_ephemeral_pubkey;
+    rct::key enote_ephemeral_pubkey;
     /// t: the enote's output index in the tx that created it
-    std::uint64_t m_tx_output_index;
+    std::uint64_t tx_output_index;
     /// u: the enote's unlock time
-    std::uint64_t m_unlock_time;
+    std::uint64_t unlock_time;
 
     /// mask
-    crypto::secret_key m_commitment_mask;
+    crypto::secret_key commitment_mask;
 
     /// cached legacy enote indices for a legacy ring signature (should include a reference to this input proposal's enote)
-    std::vector<std::uint64_t> m_reference_set;
+    std::vector<std::uint64_t> reference_set;
 };
 
 ////
@@ -110,16 +110,16 @@ struct LegacyMultisigInputProposalV1 final
 struct SpMultisigInputProposalV1 final
 {
     /// enote to spend
-    SpEnoteVariant m_enote;
+    SpEnoteVariant enote;
     /// the enote's ephemeral pubkey
-    crypto::x25519_pubkey m_enote_ephemeral_pubkey;
+    crypto::x25519_pubkey enote_ephemeral_pubkey;
     /// the enote's input context
-    rct::key m_input_context;
+    rct::key input_context;
 
     /// t_k
-    crypto::secret_key m_address_mask;
+    crypto::secret_key address_mask;
     /// t_c
-    crypto::secret_key m_commitment_mask;
+    crypto::secret_key commitment_mask;
 };
 
 ////
@@ -129,29 +129,29 @@ struct SpMultisigInputProposalV1 final
 struct SpMultisigTxProposalV1 final
 {
     /// legacy tx inputs to sign with multisig (SORTED)
-    std::vector<LegacyMultisigInputProposalV1> m_legacy_multisig_input_proposals;
+    std::vector<LegacyMultisigInputProposalV1> legacy_multisig_input_proposals;
     /// seraphis tx inputs to sign with multisig (NOT SORTED; get sorted seraphis input proposals by converting to
     ///   a normal tx proposal)
-    std::vector<SpMultisigInputProposalV1> m_sp_multisig_input_proposals;
+    std::vector<SpMultisigInputProposalV1> sp_multisig_input_proposals;
     /// legacy ring signature proposals (CLSAGs) for each legacy input proposal (ALIGNED TO SORTED LEGACY INPUTS)
-    std::vector<multisig::CLSAGMultisigProposal> m_legacy_input_proof_proposals;
+    std::vector<multisig::CLSAGMultisigProposal> legacy_input_proof_proposals;
     /// composition proof proposals for each seraphis input proposal (ALIGNED TO SORTED SERAPHIS INPUTS)
-    std::vector<multisig::SpCompositionProofMultisigProposal> m_sp_input_proof_proposals;
+    std::vector<multisig::SpCompositionProofMultisigProposal> sp_input_proof_proposals;
     /// all multisig signers who may participate in signing this proposal
     /// - the set may be larger than 'threshold', in which case every permutation of 'threshold' signers will attempt to sign
-    multisig::signer_set_filter m_aggregate_signer_set_filter;
+    multisig::signer_set_filter aggregate_signer_set_filter;
 
     /// normal tx outputs (NOT SORTED)
-    std::vector<jamtis::JamtisPaymentProposalV1> m_normal_payment_proposals;
+    std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals;
     /// self-send tx outputs (NOT SORTED)
-    std::vector<jamtis::JamtisPaymentProposalSelfSendV1> m_selfsend_payment_proposals;
+    std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals;
     /// proposed transaction fee
-    DiscretizedFee m_tx_fee;
+    DiscretizedFee tx_fee;
     /// miscellaneous memo elements to add to the tx memo
-    TxExtra m_partial_memo;
+    TxExtra partial_memo;
 
     /// encoding of intended tx version
-    tx_version_t m_tx_version;
+    tx_version_t tx_version;
 };
 
 /// comparison method for sorting: a.KI < b.KI

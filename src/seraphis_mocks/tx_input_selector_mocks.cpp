@@ -183,10 +183,10 @@ bool InputSelectorMockV1::try_select_input_candidate_v1(const boost::multiprecis
         // e. if this legacy enote shares a onetime address with any other legacy enotes, only proceed if this one
         //   has the highest amount
         if (!legacy_enote_has_highest_amount_in_set(mapped_enote_record.first,
-                mapped_enote_record.second.m_record.m_amount,
+                mapped_enote_record.second.record.amount,
                 {SpEnoteOriginStatus::OFFCHAIN, SpEnoteOriginStatus::UNCONFIRMED, SpEnoteOriginStatus::ONCHAIN},
                 m_enote_store.m_tracked_legacy_onetime_address_duplicates.at(
-                    onetime_address_ref(mapped_enote_record.second.m_record.m_enote)
+                    onetime_address_ref(mapped_enote_record.second.record.enote)
                 ),
                 [&mapped_legacy_contextual_enote_records](const rct::key &identifier) -> const SpEnoteOriginStatus&
                 {
@@ -195,7 +195,7 @@ bool InputSelectorMockV1::try_select_input_candidate_v1(const boost::multiprecis
                         "input selector (mock): tracked legacy duplicates has an entry that doesn't line up "
                         "1:1 with the legacy map even though it should (bug).");
 
-                    return mapped_legacy_contextual_enote_records.at(identifier).m_origin_context.m_origin_status;
+                    return mapped_legacy_contextual_enote_records.at(identifier).origin_context.origin_status;
                 },
                 [&mapped_legacy_contextual_enote_records](const rct::key &identifier) -> rct::xmr_amount
                 {
@@ -204,7 +204,7 @@ bool InputSelectorMockV1::try_select_input_candidate_v1(const boost::multiprecis
                         "input selector (mock): tracked legacy duplicates has an entry that doesn't line up "
                         "1:1 with the legacy map even though it should (bug).");
 
-                    return mapped_legacy_contextual_enote_records.at(identifier).m_record.m_amount;
+                    return mapped_legacy_contextual_enote_records.at(identifier).record.amount;
                 }))
             continue;
 

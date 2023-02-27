@@ -57,37 +57,37 @@ namespace sp
 /// semantic validation config: component counts
 struct SemanticConfigCoinbaseComponentCountsV1 final
 {
-    std::size_t m_min_outputs;
-    std::size_t m_max_outputs;
+    std::size_t min_outputs;
+    std::size_t max_outputs;
 };
 
 /// semantic validation config: component counts
 struct SemanticConfigComponentCountsV1 final
 {
-    std::size_t m_min_inputs;
-    std::size_t m_max_inputs;
-    std::size_t m_min_outputs;
-    std::size_t m_max_outputs;
+    std::size_t min_inputs;
+    std::size_t max_inputs;
+    std::size_t min_outputs;
+    std::size_t max_outputs;
 };
 
 /// semantic validation config: legacy reference sets
 struct SemanticConfigLegacyRefSetV1 final
 {
-    std::size_t m_ring_size_min;
-    std::size_t m_ring_size_max;
+    std::size_t ring_size_min;
+    std::size_t ring_size_max;
 };
 
 /// semantic validation config: seraphis reference sets
 struct SemanticConfigSpRefSetV1 final
 {
-    std::size_t m_decomp_n_min;
-    std::size_t m_decomp_n_max;
-    std::size_t m_decomp_m_min;
-    std::size_t m_decomp_m_max;
-    std::size_t m_bin_radius_min;
-    std::size_t m_bin_radius_max;
-    std::size_t m_num_bin_members_min;
-    std::size_t m_num_bin_members_max;
+    std::size_t decomp_n_min;
+    std::size_t decomp_n_max;
+    std::size_t decomp_m_min;
+    std::size_t decomp_m_max;
+    std::size_t bin_radius_min;
+    std::size_t bin_radius_max;
+    std::size_t num_bin_members_min;
+    std::size_t num_bin_members_max;
 };
 
 /**

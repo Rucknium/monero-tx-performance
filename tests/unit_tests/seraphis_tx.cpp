@@ -336,7 +336,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
         temp.legacy_ring_size = 2;
         temp.ref_set_decomp_n = 2;
         temp.ref_set_decomp_m = 2;
-        temp.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        temp.bin_config = SpBinnedReferenceSetConfigV1{.bin_radius = 0, .num_bin_members = 1};
         temp.test_double_spend = test_double_spend;
 
         gen_data.push_back(temp);
@@ -352,7 +352,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
         temp.legacy_ring_size = 2;
         temp.ref_set_decomp_n = 2;
         temp.ref_set_decomp_m = 2;
-        temp.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        temp.bin_config = SpBinnedReferenceSetConfigV1{.bin_radius = 0, .num_bin_members = 1};
         temp.test_double_spend = test_double_spend;
 
         gen_data.push_back(temp);
@@ -368,7 +368,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
         temp.legacy_ring_size = 2;
         temp.ref_set_decomp_n = 2;
         temp.ref_set_decomp_m = 2;
-        temp.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        temp.bin_config = SpBinnedReferenceSetConfigV1{.bin_radius = 0, .num_bin_members = 1};
         temp.test_double_spend = test_double_spend;
 
         gen_data.push_back(temp);
@@ -384,7 +384,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
         temp.legacy_ring_size = 2;
         temp.ref_set_decomp_n = 2;
         temp.ref_set_decomp_m = 2;
-        temp.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        temp.bin_config = SpBinnedReferenceSetConfigV1{.bin_radius = 0, .num_bin_members = 1};
         temp.test_double_spend = test_double_spend;
 
         gen_data.push_back(temp);
@@ -397,7 +397,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
         temp.legacy_ring_size = 4;
         temp.ref_set_decomp_n = 2;
         temp.ref_set_decomp_m = 3;
-        temp.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        temp.bin_config = SpBinnedReferenceSetConfigV1{.bin_radius = 0, .num_bin_members = 1};
         for (std::size_t i{0}; i < 8; ++i)
         {
             temp.alternate_input_amounts.push_back(1);
@@ -415,7 +415,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
         temp.legacy_ring_size = 2;
         temp.ref_set_decomp_n = 2;
         temp.ref_set_decomp_m = 2;
-        temp.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        temp.bin_config = SpBinnedReferenceSetConfigV1{.bin_radius = 0, .num_bin_members = 1};
         for (std::size_t i{0}; i < 4; ++i)
         {
             temp.alternate_input_amounts.push_back(0);
@@ -436,7 +436,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
         temp.legacy_ring_size = 2;
         temp.ref_set_decomp_n = 2;
         temp.ref_set_decomp_m = 2;
-        temp.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        temp.bin_config = SpBinnedReferenceSetConfigV1{.bin_radius = 0, .num_bin_members = 1};
 
         gen_data.push_back(temp);
     }
@@ -449,7 +449,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
         temp.legacy_ring_size = 2;
         temp.ref_set_decomp_n = 2;
         temp.ref_set_decomp_m = 2;
-        temp.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        temp.bin_config = SpBinnedReferenceSetConfigV1{.bin_radius = 0, .num_bin_members = 1};
 
         gen_data.push_back(temp);
     }
@@ -462,7 +462,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
         temp.output_amounts.push_back(1);
         temp.legacy_ring_size = 0;
         temp.ref_set_decomp_n = 0;
-        temp.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        temp.bin_config = SpBinnedReferenceSetConfigV1{.bin_radius = 0, .num_bin_members = 1};
 
         gen_data.push_back(temp);
     }
@@ -476,7 +476,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_misc(const bool test_double
         temp.legacy_ring_size = 2;
         temp.ref_set_decomp_n = 2;
         temp.ref_set_decomp_m = 2;
-        temp.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        temp.bin_config = SpBinnedReferenceSetConfigV1{.bin_radius = 0, .num_bin_members = 1};
 
         gen_data.push_back(temp);
     }
@@ -501,7 +501,7 @@ static std::vector<SpTxGenData> get_mock_tx_gen_data_batching()
         gen.legacy_ring_size = 2;
         gen.ref_set_decomp_n = 2;
         gen.ref_set_decomp_m = 2;
-        gen.bin_config = SpBinnedReferenceSetConfigV1{.m_bin_radius = 0, .m_num_bin_members = 1};
+        gen.bin_config = SpBinnedReferenceSetConfigV1{.bin_radius = 0, .num_bin_members = 1};
     }
 
     return gen_data;
@@ -567,7 +567,7 @@ TEST(seraphis_tx, seraphis_squashed_multi_input_type)
     run_mock_tx_test<SpTxSquashedV1>(2,
         2,
         2,
-        SpBinnedReferenceSetConfigV1{.m_bin_radius = 1, .m_num_bin_members = 2},
+        SpBinnedReferenceSetConfigV1{.bin_radius = 1, .num_bin_members = 2},
         {2, 2},
         {1, 1},
         {5},
@@ -578,7 +578,7 @@ TEST(seraphis_tx, seraphis_squashed_multi_input_type)
     run_mock_tx_test_cached<SpTxSquashedV1>(2,
         2,
         2,
-        SpBinnedReferenceSetConfigV1{.m_bin_radius = 1, .m_num_bin_members = 2},
+        SpBinnedReferenceSetConfigV1{.bin_radius = 1, .num_bin_members = 2},
         {2, 2},
         {1, 1},
         {5},

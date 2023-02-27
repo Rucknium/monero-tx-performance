@@ -158,8 +158,8 @@ TEST(seraphis_serialization_demo, seraphis_squashed_standard)
     tx_params.ref_set_decomp_m = 2;
     tx_params.bin_config =
         SpBinnedReferenceSetConfigV1{
-            .m_bin_radius = 1,
-            .m_num_bin_members = 1
+            .bin_radius = 1,
+            .num_bin_members = 1
         };
 
     // ledger context

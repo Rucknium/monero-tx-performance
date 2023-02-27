@@ -69,15 +69,15 @@ bool MockOffchainContext::seraphis_key_image_exists(const crypto::key_image &key
 //-------------------------------------------------------------------------------------------------------------------
 bool MockOffchainContext::try_add_partial_tx_v1(const SpPartialTxV1 &partial_tx)
 {
-    return this->try_add_v1_impl(partial_tx.m_legacy_input_images,
-        partial_tx.m_sp_input_images,
-        partial_tx.m_tx_supplement,
-        partial_tx.m_outputs);
+    return this->try_add_v1_impl(partial_tx.legacy_input_images,
+        partial_tx.sp_input_images,
+        partial_tx.tx_supplement,
+        partial_tx.outputs);
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool MockOffchainContext::try_add_tx_v1(const SpTxSquashedV1 &tx)
 {
-    return this->try_add_v1_impl(tx.m_legacy_input_images, tx.m_sp_input_images, tx.m_tx_supplement, tx.m_outputs);
+    return this->try_add_v1_impl(tx.legacy_input_images, tx.sp_input_images, tx.tx_supplement, tx.outputs);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void MockOffchainContext::remove_tx_from_cache(const rct::key &input_context)
@@ -141,8 +141,8 @@ void MockOffchainContext::clear_cache()
 void MockOffchainContext::get_offchain_chunk_sp(const crypto::x25519_secret_key &xk_find_received,
     EnoteScanningChunkNonLedgerV1 &chunk_out) const
 {
-    chunk_out.m_basic_records_per_tx.clear();
-    chunk_out.m_contextual_key_images.clear();
+    chunk_out.basic_records_per_tx.clear();
+    chunk_out.contextual_key_images.clear();
 
     // 1. no chunk if no txs to scan
     if (m_output_contents.size() == 0)
@@ -168,8 +168,8 @@ void MockOffchainContext::get_offchain_chunk_sp(const crypto::x25519_secret_key 
             SpEnoteOriginStatus::OFFCHAIN,
             collected_records))
         {
-            chunk_out.m_basic_records_per_tx[tx_id]
-                .splice(chunk_out.m_basic_records_per_tx[tx_id].end(), collected_records);
+            chunk_out.basic_records_per_tx[tx_id]
+                .splice(chunk_out.basic_records_per_tx[tx_id].end(), collected_records);
 
             CHECK_AND_ASSERT_THROW_MES(m_tx_key_images.find(tx_with_output_contents.first) != m_tx_key_images.end(),
                 "offchain find-received scanning (mock offchain context): key image map missing input context (bug).");
@@ -181,7 +181,7 @@ void MockOffchainContext::get_offchain_chunk_sp(const crypto::x25519_secret_key 
                     std::get<1>(m_tx_key_images.at(tx_with_output_contents.first)),
                     SpEnoteSpentStatus::SPENT_OFFCHAIN,
                     collected_key_images))
-                chunk_out.m_contextual_key_images.emplace_back(std::move(collected_key_images));
+                chunk_out.contextual_key_images.emplace_back(std::move(collected_key_images));
         }
     }
 }
@@ -201,10 +201,10 @@ bool MockOffchainContext::try_add_v1_impl(const std::vector<LegacyEnoteImageV2> 
 
     for (const LegacyEnoteImageV2 &legacy_enote_image : legacy_input_images)
     {
-        if (this->cryptonote_key_image_exists(legacy_enote_image.m_key_image))
+        if (this->cryptonote_key_image_exists(legacy_enote_image.key_image))
             return false;
 
-        legacy_key_images_collected.emplace_back(legacy_enote_image.m_key_image);
+        legacy_key_images_collected.emplace_back(legacy_enote_image.key_image);
     }
 
     for (const SpEnoteImageV1 &sp_enote_image : sp_input_images)

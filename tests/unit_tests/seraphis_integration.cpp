@@ -90,16 +90,16 @@ TEST(seraphis_integration, txtype_squashed_v1)
     const std::size_t ref_set_decomp_m{2};
 
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     const FeeCalculatorMockTrivial fee_calculator;  //just do a trivial calculator for now (fee = fee/weight * 1 weight)
 
     const SpBinnedReferenceSetConfigV1 bin_config{
-            .m_bin_radius = 1,
-            .m_num_bin_members = 2
+            .bin_radius = 1,
+            .num_bin_members = 2
         };
 
     /// mock ledger context for this test
@@ -120,7 +120,7 @@ TEST(seraphis_integration, txtype_squashed_v1)
 
     // b. add enough fake enotes to the ledger so we can reliably make seraphis membership proofs
     std::vector<rct::xmr_amount> fake_sp_enote_amounts(
-            static_cast<std::size_t>(compute_bin_width(bin_config.m_bin_radius)),
+            static_cast<std::size_t>(compute_bin_width(bin_config.bin_radius)),
             0
         );
     JamtisDestinationV1 fake_destination;

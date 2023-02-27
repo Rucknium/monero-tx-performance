@@ -75,7 +75,7 @@ std::size_t sp_tx_coinbase_v1_size_bytes(const std::size_t num_outputs, const Tx
 //-------------------------------------------------------------------------------------------------------------------
 std::size_t sp_tx_coinbase_v1_size_bytes(const SpTxCoinbaseV1 &tx)
 {
-    return sp_tx_coinbase_v1_size_bytes(tx.m_outputs.size(), tx.m_tx_supplement.m_tx_extra);
+    return sp_tx_coinbase_v1_size_bytes(tx.outputs.size(), tx.tx_supplement.tx_extra);
 }
 //-------------------------------------------------------------------------------------------------------------------
 std::size_t sp_tx_coinbase_v1_weight(const std::size_t num_outputs, const TxExtra &tx_extra)
@@ -85,26 +85,26 @@ std::size_t sp_tx_coinbase_v1_weight(const std::size_t num_outputs, const TxExtr
 //-------------------------------------------------------------------------------------------------------------------
 std::size_t sp_tx_coinbase_v1_weight(const SpTxCoinbaseV1 &tx)
 {
-    return sp_tx_coinbase_v1_weight(tx.m_outputs.size(), tx.m_tx_supplement.m_tx_extra);
+    return sp_tx_coinbase_v1_weight(tx.outputs.size(), tx.tx_supplement.tx_extra);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void get_sp_tx_coinbase_v1_txid(const SpTxCoinbaseV1 &tx, rct::key &tx_id_out)
 {
     // tx_id = H_32(tx version, block height, block reward, output enotes, tx supplement)
-    const tx_version_t tx_version{tx_version_from(tx.m_tx_semantic_rules_version)};
+    const tx_version_t tx_version{tx_version_from(tx.tx_semantic_rules_version)};
 
     SpFSTranscript transcript{
             config::HASH_KEY_SERAPHIS_TRANSACTION_TYPE_COINBASE_V1,
             sizeof(tx_version) +
                 16 +
-                tx.m_outputs.size()*sp_coinbase_enote_v1_size_bytes() +
-                sp_tx_supplement_v1_size_bytes(tx.m_tx_supplement)
+                tx.outputs.size()*sp_coinbase_enote_v1_size_bytes() +
+                sp_tx_supplement_v1_size_bytes(tx.tx_supplement)
         };
     transcript.append("tx_version", tx_version.bytes);
-    transcript.append("block_height", tx.m_block_height);
-    transcript.append("block_reward", tx.m_block_reward);
-    transcript.append("output_enotes", tx.m_outputs);
-    transcript.append("tx_supplement", tx.m_tx_supplement);
+    transcript.append("block_height", tx.block_height);
+    transcript.append("block_reward", tx.block_reward);
+    transcript.append("output_enotes", tx.outputs);
+    transcript.append("tx_supplement", tx.tx_supplement);
 
     sp_hash_to_32(transcript.data(), transcript.size(), tx_id_out.bytes);
 }
@@ -116,11 +116,11 @@ void make_seraphis_tx_coinbase_v1(const SpTxCoinbaseV1::SemanticRulesVersion sem
     SpTxSupplementV1 tx_supplement,
     SpTxCoinbaseV1 &tx_out)
 {
-    tx_out.m_tx_semantic_rules_version = semantic_rules_version;
-    tx_out.m_block_height = block_height;
-    tx_out.m_block_reward = block_reward;
-    tx_out.m_outputs = std::move(outputs);
-    tx_out.m_tx_supplement = std::move(tx_supplement);
+    tx_out.tx_semantic_rules_version = semantic_rules_version;
+    tx_out.block_height              = block_height;
+    tx_out.block_reward              = block_reward;
+    tx_out.outputs                   = std::move(outputs);
+    tx_out.tx_supplement             = std::move(tx_supplement);
 
     CHECK_AND_ASSERT_THROW_MES(validate_tx_semantics(tx_out), "Failed to assemble an SpTxCoinbaseV1.");
 }
@@ -139,15 +139,15 @@ void make_seraphis_tx_coinbase_v1(const SpTxCoinbaseV1::SemanticRulesVersion sem
     // 3. extract info from output proposals
     std::vector<SpCoinbaseEnoteV1> output_enotes;
     SpTxSupplementV1 tx_supplement;
-    make_v1_coinbase_outputs_v1(output_proposals, output_enotes, tx_supplement.m_output_enote_ephemeral_pubkeys);
+    make_v1_coinbase_outputs_v1(output_proposals, output_enotes, tx_supplement.output_enote_ephemeral_pubkeys);
 
     // 4. collect full memo
-    finalize_tx_extra_v1(tx_proposal.m_partial_memo, output_proposals, tx_supplement.m_tx_extra);
+    finalize_tx_extra_v1(tx_proposal.partial_memo, output_proposals, tx_supplement.tx_extra);
 
     // 5. finish tx
     make_seraphis_tx_coinbase_v1(semantic_rules_version,
-        tx_proposal.m_block_height,
-        tx_proposal.m_block_reward,
+        tx_proposal.block_height,
+        tx_proposal.block_reward,
         std::move(output_enotes),
         std::move(tx_supplement),
         tx_out);
@@ -179,13 +179,13 @@ SemanticConfigCoinbaseComponentCountsV1 semantic_config_coinbase_component_count
 
     if (tx_semantic_rules_version == SpTxCoinbaseV1::SemanticRulesVersion::MOCK)
     {
-        config.m_min_outputs = 1;
-        config.m_max_outputs = 100000;
+        config.min_outputs = 1;
+        config.max_outputs = 100000;
     }
     else if (tx_semantic_rules_version == SpTxCoinbaseV1::SemanticRulesVersion::ONE)
     {
-        config.m_min_outputs = 1;
-        config.m_max_outputs = config::SP_MAX_COINBASE_OUTPUTS_V1;
+        config.min_outputs = 1;
+        config.max_outputs = config::SP_MAX_COINBASE_OUTPUTS_V1;
     }
     else  //unknown semantic rules version
     {
@@ -200,19 +200,19 @@ bool validate_tx_semantics<SpTxCoinbaseV1>(const SpTxCoinbaseV1 &tx)
 {
     // validate component counts (num outputs, etc.)
     if (!validate_sp_semantics_coinbase_component_counts_v1(
-            semantic_config_coinbase_component_counts_v1(tx.m_tx_semantic_rules_version),
-            tx.m_outputs.size(),
-            tx.m_tx_supplement.m_output_enote_ephemeral_pubkeys.size()))
+            semantic_config_coinbase_component_counts_v1(tx.tx_semantic_rules_version),
+            tx.outputs.size(),
+            tx.tx_supplement.output_enote_ephemeral_pubkeys.size()))
         return false;
 
     // validate output serialization semantics
-    if (!validate_sp_semantics_output_serialization_v1(tx.m_outputs))
+    if (!validate_sp_semantics_output_serialization_v1(tx.outputs))
         return false;
 
     // validate layout (sorting, uniqueness) of outputs and tx supplement
-    if (!validate_sp_semantics_coinbase_layout_v1(tx.m_outputs,
-            tx.m_tx_supplement.m_output_enote_ephemeral_pubkeys,
-            tx.m_tx_supplement.m_tx_extra))
+    if (!validate_sp_semantics_coinbase_layout_v1(tx.outputs,
+            tx.tx_supplement.output_enote_ephemeral_pubkeys,
+            tx.tx_supplement.tx_extra))
         return false;
 
     return true;
@@ -229,7 +229,7 @@ template <>
 bool validate_tx_amount_balance<SpTxCoinbaseV1>(const SpTxCoinbaseV1 &tx)
 {
     // balance proof
-    if (!validate_sp_coinbase_amount_balance_v1(tx.m_block_reward, tx.m_outputs))
+    if (!validate_sp_coinbase_amount_balance_v1(tx.block_reward, tx.outputs))
         return false;
 
     return true;

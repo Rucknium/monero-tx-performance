@@ -199,7 +199,7 @@ static bool try_get_fee_value(const DiscretizedFeeContext &fee_context,
     std::uint64_t &fee_value_out)
 {
     // try to find the discretized fee in the map and return its fee value
-    const auto found_fee = fee_context.mapped_values.find(discretized_fee.m_fee_encoding);
+    const auto found_fee = fee_context.mapped_values.find(discretized_fee.fee_encoding);
     if (found_fee == fee_context.mapped_values.end())
         return false;
 
@@ -222,22 +222,22 @@ static const DiscretizedFeeContext& default_fee_context()
 //-------------------------------------------------------------------------------------------------------------------
 void append_to_transcript(const DiscretizedFee container, SpTranscriptBuilder &transcript_inout)
 {
-    transcript_inout.append("fee_encoding", container.m_fee_encoding);
+    transcript_inout.append("fee_encoding", container.fee_encoding);
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool operator==(const DiscretizedFee a, const DiscretizedFee b)
 {
-    return a.m_fee_encoding == b.m_fee_encoding;
+    return a.fee_encoding == b.fee_encoding;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool operator==(const DiscretizedFee fee, const discretized_fee_encoding_t fee_level)
 {
-    return fee.m_fee_encoding == fee_level;
+    return fee.fee_encoding == fee_level;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool operator==(const discretized_fee_encoding_t fee_level, const DiscretizedFee fee)
 {
-    return fee_level == fee.m_fee_encoding;
+    return fee_level == fee.fee_encoding;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool operator==(const DiscretizedFee fee, const rct::xmr_amount raw_fee_value)

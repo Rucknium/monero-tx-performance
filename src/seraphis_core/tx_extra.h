@@ -52,11 +52,11 @@ using TxExtra = std::vector<unsigned char>;
 struct ExtraFieldElement final
 {
     /// type
-    std::uint64_t m_type;
+    std::uint64_t type;
     /// value length
     //m_value.size()
     /// value
-    std::vector<unsigned char> m_value;
+    std::vector<unsigned char> value;
 };
 
 /// less-than operator for sorting: sort order = type, length, value bytewise comparison

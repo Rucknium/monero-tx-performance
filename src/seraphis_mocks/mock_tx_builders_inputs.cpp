@@ -114,24 +114,24 @@ SpMembershipProofPrepV1 gen_mock_sp_membership_proof_prep_for_enote_at_pos_v1(
         generator_seed,
         ref_set_size,
         real_reference_index_in_ledger,
-        proof_prep.m_binned_reference_set);
+        proof_prep.binned_reference_set);
 
 
     /// copy all referenced enotes from the ledger (in squashed enote representation)
     std::vector<std::uint64_t> reference_indices;
-    CHECK_AND_ASSERT_THROW_MES(try_get_reference_indices_from_binned_reference_set_v1(proof_prep.m_binned_reference_set,
+    CHECK_AND_ASSERT_THROW_MES(try_get_reference_indices_from_binned_reference_set_v1(proof_prep.binned_reference_set,
             reference_indices),
         "gen mock membership proof prep: could not extract reference indices from binned representation (bug).");
 
-    ledger_context.get_reference_set_proof_elements_v2(reference_indices, proof_prep.m_referenced_enotes_squashed);
+    ledger_context.get_reference_set_proof_elements_v2(reference_indices, proof_prep.referenced_enotes_squashed);
 
 
     /// copy misc pieces
-    proof_prep.m_ref_set_decomp_n     = ref_set_decomp_n;
-    proof_prep.m_ref_set_decomp_m     = ref_set_decomp_m;
-    proof_prep.m_real_reference_enote = real_reference_enote;
-    proof_prep.m_address_mask         = address_mask;
-    proof_prep.m_commitment_mask      = commitment_mask;
+    proof_prep.ref_set_decomp_n     = ref_set_decomp_n;
+    proof_prep.ref_set_decomp_m     = ref_set_decomp_m;
+    proof_prep.real_reference_enote = real_reference_enote;
+    proof_prep.address_mask         = address_mask;
+    proof_prep.commitment_mask      = commitment_mask;
 
     return proof_prep;
 }
@@ -161,9 +161,9 @@ SpMembershipProofPrepV1 gen_mock_sp_membership_proof_prep_v1(
         if (enote_to_add == add_real_at_pos)
         {
             if (const SpCoinbaseEnoteCore *enote_ptr = real_reference_enote.try_unwrap<SpCoinbaseEnoteCore>())
-                mock_enotes.emplace_back(SpCoinbaseEnoteV1{.m_core = *enote_ptr});
+                mock_enotes.emplace_back(SpCoinbaseEnoteV1{.core = *enote_ptr});
             else if (const SpEnoteCore *enote_ptr = real_reference_enote.try_unwrap<SpEnoteCore>())
-                mock_enotes.emplace_back(SpEnoteV1{.m_core = *enote_ptr});
+                mock_enotes.emplace_back(SpEnoteV1{.core = *enote_ptr});
             else
                 CHECK_AND_ASSERT_THROW_MES(false, "gen mock sp membership proof prep: invalid real reference enote type.");
         }
@@ -247,9 +247,9 @@ std::vector<SpMembershipProofPrepV1> gen_mock_sp_membership_proof_preps_v1(
 
     for (const SpInputProposalV1 &input_proposal : input_proposals)
     {
-        input_enotes.emplace_back(input_proposal.m_core.m_enote_core);
-        address_masks.emplace_back(input_proposal.m_core.m_address_mask);
-        commitment_masks.emplace_back(input_proposal.m_core.m_commitment_mask);
+        input_enotes.emplace_back(input_proposal.core.enote_core);
+        address_masks.emplace_back(input_proposal.core.address_mask);
+        commitment_masks.emplace_back(input_proposal.core.commitment_mask);
     }
 
     return gen_mock_sp_membership_proof_preps_v1(input_enotes,
@@ -283,10 +283,10 @@ void make_mock_sp_membership_proof_preps_for_inputs_v1(
             "make mock membership proof preps: the enote ledger indices map is missing an expected key image.");
 
         membership_proof_preps_out.emplace_back(
-                gen_mock_sp_membership_proof_prep_for_enote_at_pos_v1(input_proposal.m_core.m_enote_core,
+                gen_mock_sp_membership_proof_prep_for_enote_at_pos_v1(input_proposal.core.enote_core,
                         input_ledger_mappings.at(key_image_ref(input_proposal)),
-                        input_proposal.m_core.m_address_mask,
-                        input_proposal.m_core.m_commitment_mask,
+                        input_proposal.core.address_mask,
+                        input_proposal.core.commitment_mask,
                         ref_set_decomp_n,
                         ref_set_decomp_m,
                         bin_config,

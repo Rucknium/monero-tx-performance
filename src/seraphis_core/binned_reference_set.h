@@ -55,9 +55,9 @@ using ref_set_bin_dimension_v1_t = std::uint16_t;
 struct SpBinnedReferenceSetConfigV1 final
 {
     /// bin radius (defines the range of elements that a bin covers in the parent set)
-    ref_set_bin_dimension_v1_t m_bin_radius;
+    ref_set_bin_dimension_v1_t bin_radius;
     /// number of elements referenced by a bin
-    ref_set_bin_dimension_v1_t m_num_bin_members;
+    ref_set_bin_dimension_v1_t num_bin_members;
 };
 inline const boost::string_ref container_name(const SpBinnedReferenceSetConfigV1&) { return "SpBinnedReferenceSetConfigV1"; }
 void append_to_transcript(const SpBinnedReferenceSetConfigV1 &container, SpTranscriptBuilder &transcript_inout);
@@ -78,13 +78,13 @@ std::size_t sp_binned_ref_set_config_v1_size_bytes();
 struct SpBinnedReferenceSetV1 final
 {
     /// bin configuration details (shared by all bins)
-    SpBinnedReferenceSetConfigV1 m_bin_config;
+    SpBinnedReferenceSetConfigV1 bin_config;
     /// bin generator seed (shared by all bins)
-    rct::key m_bin_generator_seed;
+    rct::key bin_generator_seed;
     /// rotation factor (shared by all bins)
-    ref_set_bin_dimension_v1_t m_bin_rotation_factor;
+    ref_set_bin_dimension_v1_t bin_rotation_factor;
     /// bin loci
-    std::vector<std::uint64_t> m_bin_loci;
+    std::vector<std::uint64_t> bin_loci;
 };
 inline const boost::string_ref container_name(const SpBinnedReferenceSetV1&) { return "SpBinnedReferenceSetV1"; }
 void append_to_transcript(const SpBinnedReferenceSetV1 &container, SpTranscriptBuilder &transcript_inout);

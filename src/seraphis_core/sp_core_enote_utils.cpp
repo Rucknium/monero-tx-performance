@@ -183,10 +183,10 @@ void make_seraphis_enote_core(const rct::key &onetime_address,
     SpEnoteCore &enote_core_out)
 {
     // Ko
-    enote_core_out.m_onetime_address = onetime_address;
+    enote_core_out.onetime_address = onetime_address;
 
     // C = x G + a H
-    enote_core_out.m_amount_commitment = rct::commit(amount, rct::sk2rct(amount_blinding_factor));
+    enote_core_out.amount_commitment = rct::commit(amount, rct::sk2rct(amount_blinding_factor));
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_seraphis_enote_core(const crypto::secret_key &extension_privkey_g,
@@ -199,16 +199,16 @@ void make_seraphis_enote_core(const crypto::secret_key &extension_privkey_g,
     SpEnoteCore &enote_core_out)
 {
     // K_s = k_a X + k_b U
-    enote_core_out.m_onetime_address = core_spend_pubkey;
-    extend_seraphis_spendkey_x(sp_view_privkey, enote_core_out.m_onetime_address);
+    enote_core_out.onetime_address = core_spend_pubkey;
+    extend_seraphis_spendkey_x(sp_view_privkey, enote_core_out.onetime_address);
 
     // Ko = k_extension_g G + k_extension_x X + k_extension_u U + K_s
-    extend_seraphis_spendkey_u(extension_privkey_u, enote_core_out.m_onetime_address);
-    extend_seraphis_spendkey_x(extension_privkey_x, enote_core_out.m_onetime_address);
-    mask_key(extension_privkey_g, enote_core_out.m_onetime_address, enote_core_out.m_onetime_address);
+    extend_seraphis_spendkey_u(extension_privkey_u, enote_core_out.onetime_address);
+    extend_seraphis_spendkey_x(extension_privkey_x, enote_core_out.onetime_address);
+    mask_key(extension_privkey_g, enote_core_out.onetime_address, enote_core_out.onetime_address);
 
     // finish making the enote
-    make_seraphis_enote_core(enote_core_out.m_onetime_address, amount, amount_blinding_factor, enote_core_out);
+    make_seraphis_enote_core(enote_core_out.onetime_address, amount, amount_blinding_factor, enote_core_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_seraphis_enote_core(const crypto::secret_key &enote_view_extension_g,

@@ -50,28 +50,28 @@ namespace sp
 //-------------------------------------------------------------------------------------------------------------------
 rct::xmr_amount amount_ref(const LegacyInputProposalV1 &proposal)
 {
-    return proposal.m_amount;
+    return proposal.amount;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool compare_KI(const LegacyInputProposalV1 &a, const LegacyInputProposalV1 &b)
 {
-    return a.m_key_image < b.m_key_image;
+    return a.key_image < b.key_image;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool compare_KI(const LegacyRingSignaturePrepV1 &a, const LegacyRingSignaturePrepV1 &b)
 {
-    return compare_KI(a.m_reference_image, b.m_reference_image);
+    return compare_KI(a.reference_image, b.reference_image);
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool compare_KI(const LegacyInputV1 &a, const LegacyInputV1 &b)
 {
-    return compare_KI(a.m_input_image, b.m_input_image);
+    return compare_KI(a.input_image, b.input_image);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void get_enote_image_v2(const LegacyInputProposalV1 &proposal, LegacyEnoteImageV2 &image_out)
 {
-    mask_key(proposal.m_commitment_mask, proposal.m_amount_commitment, image_out.m_masked_commitment);
-    image_out.m_key_image = proposal.m_key_image;
+    mask_key(proposal.commitment_mask, proposal.amount_commitment, image_out.masked_commitment);
+    image_out.key_image = proposal.key_image;
 }
 //-------------------------------------------------------------------------------------------------------------------
 LegacyInputProposalV1 gen_legacy_input_proposal_v1(const crypto::secret_key &legacy_spend_privkey,
@@ -79,18 +79,18 @@ LegacyInputProposalV1 gen_legacy_input_proposal_v1(const crypto::secret_key &leg
 {
     LegacyInputProposalV1 temp;
 
-    temp.m_enote_view_extension = rct::rct2sk(rct::skGen());
-    temp.m_amount_blinding_factor = rct::rct2sk(rct::skGen());
-    temp.m_amount = amount;
-    temp.m_commitment_mask = rct::rct2sk(rct::skGen());
-    temp.m_onetime_address = rct::scalarmultBase(rct::sk2rct(legacy_spend_privkey));
-    mask_key(temp.m_enote_view_extension, temp.m_onetime_address, temp.m_onetime_address);
-    temp.m_amount_commitment = rct::commit(temp.m_amount, rct::sk2rct(temp.m_amount_blinding_factor));
-    make_legacy_key_image(temp.m_enote_view_extension,
+    temp.enote_view_extension   = rct::rct2sk(rct::skGen());
+    temp.amount_blinding_factor = rct::rct2sk(rct::skGen());
+    temp.amount                 = amount;
+    temp.commitment_mask        = rct::rct2sk(rct::skGen());
+    temp.onetime_address        = rct::scalarmultBase(rct::sk2rct(legacy_spend_privkey));
+    mask_key(temp.enote_view_extension, temp.onetime_address, temp.onetime_address);
+    temp.amount_commitment      = rct::commit(temp.amount, rct::sk2rct(temp.amount_blinding_factor));
+    make_legacy_key_image(temp.enote_view_extension,
         legacy_spend_privkey,
-        temp.m_onetime_address,
+        temp.onetime_address,
         hw::get_device("default"),
-        temp.m_key_image);
+        temp.key_image);
 
     return temp;
 }

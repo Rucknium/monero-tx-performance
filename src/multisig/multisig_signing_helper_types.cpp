@@ -78,10 +78,10 @@ bool try_get_nonces(const MultisigProofInitSetV1 &init_set,
     const std::size_t filter_index,
     std::vector<MultisigPubNonces> &nonces_out)
 {
-    if (filter_index >= init_set.m_inits.size())
+    if (filter_index >= init_set.inits.size())
         return false;
 
-    nonces_out = init_set.m_inits[filter_index];
+    nonces_out = init_set.inits[filter_index];
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------

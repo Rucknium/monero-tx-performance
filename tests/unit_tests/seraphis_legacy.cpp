@@ -83,7 +83,7 @@ static void test_information_recovery(const crypto::secret_key &legacy_spend_pri
         hw::get_device("default"),
         basic_record_recovered)));
 
-    ASSERT_TRUE(basic_record_recovered.m_address_index == expected_recieving_index);
+    ASSERT_TRUE(basic_record_recovered.address_index == expected_recieving_index);
 
     // intermediate enote record: from basic record
     LegacyIntermediateEnoteRecord intermediate_record_recovered_from_basic;
@@ -94,8 +94,8 @@ static void test_information_recovery(const crypto::secret_key &legacy_spend_pri
         hw::get_device("default"),
         intermediate_record_recovered_from_basic)));
 
-    ASSERT_TRUE(intermediate_record_recovered_from_basic.m_address_index == expected_recieving_index);
-    ASSERT_TRUE(intermediate_record_recovered_from_basic.m_amount == expected_amount);
+    ASSERT_TRUE(intermediate_record_recovered_from_basic.address_index == expected_recieving_index);
+    ASSERT_TRUE(intermediate_record_recovered_from_basic.amount        == expected_amount);
 
     // intermediate enote record: full
     LegacyIntermediateEnoteRecord intermediate_record_recovered;
@@ -110,8 +110,8 @@ static void test_information_recovery(const crypto::secret_key &legacy_spend_pri
         hw::get_device("default"),
         intermediate_record_recovered)));
 
-    ASSERT_TRUE(intermediate_record_recovered.m_address_index == expected_recieving_index);
-    ASSERT_TRUE(intermediate_record_recovered.m_amount == expected_amount);
+    ASSERT_TRUE(intermediate_record_recovered.address_index == expected_recieving_index);
+    ASSERT_TRUE(intermediate_record_recovered.amount        == expected_amount);
 
     // full enote record: from basic record
     LegacyEnoteRecord full_record_recovered_from_basic;
@@ -123,8 +123,8 @@ static void test_information_recovery(const crypto::secret_key &legacy_spend_pri
         hw::get_device("default"),
         full_record_recovered_from_basic)));
 
-    ASSERT_TRUE(full_record_recovered_from_basic.m_address_index == expected_recieving_index);
-    ASSERT_TRUE(full_record_recovered_from_basic.m_amount == expected_amount);
+    ASSERT_TRUE(full_record_recovered_from_basic.address_index == expected_recieving_index);
+    ASSERT_TRUE(full_record_recovered_from_basic.amount        == expected_amount);
 
     // full enote record: from intermediate record
     LegacyEnoteRecord full_record_recovered_from_intermediate;
@@ -134,9 +134,9 @@ static void test_information_recovery(const crypto::secret_key &legacy_spend_pri
         hw::get_device("default"),
         full_record_recovered_from_intermediate));
 
-    ASSERT_TRUE(full_record_recovered_from_intermediate.m_address_index == expected_recieving_index);
-    ASSERT_TRUE(full_record_recovered_from_intermediate.m_amount == expected_amount);
-    ASSERT_TRUE(full_record_recovered_from_intermediate.m_key_image == full_record_recovered_from_basic.m_key_image);
+    ASSERT_TRUE(full_record_recovered_from_intermediate.address_index == expected_recieving_index);
+    ASSERT_TRUE(full_record_recovered_from_intermediate.amount        == expected_amount);
+    ASSERT_TRUE(full_record_recovered_from_intermediate.key_image     == full_record_recovered_from_basic.key_image);
 
     // full enote record: full
     LegacyEnoteRecord full_record_recovered;
@@ -152,9 +152,9 @@ static void test_information_recovery(const crypto::secret_key &legacy_spend_pri
         hw::get_device("default"),
         full_record_recovered));
 
-    ASSERT_TRUE(full_record_recovered.m_address_index == expected_recieving_index);
-    ASSERT_TRUE(full_record_recovered.m_amount == expected_amount);
-    ASSERT_TRUE(full_record_recovered.m_key_image == full_record_recovered_from_basic.m_key_image);
+    ASSERT_TRUE(full_record_recovered.address_index == expected_recieving_index);
+    ASSERT_TRUE(full_record_recovered.amount        == expected_amount);
+    ASSERT_TRUE(full_record_recovered.key_image     == full_record_recovered_from_basic.key_image);
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------

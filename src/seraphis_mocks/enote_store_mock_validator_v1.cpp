@@ -105,21 +105,21 @@ boost::multiprecision::uint128_t SpEnoteStoreMockPaymentValidatorV1::get_receive
         const SpContextualIntermediateEnoteRecordV1 &contextual_record{mapped_contextual_record.second};
 
         // ignore enotes with unrequested origins
-        if (origin_statuses.find(contextual_record.m_origin_context.m_origin_status) == origin_statuses.end())
+        if (origin_statuses.find(contextual_record.origin_context.origin_status) == origin_statuses.end())
             continue;
 
         // ignore onchain enotes that are locked
         if (exclusions.find(EnoteStoreBalanceUpdateExclusions::ORIGIN_LEDGER_LOCKED) != exclusions.end() &&
-            contextual_record.m_origin_context.m_origin_status == SpEnoteOriginStatus::ONCHAIN &&
+            contextual_record.origin_context.origin_status == SpEnoteOriginStatus::ONCHAIN &&
             onchain_sp_enote_is_locked(
-                    contextual_record.m_origin_context.m_block_index,
+                    contextual_record.origin_context.block_index,
                     this->top_block_index(),
                     m_default_spendable_age
                 ))
             continue;
 
         // update received sum
-        received_sum += contextual_record.m_record.m_amount;
+        received_sum += contextual_record.record.amount;
     }
 
     return received_sum;
@@ -151,7 +151,7 @@ void SpEnoteStoreMockPaymentValidatorV1::update_with_sp_records_from_nonledger(
             [&](const auto &mapped_contextual_enote_record) -> bool
             {
                 // ignore enotes that don't have our specified origin
-                if (mapped_contextual_enote_record.second.m_origin_context.m_origin_status != nonledger_origin_status)
+                if (mapped_contextual_enote_record.second.origin_context.origin_status != nonledger_origin_status)
                     return false;
 
                 changes_inout.emplace_back(RemovedSpIntermediateRecord{mapped_contextual_enote_record.first});
@@ -188,16 +188,16 @@ void SpEnoteStoreMockPaymentValidatorV1::update_with_sp_records_from_ledger(cons
             [&](const auto &mapped_contextual_enote_record) -> bool
             {
                 // a. remove onchain enotes in range [first_new_block, end of chain]
-                if (mapped_contextual_enote_record.second.m_origin_context.m_origin_status ==
+                if (mapped_contextual_enote_record.second.origin_context.origin_status ==
                         SpEnoteOriginStatus::ONCHAIN &&
-                    mapped_contextual_enote_record.second.m_origin_context.m_block_index >= first_new_block)
+                    mapped_contextual_enote_record.second.origin_context.block_index >= first_new_block)
                 {
                     changes_inout.emplace_back(RemovedSpIntermediateRecord{mapped_contextual_enote_record.first});
                     return true;
                 }
 
                 // b. remove all unconfirmed enotes
-                if (mapped_contextual_enote_record.second.m_origin_context.m_origin_status ==
+                if (mapped_contextual_enote_record.second.origin_context.origin_status ==
                         SpEnoteOriginStatus::UNCONFIRMED)
                 {
                     changes_inout.emplace_back(RemovedSpIntermediateRecord{mapped_contextual_enote_record.first});
@@ -228,8 +228,8 @@ void SpEnoteStoreMockPaymentValidatorV1::add_record(const SpContextualIntermedia
     }
     else
     {
-        if (try_update_enote_origin_context_v1(new_record.m_origin_context,
-                m_sp_contextual_enote_records[record_onetime_address].m_origin_context))
+        if (try_update_enote_origin_context_v1(new_record.origin_context,
+                m_sp_contextual_enote_records[record_onetime_address].origin_context))
             changes_inout.emplace_back(UpdatedSpIntermediateOriginContext{record_onetime_address});
     }
 }

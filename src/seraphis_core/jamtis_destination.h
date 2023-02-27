@@ -55,13 +55,13 @@ namespace jamtis
 struct JamtisDestinationV1 final
 {
     /// K_1 = k^j_g G + k^j_x X + k^j_u U + K_s   (address spend key)
-    rct::key m_addr_K1;
+    rct::key addr_K1;
     /// xK_2 = xk^j_a xK_fr                       (address view key)
-    crypto::x25519_pubkey m_addr_K2;
+    crypto::x25519_pubkey addr_K2;
     /// xK_3 = xk^j_a xK_ua                       (DH base key)
-    crypto::x25519_pubkey m_addr_K3;
+    crypto::x25519_pubkey addr_K3;
     /// addr_tag
-    address_tag_t m_addr_tag;
+    address_tag_t addr_tag;
 };
 
 /// equivalence test (false on partial equality)

@@ -54,9 +54,9 @@ namespace sp
 struct LegacyEnoteV1 final
 {
     /// Ko
-    rct::key m_onetime_address;
+    rct::key onetime_address;
     /// a
-    rct::xmr_amount m_amount;
+    rct::xmr_amount amount;
 };
 
 /// get size in bytes
@@ -72,13 +72,13 @@ inline std::size_t legacy_enote_v1_size_bytes() { return 32 + 8; }
 struct LegacyEnoteV2 final
 {
     /// Ko
-    rct::key m_onetime_address;
+    rct::key onetime_address;
     /// C
-    rct::key m_amount_commitment;
+    rct::key amount_commitment;
     /// enc(x)
-    rct::key m_encoded_amount_blinding_factor;
+    rct::key encoded_amount_blinding_factor;
     /// enc(a)
-    rct::key m_encoded_amount;
+    rct::key encoded_amount;
 };
 
 /// get size in bytes
@@ -93,11 +93,11 @@ inline std::size_t legacy_enote_v2_size_bytes() { return 4*32; }
 struct LegacyEnoteV3 final
 {
     /// Ko
-    rct::key m_onetime_address;
+    rct::key onetime_address;
     /// C
-    rct::key m_amount_commitment;
+    rct::key amount_commitment;
     /// enc(a)
-    jamtis::encoded_amount_t m_encoded_amount;
+    jamtis::encoded_amount_t encoded_amount;
 };
 
 /// get size in bytes
@@ -112,11 +112,11 @@ inline std::size_t legacy_enote_v3_size_bytes() { return 2*32 + 8; }
 struct LegacyEnoteV4 final
 {
     /// Ko
-    rct::key m_onetime_address;
+    rct::key onetime_address;
     /// a
-    rct::xmr_amount m_amount;
+    rct::xmr_amount amount;
     /// view_tag
-    crypto::view_tag m_view_tag;
+    crypto::view_tag view_tag;
 };
 
 /// get size in bytes
@@ -132,13 +132,13 @@ inline std::size_t legacy_enote_v4_size_bytes() { return 2*32 + 8 + sizeof(crypt
 struct LegacyEnoteV5 final
 {
     /// Ko
-    rct::key m_onetime_address;
+    rct::key onetime_address;
     /// C
-    rct::key m_amount_commitment;
+    rct::key amount_commitment;
     /// enc(a)
-    jamtis::encoded_amount_t m_encoded_amount;
+    jamtis::encoded_amount_t encoded_amount;
     /// view_tag
-    crypto::view_tag m_view_tag;
+    crypto::view_tag view_tag;
 };
 
 /// get size in bytes

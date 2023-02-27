@@ -60,15 +60,15 @@ namespace jamtis
 struct JamtisPaymentProposalV1 final
 {
     /// user address
-    JamtisDestinationV1 m_destination;
+    JamtisDestinationV1 destination;
     /// b
-    rct::xmr_amount m_amount;
+    rct::xmr_amount amount;
 
     /// enote ephemeral privkey: xr
-    crypto::x25519_secret_key m_enote_ephemeral_privkey;
+    crypto::x25519_secret_key enote_ephemeral_privkey;
 
     /// memo elements to add to the tx memo
-    TxExtra m_partial_memo;
+    TxExtra partial_memo;
 };
 
 ////
@@ -78,17 +78,17 @@ struct JamtisPaymentProposalV1 final
 struct JamtisPaymentProposalSelfSendV1 final
 {
     /// user address
-    JamtisDestinationV1 m_destination;
+    JamtisDestinationV1 destination;
     /// b
-    rct::xmr_amount m_amount;
+    rct::xmr_amount amount;
 
     /// self-send type
-    JamtisSelfSendType m_type;
+    JamtisSelfSendType type;
     /// enote ephemeral privkey: xr
-    crypto::x25519_secret_key m_enote_ephemeral_privkey;
+    crypto::x25519_secret_key enote_ephemeral_privkey;
 
     /// memo elements to add to the tx memo
-    TxExtra m_partial_memo;
+    TxExtra partial_memo;
 };
 
 /**

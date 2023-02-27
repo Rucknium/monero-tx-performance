@@ -53,10 +53,10 @@ namespace sp
 struct SpCoinbaseEnoteCore final
 {
     //// Ko = k_g G + (k_x + k_a) X + (k_u + k_b) U
-    rct::key m_onetime_address;
+    rct::key onetime_address;
     /// a
     /// note: C = 1 G + a H  (implied)
-    rct::xmr_amount m_amount;
+    rct::xmr_amount amount;
 };
 inline const boost::string_ref container_name(const SpCoinbaseEnoteCore&) { return "SpCoinbaseEnoteCore"; }
 void append_to_transcript(const SpCoinbaseEnoteCore &container, SpTranscriptBuilder &transcript_inout);
@@ -70,9 +70,9 @@ inline std::size_t sp_coinbase_enote_core_size_bytes() { return 32 + 8; }
 struct SpEnoteCore final
 {
     /// Ko = k_g G + (k_x + k_a) X + (k_u + k_b) U
-    rct::key m_onetime_address;
+    rct::key onetime_address;
     /// C = x G + a H
-    rct::key m_amount_commitment;
+    rct::key amount_commitment;
 };
 inline const boost::string_ref container_name(const SpEnoteCore&) { return "SpEnoteCore"; }
 void append_to_transcript(const SpEnoteCore &container, SpTranscriptBuilder &transcript_inout);
@@ -98,11 +98,11 @@ rct::key amount_commitment_ref(const SpEnoteCoreVariant &variant);
 struct SpEnoteImageCore final
 {
     /// K" = t_k G + H_n(Ko,C)*Ko   (in the squashed enote model)
-    rct::key m_masked_address;
+    rct::key masked_address;
     /// C" = (t_c + x) G + a H
-    rct::key m_masked_commitment;
+    rct::key masked_commitment;
     /// KI = ((k_u + k_b) / (k_x + k_a)) U
-    crypto::key_image m_key_image;
+    crypto::key_image key_image;
 };
 inline const boost::string_ref container_name(const SpEnoteImageCore&) { return "SpEnoteImageCore"; }
 void append_to_transcript(const SpEnoteImageCore &container, SpTranscriptBuilder &transcript_inout);
@@ -117,25 +117,25 @@ inline std::size_t sp_enote_image_core_size_bytes() { return 32*3; }
 struct SpInputProposalCore final
 {
     /// core of the original enote
-    SpEnoteCoreVariant m_enote_core;
+    SpEnoteCoreVariant enote_core;
     /// the enote's key image
-    crypto::key_image m_key_image;
+    crypto::key_image key_image;
 
     /// k_g = k_{g, sender} + k_{g, address}
-    crypto::secret_key m_enote_view_extension_g;
+    crypto::secret_key enote_view_extension_g;
     /// k_x = k_{x, sender} + k_{x, address}  (does not include k_a)
-    crypto::secret_key m_enote_view_extension_x;
+    crypto::secret_key enote_view_extension_x;
     /// k_u = k_{u, sender} + k_{u, address}  (does not include k_b)
-    crypto::secret_key m_enote_view_extension_u;
+    crypto::secret_key enote_view_extension_u;
     /// x
-    crypto::secret_key m_amount_blinding_factor;
+    crypto::secret_key amount_blinding_factor;
     /// a
-    rct::xmr_amount m_amount;
+    rct::xmr_amount amount;
 
     /// t_k
-    crypto::secret_key m_address_mask;
+    crypto::secret_key address_mask;
     /// t_c
-    crypto::secret_key m_commitment_mask;
+    crypto::secret_key commitment_mask;
 };
 
 ////
@@ -145,11 +145,11 @@ struct SpInputProposalCore final
 struct SpOutputProposalCore final
 {
     /// Ko
-    rct::key m_onetime_address;
+    rct::key onetime_address;
     /// y
-    crypto::secret_key m_amount_blinding_factor;
+    crypto::secret_key amount_blinding_factor;
     /// b
-    rct::xmr_amount m_amount;
+    rct::xmr_amount amount;
 };
 
 /// equality operators for equivalence testing

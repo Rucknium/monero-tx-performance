@@ -203,7 +203,7 @@ bool try_get_membership_proof_real_reference_mappings(const std::vector<LegacyCo
 
         // 2. save the [ KI : enote ledger index ] entry
         enote_ledger_mappings_out[key_image_ref(contextual_record)] =
-            contextual_record.m_origin_context.m_enote_ledger_index;
+            contextual_record.origin_context.enote_ledger_index;
     }
 
     return true;
@@ -222,7 +222,7 @@ bool try_get_membership_proof_real_reference_mappings(const std::vector<SpContex
 
         // 2. save the [ KI : enote ledger index ] entry
         enote_ledger_mappings_out[key_image_ref(contextual_record)] =
-            contextual_record.m_origin_context.m_enote_ledger_index;
+            contextual_record.origin_context.enote_ledger_index;
     }
 
     return true;
@@ -262,8 +262,8 @@ bool try_update_contextual_enote_record_spent_context_v1(const SpContextualKeyIm
         return false;
 
     // 2. try to update the record's spent context
-    if (!try_update_enote_spent_context_v1(contextual_key_image_set.m_spent_context,
-            contextual_enote_record_inout.m_spent_context))
+    if (!try_update_enote_spent_context_v1(contextual_key_image_set.spent_context,
+            contextual_enote_record_inout.spent_context))
         return false;
 
     return true;
@@ -316,19 +316,19 @@ void update_contextual_enote_record_contexts_v1(const SpEnoteOriginContextV1 &ne
     try_update_enote_spent_context_v1(new_spent_context, spent_context_inout);
 
     // 3. bump the origin status based on the new spent status
-    try_bump_enote_record_origin_status_v1(spent_context_inout.m_spent_status, origin_context_inout.m_origin_status);
+    try_bump_enote_record_origin_status_v1(spent_context_inout.spent_status, origin_context_inout.origin_status);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void update_contextual_enote_record_contexts_v1(const SpContextualEnoteRecordV1 &fresh_record,
     SpContextualEnoteRecordV1 &existing_record_inout)
 {
-    CHECK_AND_ASSERT_THROW_MES(fresh_record.m_record.m_key_image == existing_record_inout.m_record.m_key_image,
+    CHECK_AND_ASSERT_THROW_MES(fresh_record.record.key_image == existing_record_inout.record.key_image,
         "updating a contextual enote record: the fresh record doesn't represent the same enote.");
 
-    update_contextual_enote_record_contexts_v1(fresh_record.m_origin_context,
-        fresh_record.m_spent_context,
-        existing_record_inout.m_origin_context,
-        existing_record_inout.m_spent_context);
+    update_contextual_enote_record_contexts_v1(fresh_record.origin_context,
+        fresh_record.spent_context,
+        existing_record_inout.origin_context,
+        existing_record_inout.spent_context);
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace sp

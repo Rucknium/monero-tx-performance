@@ -49,21 +49,21 @@ const std::string& error_message_ref(const MultisigSigningErrorVariant &variant)
     {
         using variant_static_visitor::operator();  //for blank overload
         const std::string& operator()(const MultisigSigningErrorBadInitSet &error) const
-        { return error.m_error_message; }
+        { return error.error_message; }
         const std::string& operator()(const MultisigSigningErrorBadInitSetCollection &error) const
-        { return error.m_error_message; }
+        { return error.error_message; }
         const std::string& operator()(const MultisigSigningErrorAvailableSigners &error) const
-        { return error.m_error_message; }
+        { return error.error_message; }
         const std::string& operator()(const MultisigSigningErrorBadPartialSig &error) const
-        { return error.m_error_message; }
+        { return error.error_message; }
         const std::string& operator()(const MultisigSigningErrorMakePartialSigSet &error) const
-        { return error.m_error_message; }
+        { return error.error_message; }
         const std::string& operator()(const MultisigSigningErrorBadPartialSigSet &error) const
-        { return error.m_error_message; }
+        { return error.error_message; }
         const std::string& operator()(const MultisigSigningErrorBadSigAssembly &error) const
-        { return error.m_error_message; }
+        { return error.error_message; }
         const std::string& operator()(const MultisigSigningErrorBadSigSet &error) const
-        { return error.m_error_message; }
+        { return error.error_message; }
     };
 
     return variant.visit(visitor{});

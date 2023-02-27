@@ -136,7 +136,7 @@ static void refresh_user_enote_store_legacy_multisig(const std::vector<multisig:
     for (const auto &intermediate_record : legacy_intermediate_records)
     {
         saved_key_components[rct::rct2pk(onetime_address_ref(intermediate_record.second))] =
-            intermediate_record.second.m_record.m_enote_view_extension;
+            intermediate_record.second.record.enote_view_extension;
     }
 
     // 4. recover key images (multisig KI ceremony)
@@ -178,20 +178,20 @@ static bool legacy_multisig_input_is_ready_to_spend(const LegacyMultisigInputPro
 {
     // 1. get the legacy enote from the enote store
     LegacyContextualEnoteRecordV1 contextual_record;
-    if (!enote_store.try_get_legacy_enote_record(input_proposal.m_key_image, contextual_record))
+    if (!enote_store.try_get_legacy_enote_record(input_proposal.key_image, contextual_record))
         return false;
 
     // 2. expect the record obtained matches with the input proposal
-    if (!matches_with(input_proposal, contextual_record.m_record))
+    if (!matches_with(input_proposal, contextual_record.record))
         return false;
 
     // 3. expect that the enote is unspent
-    if (contextual_record.m_spent_context.m_spent_status != SpEnoteSpentStatus::UNSPENT)
+    if (contextual_record.spent_context.spent_status != SpEnoteSpentStatus::UNSPENT)
         return false;
 
     // 4. expect the enote is spendable within the index specified
-    if (onchain_legacy_enote_is_locked(contextual_record.m_origin_context.m_block_index,
-            contextual_record.m_record.m_unlock_time,
+    if (onchain_legacy_enote_is_locked(contextual_record.origin_context.block_index,
+            contextual_record.record.unlock_time,
             top_block_index,
             0,  //default spendable age: configurable
             0)) //current time: use system call
@@ -218,21 +218,21 @@ static bool sp_multisig_input_is_ready_to_spend(const SpMultisigInputProposalV1 
         return false;
 
     // 3. expect the record obtained matches with the input proposal
-    if (!matches_with(multisig_input_proposal, contextual_record.m_record))
+    if (!matches_with(multisig_input_proposal, contextual_record.record))
         return false;
 
     // 4. expect that the enote has an allowed origin
-    if (origin_statuses.find(contextual_record.m_origin_context.m_origin_status) == origin_statuses.end())
+    if (origin_statuses.find(contextual_record.origin_context.origin_status) == origin_statuses.end())
         return false;
 
     // 5. expect that the enote is unspent
-    if (contextual_record.m_spent_context.m_spent_status != SpEnoteSpentStatus::UNSPENT)
+    if (contextual_record.spent_context.spent_status != SpEnoteSpentStatus::UNSPENT)
         return false;
 
     // 6. expect the enote is spendable within the index specified (only check when only onchain enotes are permitted)
     if (origin_statuses.size() == 1 &&
         origin_statuses.find(SpEnoteOriginStatus::ONCHAIN) != origin_statuses.end() &&
-        onchain_sp_enote_is_locked(contextual_record.m_origin_context.m_block_index,
+        onchain_sp_enote_is_locked(contextual_record.origin_context.block_index,
             top_block_index,
             0))  //default spendable age: configurable
         return false;
@@ -305,7 +305,7 @@ static void validate_multisig_tx_proposal(const SpMultisigTxProposalV1 &multisig
     // note: could also check if the proposed inputs have been confirmed up to N blocks
     // note2: these checks are only 'temporary' because the specified enotes may be spent at any time (or be reorged)
     for (const LegacyMultisigInputProposalV1 &legacy_multisig_input_proposal :
-        multisig_tx_proposal.m_legacy_multisig_input_proposals)
+        multisig_tx_proposal.legacy_multisig_input_proposals)
     {
         ASSERT_TRUE(legacy_multisig_input_is_ready_to_spend(legacy_multisig_input_proposal,
             enote_store,
@@ -313,7 +313,7 @@ static void validate_multisig_tx_proposal(const SpMultisigTxProposalV1 &multisig
     }
 
     for (const SpMultisigInputProposalV1 &sp_multisig_input_proposal :
-        multisig_tx_proposal.m_sp_multisig_input_proposals)
+        multisig_tx_proposal.sp_multisig_input_proposals)
     {
         ASSERT_TRUE(sp_multisig_input_is_ready_to_spend(sp_multisig_input_proposal,
             enote_store,
@@ -325,16 +325,16 @@ static void validate_multisig_tx_proposal(const SpMultisigTxProposalV1 &multisig
 
     // 3. check that the legacy inputs' ring members are valid references from the ledger
     // note: a reorg can invalidate the result of these checks
-    ASSERT_TRUE(multisig_tx_proposal.m_legacy_multisig_input_proposals.size() ==
-        multisig_tx_proposal.m_legacy_input_proof_proposals.size());
+    ASSERT_TRUE(multisig_tx_proposal.legacy_multisig_input_proposals.size() ==
+        multisig_tx_proposal.legacy_input_proof_proposals.size());
 
     for (std::size_t legacy_input_index{0};
-        legacy_input_index < multisig_tx_proposal.m_legacy_multisig_input_proposals.size();
+        legacy_input_index < multisig_tx_proposal.legacy_multisig_input_proposals.size();
         ++legacy_input_index)
     {
         ASSERT_TRUE(legacy_ring_members_are_ready_to_spend(
-            multisig_tx_proposal.m_legacy_multisig_input_proposals[legacy_input_index].m_reference_set,
-            multisig_tx_proposal.m_legacy_input_proof_proposals[legacy_input_index].ring_members,
+            multisig_tx_proposal.legacy_multisig_input_proposals[legacy_input_index].reference_set,
+            multisig_tx_proposal.legacy_input_proof_proposals[legacy_input_index].ring_members,
             ledger_context));
     }
 }
@@ -376,14 +376,14 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
     const std::size_t num_bin_members{2};
 
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     const SpBinnedReferenceSetConfigV1 bin_config{
-            .m_bin_radius = bin_radius,
-            .m_num_bin_members = num_bin_members
+            .bin_radius = bin_radius,
+            .num_bin_members = num_bin_members
         };
 
     // global
@@ -502,11 +502,11 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
     {
         selfsend_payment_proposals.emplace_back(
                 JamtisPaymentProposalSelfSendV1{
-                    .m_destination             = sp_user_address,
-                    .m_amount                  = out_amount,
-                    .m_type                    = JamtisSelfSendType::SELF_SPEND,
-                    .m_enote_ephemeral_privkey = crypto::x25519_secret_key_gen(),
-                    .m_partial_memo            = TxExtra{}
+                    .destination             = sp_user_address,
+                    .amount                  = out_amount,
+                    .type                    = JamtisSelfSendType::SELF_SPEND,
+                    .enote_ephemeral_privkey = crypto::x25519_secret_key_gen(),
+                    .partial_memo            = TxExtra{}
                 }
             );
     }
@@ -576,7 +576,7 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
         shared_sp_keys.k_vb,
         multisig_tx_proposal));
 
-    ASSERT_TRUE(multisig_tx_proposal.m_tx_fee == fee);
+    ASSERT_TRUE(multisig_tx_proposal.tx_fee == fee);
 
     // f) prove the multisig tx proposal is valid (this should be done by every signer who receives a multisig tx proposal
     //    from another group member)
@@ -771,7 +771,7 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
     // note: use ring size 2^2 = 4 for speed
     std::vector<SpMembershipProofPrepV1> membership_proof_preps;
     ASSERT_NO_THROW(make_mock_sp_membership_proof_preps_for_inputs_v1(sp_input_ledger_mappings,
-        tx_proposal.m_sp_input_proposals,
+        tx_proposal.sp_input_proposals,
         ref_set_decomp_n,
         ref_set_decomp_m,
         bin_config,
@@ -793,7 +793,7 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
         completed_tx));
 
     // - sanity check fee (should do this in production use-case, but can't do it here with the trivial fee calculator)
-    //ASSERT_TRUE(completed_tx.m_tx_fee == tx_fee_calculator.compute_fee(fee_per_tx_weight, completed_tx));
+    //ASSERT_TRUE(completed_tx.tx_fee == tx_fee_calculator.compute_fee(fee_per_tx_weight, completed_tx));
 
     // g) verify tx
     const TxValidationContextMock tx_validation_context{ledger_context};

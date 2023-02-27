@@ -52,20 +52,20 @@ namespace sp
 struct LegacyInputProposalV1 final
 {
     /// core of the original enote
-    rct::key m_onetime_address;
-    rct::key m_amount_commitment;
+    rct::key onetime_address;
+    rct::key amount_commitment;
     /// the enote's key image
-    crypto::key_image m_key_image;
+    crypto::key_image key_image;
 
     /// Hn(k_v R_t, t) + [subaddresses: Hn(k_v, i)]  (does not include legacy spend privkey k_s)
-    crypto::secret_key m_enote_view_extension;
+    crypto::secret_key enote_view_extension;
     /// x
-    crypto::secret_key m_amount_blinding_factor;
+    crypto::secret_key amount_blinding_factor;
     /// a
-    rct::xmr_amount m_amount;
+    rct::xmr_amount amount;
 
     /// mask
-    crypto::secret_key m_commitment_mask;
+    crypto::secret_key commitment_mask;
 };
 
 /// get the proposal's amount
@@ -78,19 +78,19 @@ rct::xmr_amount amount_ref(const LegacyInputProposalV1 &proposal);
 struct LegacyRingSignaturePrepV1 final
 {
     /// tx proposal prefix (message to sign in the proof)
-    rct::key m_tx_proposal_prefix;
+    rct::key tx_proposal_prefix;
     /// ledger indices of legacy enotes to be referenced by the proof
-    std::vector<std::uint64_t> m_reference_set;
+    std::vector<std::uint64_t> reference_set;
     /// the referenced enotes ({Ko, C}((legacy)) representation)
-    rct::ctkeyV m_referenced_enotes;
+    rct::ctkeyV referenced_enotes;
     /// the index of the real enote being referenced within the reference set
-    std::uint64_t m_real_reference_index;
+    std::uint64_t real_reference_index;
     /// enote image of the real reference (useful for sorting)
-    LegacyEnoteImageV2 m_reference_image;
+    LegacyEnoteImageV2 reference_image;
     /// enote view privkey of the real reference's onetime address
-    crypto::secret_key m_reference_view_privkey;
+    crypto::secret_key reference_view_privkey;
     /// commitment mask applied to the reference amount commitment to produce the image's masked commitment
-    crypto::secret_key m_reference_commitment_mask;
+    crypto::secret_key reference_commitment_mask;
 };
 
 ////
@@ -104,21 +104,21 @@ struct LegacyRingSignaturePrepV1 final
 struct LegacyInputV1 final
 {
     /// input's image
-    LegacyEnoteImageV2 m_input_image;
+    LegacyEnoteImageV2 input_image;
     /// input's ring signature (demonstrates ownership and membership of the underlying enote, and that the enote image
     ///   is correct)
-    LegacyRingSignatureV4 m_ring_signature;
+    LegacyRingSignatureV4 ring_signature;
 
     /// input amount
-    rct::xmr_amount m_input_amount;
+    rct::xmr_amount input_amount;
     /// input masked amount commitment's blinding factor; used for making the balance proof
-    crypto::secret_key m_input_masked_commitment_blinding_factor;
+    crypto::secret_key input_masked_commitment_blinding_factor;
 
     /// cached ring members of the ring signature; used for validating the ring signature
-    rct::ctkeyV m_ring_members;
+    rct::ctkeyV ring_members;
 
     /// tx proposal prefix (represents the inputs/outputs/fee/memo; signed by this input's ring signature)
-    rct::key m_tx_proposal_prefix;
+    rct::key tx_proposal_prefix;
 };
 
 /// comparison method for sorting: a.KI < b.KI

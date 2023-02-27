@@ -72,13 +72,13 @@ struct ser_encoded_amount_t final
 struct ser_SpCoinbaseEnoteCore final
 {
     /// Ko
-    rct::key m_onetime_address;
+    rct::key onetime_address;
     /// a
-    rct::xmr_amount m_amount;
+    rct::xmr_amount amount;
 
     BEGIN_SERIALIZE()
-        FIELD(m_onetime_address)
-        VARINT_FIELD(m_amount)
+        FIELD(onetime_address)
+        VARINT_FIELD(amount)
     END_SERIALIZE()
 };
 
@@ -86,13 +86,13 @@ struct ser_SpCoinbaseEnoteCore final
 struct ser_SpEnoteCore final
 {
     /// Ko
-    rct::key m_onetime_address;
+    rct::key onetime_address;
     /// C
-    rct::key m_amount_commitment;
+    rct::key amount_commitment;
 
     BEGIN_SERIALIZE()
-        FIELD(m_onetime_address)
-        FIELD(m_amount_commitment)
+        FIELD(onetime_address)
+        FIELD(amount_commitment)
     END_SERIALIZE()
 };
 
@@ -100,16 +100,16 @@ struct ser_SpEnoteCore final
 struct ser_SpEnoteImageCore final
 {
     /// K"
-    rct::key m_masked_address;
+    rct::key masked_address;
     /// C"
-    rct::key m_masked_commitment;
+    rct::key masked_commitment;
     /// KI
-    crypto::key_image m_key_image;
+    crypto::key_image key_image;
 
     BEGIN_SERIALIZE()
-        FIELD(m_masked_address)
-        FIELD(m_masked_commitment)
-        FIELD(m_key_image)
+        FIELD(masked_address)
+        FIELD(masked_commitment)
+        FIELD(key_image)
     END_SERIALIZE()
 };
 
@@ -194,18 +194,18 @@ struct ser_GrootleProof final
 struct ser_SpBinnedReferenceSetV1_PARTIAL final
 {
     /// bin configuration details (shared by all bins)
-    //SpBinnedReferenceSetConfigV1 m_bin_config;  (not serializable here)
+    //SpBinnedReferenceSetConfigV1 bin_config;  (not serializable here)
     /// bin generator seed (shared by all bins)
-    //rct::key m_bin_generator_seed;              (not serializable here)
+    //rct::key bin_generator_seed;              (not serializable here)
     /// rotation factor (shared by all bins)
-    std::uint16_t m_bin_rotation_factor;
+    std::uint16_t bin_rotation_factor;
     /// bin loci (serializable as index offsets)
-    std::vector<std::uint64_t> m_bin_loci_COMPACT;
+    std::vector<std::uint64_t> bin_loci_COMPACT;
 
     BEGIN_SERIALIZE()
-        VARINT_FIELD(m_bin_rotation_factor)
-            static_assert(sizeof(m_bin_rotation_factor) == sizeof(ref_set_bin_dimension_v1_t), "");
-        FIELD(m_bin_loci_COMPACT)
+        VARINT_FIELD(bin_rotation_factor)
+            static_assert(sizeof(bin_rotation_factor) == sizeof(ref_set_bin_dimension_v1_t), "");
+        FIELD(bin_loci_COMPACT)
     END_SERIALIZE()
 };
 
@@ -213,13 +213,13 @@ struct ser_SpBinnedReferenceSetV1_PARTIAL final
 struct ser_LegacyEnoteImageV2 final
 {
     /// masked commitment (aka 'pseudo-output commitment')
-    rct::key m_masked_commitment;
+    rct::key masked_commitment;
     /// legacy key image
-    crypto::key_image m_key_image;
+    crypto::key_image key_image;
 
     BEGIN_SERIALIZE()
-        FIELD(m_masked_commitment)
-        FIELD(m_key_image)
+        FIELD(masked_commitment)
+        FIELD(key_image)
     END_SERIALIZE()
 };
 
@@ -227,10 +227,10 @@ struct ser_LegacyEnoteImageV2 final
 struct ser_SpEnoteImageV1 final
 {
     /// enote image core
-    ser_SpEnoteImageCore m_core;
+    ser_SpEnoteImageCore core;
 
     BEGIN_SERIALIZE()
-        FIELD(m_core)
+        FIELD(core)
     END_SERIALIZE()
 };
 
@@ -238,17 +238,17 @@ struct ser_SpEnoteImageV1 final
 struct ser_SpCoinbaseEnoteV1 final
 {
     /// enote core (one-time address, amount commitment)
-    ser_SpCoinbaseEnoteCore m_core;
+    ser_SpCoinbaseEnoteCore core;
 
     /// addr_tag_enc
-    ser_encrypted_address_tag_t m_addr_tag_enc;
+    ser_encrypted_address_tag_t addr_tag_enc;
     /// view_tag
-    unsigned char m_view_tag;
+    unsigned char view_tag;
 
     BEGIN_SERIALIZE()
-        FIELD(m_core)
-        FIELD(m_addr_tag_enc)    static_assert(sizeof(m_addr_tag_enc) == sizeof(jamtis::encrypted_address_tag_t), "");
-        VARINT_FIELD(m_view_tag) static_assert(sizeof(m_view_tag) == sizeof(jamtis::view_tag_t), "");
+        FIELD(core)
+        FIELD(addr_tag_enc)    static_assert(sizeof(addr_tag_enc) == sizeof(jamtis::encrypted_address_tag_t), "");
+        VARINT_FIELD(view_tag) static_assert(sizeof(view_tag) == sizeof(jamtis::view_tag_t), "");
     END_SERIALIZE()
 };
 
@@ -256,20 +256,20 @@ struct ser_SpCoinbaseEnoteV1 final
 struct ser_SpEnoteV1 final
 {
     /// enote core (one-time address, amount commitment)
-    ser_SpEnoteCore m_core;
+    ser_SpEnoteCore core;
 
     /// enc(a)
-    ser_encoded_amount_t m_encoded_amount;
+    ser_encoded_amount_t encoded_amount;
     /// addr_tag_enc
-    ser_encrypted_address_tag_t m_addr_tag_enc;
+    ser_encrypted_address_tag_t addr_tag_enc;
     /// view_tag
-    unsigned char m_view_tag;
+    unsigned char view_tag;
 
     BEGIN_SERIALIZE()
-        FIELD(m_core)
-        FIELD(m_encoded_amount)  static_assert(sizeof(m_encoded_amount) == sizeof(jamtis::encoded_amount_t), "");
-        FIELD(m_addr_tag_enc)    static_assert(sizeof(m_addr_tag_enc) == sizeof(jamtis::encrypted_address_tag_t), "");
-        VARINT_FIELD(m_view_tag) static_assert(sizeof(m_view_tag) == sizeof(jamtis::view_tag_t), "");
+        FIELD(core)
+        FIELD(encoded_amount)  static_assert(sizeof(encoded_amount) == sizeof(jamtis::encoded_amount_t), "");
+        FIELD(addr_tag_enc)    static_assert(sizeof(addr_tag_enc) == sizeof(jamtis::encrypted_address_tag_t), "");
+        VARINT_FIELD(view_tag) static_assert(sizeof(view_tag) == sizeof(jamtis::view_tag_t), "");
     END_SERIALIZE()
 };
 
@@ -277,13 +277,13 @@ struct ser_SpEnoteV1 final
 struct ser_SpBalanceProofV1_PARTIAL final
 {
     /// an aggregate set of BP+ proofs (partial serialization)
-    ser_BulletproofPlus2_PARTIAL m_bpp2_proof_PARTIAL;
+    ser_BulletproofPlus2_PARTIAL bpp2_proof_PARTIAL;
     /// the remainder blinding factor
-    rct::key m_remainder_blinding_factor;
+    rct::key remainder_blinding_factor;
 
     BEGIN_SERIALIZE()
-        FIELD(m_bpp2_proof_PARTIAL)
-        FIELD(m_remainder_blinding_factor)
+        FIELD(bpp2_proof_PARTIAL)
+        FIELD(remainder_blinding_factor)
     END_SERIALIZE()
 };
 
@@ -291,13 +291,13 @@ struct ser_SpBalanceProofV1_PARTIAL final
 struct ser_LegacyRingSignatureV4_PARTIAL final
 {
     /// a clsag proof
-    ser_clsag_PARTIAL m_clsag_proof_PARTIAL;
+    ser_clsag_PARTIAL clsag_proof_PARTIAL;
     /// on-chain indices of the proof's ring members (serializable as index offsets)
-    std::vector<std::uint64_t> m_reference_set_COMPACT;
+    std::vector<std::uint64_t> reference_set_COMPACT;
 
     BEGIN_SERIALIZE()
-        FIELD(m_clsag_proof_PARTIAL)
-        FIELD(m_reference_set_COMPACT)
+        FIELD(clsag_proof_PARTIAL)
+        FIELD(reference_set_COMPACT)
     END_SERIALIZE()
 };
 
@@ -305,10 +305,10 @@ struct ser_LegacyRingSignatureV4_PARTIAL final
 struct ser_SpImageProofV1 final
 {
     /// a seraphis composition proof
-    ser_SpCompositionProof m_composition_proof;
+    ser_SpCompositionProof composition_proof;
 
     BEGIN_SERIALIZE()
-        FIELD(m_composition_proof)
+        FIELD(composition_proof)
     END_SERIALIZE()
 };
 
@@ -316,16 +316,16 @@ struct ser_SpImageProofV1 final
 struct ser_SpMembershipProofV1_PARTIAL final
 {
     /// a grootle proof
-    ser_GrootleProof m_grootle_proof;
+    ser_GrootleProof grootle_proof;
     /// binned representation of ledger indices of enotes referenced by the proof
-    ser_SpBinnedReferenceSetV1_PARTIAL m_binned_reference_set_PARTIAL;
+    ser_SpBinnedReferenceSetV1_PARTIAL binned_reference_set_PARTIAL;
     /// ref set size = n^m
-    //std::size_t m_ref_set_decomp_n;  (not serializable here)
-    //std::size_t m_ref_set_decomp_m;  (not serializable here)
+    //std::size_t ref_set_decomp_n;  (not serializable here)
+    //std::size_t ref_set_decomp_m;  (not serializable here)
 
     BEGIN_SERIALIZE()
-        FIELD(m_grootle_proof)
-        FIELD(m_binned_reference_set_PARTIAL)
+        FIELD(grootle_proof)
+        FIELD(binned_reference_set_PARTIAL)
     END_SERIALIZE()
 };
 
@@ -333,13 +333,13 @@ struct ser_SpMembershipProofV1_PARTIAL final
 struct ser_SpTxSupplementV1 final
 {
     /// xKe: enote ephemeral pubkeys for outputs
-    std::vector<crypto::x25519_pubkey> m_output_enote_ephemeral_pubkeys;
+    std::vector<crypto::x25519_pubkey> output_enote_ephemeral_pubkeys;
     /// tx memo
-    std::vector<unsigned char> m_tx_extra;
+    std::vector<unsigned char> tx_extra;
 
     BEGIN_SERIALIZE()
-        FIELD(m_output_enote_ephemeral_pubkeys)
-        FIELD(m_tx_extra)
+        FIELD(output_enote_ephemeral_pubkeys)
+        FIELD(tx_extra)
     END_SERIALIZE()
 };
 
@@ -347,23 +347,23 @@ struct ser_SpTxSupplementV1 final
 struct ser_SpTxCoinbaseV1 final
 {
     /// semantic rules version
-    SpTxCoinbaseV1::SemanticRulesVersion m_tx_semantic_rules_version;
+    SpTxCoinbaseV1::SemanticRulesVersion tx_semantic_rules_version;
 
     /// height of the block whose block reward this coinbase tx disperses
-    std::uint64_t m_block_height;
+    std::uint64_t block_height;
     /// block reward dispersed by this coinbase tx
-    rct::xmr_amount m_block_reward;
+    rct::xmr_amount block_reward;
     /// tx outputs (new enotes)
-    std::vector<ser_SpCoinbaseEnoteV1> m_outputs;
+    std::vector<ser_SpCoinbaseEnoteV1> outputs;
     /// supplemental data for tx
-    ser_SpTxSupplementV1 m_tx_supplement;
+    ser_SpTxSupplementV1 tx_supplement;
 
     BEGIN_SERIALIZE()
-        VARINT_FIELD(m_tx_semantic_rules_version)
-        VARINT_FIELD(m_block_height)
-        VARINT_FIELD(m_block_reward)
-        FIELD(m_outputs)
-        FIELD(m_tx_supplement)
+        VARINT_FIELD(tx_semantic_rules_version)
+        VARINT_FIELD(block_height)
+        VARINT_FIELD(block_reward)
+        FIELD(outputs)
+        FIELD(tx_supplement)
     END_SERIALIZE()
 };
 
@@ -371,38 +371,38 @@ struct ser_SpTxCoinbaseV1 final
 struct ser_SpTxSquashedV1 final
 {
     /// semantic rules version
-    SpTxSquashedV1::SemanticRulesVersion m_tx_semantic_rules_version;
+    SpTxSquashedV1::SemanticRulesVersion tx_semantic_rules_version;
 
     /// legacy tx input images (spent legacy enotes)
-    std::vector<ser_LegacyEnoteImageV2> m_legacy_input_images;
+    std::vector<ser_LegacyEnoteImageV2> legacy_input_images;
     /// seraphis tx input images (spent seraphis enotes)
-    std::vector<ser_SpEnoteImageV1> m_sp_input_images;
+    std::vector<ser_SpEnoteImageV1> sp_input_images;
     /// tx outputs (new enotes)
-    std::vector<ser_SpEnoteV1> m_outputs;
+    std::vector<ser_SpEnoteV1> outputs;
     /// balance proof (balance proof and range proofs)
-    ser_SpBalanceProofV1_PARTIAL m_balance_proof;
+    ser_SpBalanceProofV1_PARTIAL balance_proof;
     /// ring signature proofs: membership and ownership/key-image-legitimacy for each legacy input
-    std::vector<ser_LegacyRingSignatureV4_PARTIAL> m_legacy_ring_signatures;
+    std::vector<ser_LegacyRingSignatureV4_PARTIAL> legacy_ring_signatures;
     /// composition proofs: ownership/key-image-legitimacy for each seraphis input
-    std::vector<ser_SpImageProofV1> m_sp_image_proofs;
+    std::vector<ser_SpImageProofV1> sp_image_proofs;
     /// Grootle proofs on squashed enotes: membership for each seraphis input
-    std::vector<ser_SpMembershipProofV1_PARTIAL> m_sp_membership_proofs;
+    std::vector<ser_SpMembershipProofV1_PARTIAL> sp_membership_proofs;
     /// supplemental data for tx
-    ser_SpTxSupplementV1 m_tx_supplement;
+    ser_SpTxSupplementV1 tx_supplement;
     /// the transaction fee (discretized representation)
-    unsigned char m_tx_fee;
+    unsigned char tx_fee;
 
     BEGIN_SERIALIZE()
-        VARINT_FIELD(m_tx_semantic_rules_version)
-        FIELD(m_legacy_input_images)
-        FIELD(m_sp_input_images)
-        FIELD(m_outputs)
-        FIELD(m_balance_proof)
-        FIELD(m_legacy_ring_signatures)
-        FIELD(m_sp_image_proofs)
-        FIELD(m_sp_membership_proofs)
-        FIELD(m_tx_supplement)
-        VARINT_FIELD(m_tx_fee) static_assert(sizeof(m_tx_fee) == sizeof(DiscretizedFee), "");
+        VARINT_FIELD(tx_semantic_rules_version)
+        FIELD(legacy_input_images)
+        FIELD(sp_input_images)
+        FIELD(outputs)
+        FIELD(balance_proof)
+        FIELD(legacy_ring_signatures)
+        FIELD(sp_image_proofs)
+        FIELD(sp_membership_proofs)
+        FIELD(tx_supplement)
+        VARINT_FIELD(tx_fee) static_assert(sizeof(tx_fee) == sizeof(DiscretizedFee), "");
     END_SERIALIZE()
 };
 

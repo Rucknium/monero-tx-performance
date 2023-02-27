@@ -94,20 +94,20 @@ enum class SpEnoteSpentStatus : unsigned char
 struct SpEnoteOriginContextV1 final
 {
     /// block index of tx (-1 if index is unknown)
-    std::uint64_t m_block_index{static_cast<std::uint64_t>(-1)};
+    std::uint64_t block_index{static_cast<std::uint64_t>(-1)};
     /// timestamp of tx's block (-1 if timestamp is unknown)
-    std::uint64_t m_block_timestamp{static_cast<std::uint64_t>(-1)};
+    std::uint64_t block_timestamp{static_cast<std::uint64_t>(-1)};
     /// tx id of the tx (0 if tx is unknown)
-    rct::key m_transaction_id{rct::zero()};
+    rct::key transaction_id{rct::zero()};
     /// index of the enote in the tx's output set (-1 if index is unknown)
-    std::uint64_t m_enote_tx_index{static_cast<std::uint16_t>(-1)};
+    std::uint64_t enote_tx_index{static_cast<std::uint16_t>(-1)};
     /// ledger index of the enote (-1 if index is unknown)
-    std::uint64_t m_enote_ledger_index{static_cast<std::uint64_t>(-1)};
+    std::uint64_t enote_ledger_index{static_cast<std::uint64_t>(-1)};
     /// origin status (off-chain by default)
-    SpEnoteOriginStatus m_origin_status{SpEnoteOriginStatus::OFFCHAIN};
+    SpEnoteOriginStatus origin_status{SpEnoteOriginStatus::OFFCHAIN};
 
     /// associated memo field (none by default)
-    TxExtra m_memo{};
+    TxExtra memo{};
 };
 
 ////
@@ -118,13 +118,13 @@ struct SpEnoteOriginContextV1 final
 struct SpEnoteSpentContextV1 final
 {
     /// block index of tx where it was spent (-1 if unspent or index is unknown)
-    std::uint64_t m_block_index{static_cast<std::uint64_t>(-1)};
+    std::uint64_t block_index{static_cast<std::uint64_t>(-1)};
     /// timestamp of tx's block (-1 if timestamp is unknown)
-    std::uint64_t m_block_timestamp{static_cast<std::uint64_t>(-1)};
+    std::uint64_t block_timestamp{static_cast<std::uint64_t>(-1)};
     /// tx id of the tx where it was spent (0 if unspent or tx is unknown)
-    rct::key m_transaction_id{rct::zero()};
+    rct::key transaction_id{rct::zero()};
     /// spent status (unspent by default)
-    SpEnoteSpentStatus m_spent_status{SpEnoteSpentStatus::UNSPENT};
+    SpEnoteSpentStatus spent_status{SpEnoteSpentStatus::UNSPENT};
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -138,9 +138,9 @@ struct SpEnoteSpentContextV1 final
 struct LegacyContextualBasicEnoteRecordV1 final
 {
     /// basic info about the enote
-    LegacyBasicEnoteRecord m_record;
+    LegacyBasicEnoteRecord record;
     /// info about where the enote was found
-    SpEnoteOriginContextV1 m_origin_context;
+    SpEnoteOriginContextV1 origin_context;
 };
 
 ////
@@ -151,9 +151,9 @@ struct LegacyContextualBasicEnoteRecordV1 final
 struct LegacyContextualIntermediateEnoteRecordV1 final
 {
     /// intermediate info about the enote
-    LegacyIntermediateEnoteRecord m_record;
+    LegacyIntermediateEnoteRecord record;
     /// info about where the enote was found
-    SpEnoteOriginContextV1 m_origin_context;
+    SpEnoteOriginContextV1 origin_context;
 };
 
 /// get the record's onetime address
@@ -168,11 +168,11 @@ rct::xmr_amount amount_ref(const LegacyContextualIntermediateEnoteRecordV1 &reco
 struct LegacyContextualEnoteRecordV1 final
 {
     /// info about the enote
-    LegacyEnoteRecord m_record;
+    LegacyEnoteRecord record;
     /// info about where the enote was found
-    SpEnoteOriginContextV1 m_origin_context;
+    SpEnoteOriginContextV1 origin_context;
     /// info about where the enote was spent
-    SpEnoteSpentContextV1 m_spent_context;
+    SpEnoteSpentContextV1 spent_context;
 };
 
 /// get the record's key image
@@ -191,9 +191,9 @@ rct::xmr_amount amount_ref(const LegacyContextualEnoteRecordV1 &record);
 struct SpContextualBasicEnoteRecordV1 final
 {
     /// basic info about the enote
-    SpBasicEnoteRecordV1 m_record;
+    SpBasicEnoteRecordV1 record;
     /// info about where the enote was found
-    SpEnoteOriginContextV1 m_origin_context;
+    SpEnoteOriginContextV1 origin_context;
 };
 
 ////
@@ -204,9 +204,9 @@ struct SpContextualBasicEnoteRecordV1 final
 struct SpContextualIntermediateEnoteRecordV1 final
 {
     /// intermediate info about the enote
-    SpIntermediateEnoteRecordV1 m_record;
+    SpIntermediateEnoteRecordV1 record;
     /// info about where the enote was found
-    SpEnoteOriginContextV1 m_origin_context;
+    SpEnoteOriginContextV1 origin_context;
 };
 
 /// get the record's onetime address
@@ -221,11 +221,11 @@ rct::xmr_amount amount_ref(const SpContextualIntermediateEnoteRecordV1 &record);
 struct SpContextualEnoteRecordV1 final
 {
     /// info about the enote
-    SpEnoteRecordV1 m_record;
+    SpEnoteRecordV1 record;
     /// info about where the enote was found
-    SpEnoteOriginContextV1 m_origin_context;
+    SpEnoteOriginContextV1 origin_context;
     /// info about where the enote was spent
-    SpEnoteSpentContextV1 m_spent_context;
+    SpEnoteSpentContextV1 spent_context;
 };
 
 /// get the record's key image
@@ -266,11 +266,11 @@ const SpEnoteSpentContextV1& spent_context_ref(const ContextualRecordVariant &va
 struct SpContextualKeyImageSetV1 final
 {
     /// a set of legacy key images found in a single tx
-    std::vector<crypto::key_image> m_legacy_key_images;
+    std::vector<crypto::key_image> legacy_key_images;
     /// a set of seraphis key images found in a single tx
-    std::vector<crypto::key_image> m_sp_key_images;
+    std::vector<crypto::key_image> sp_key_images;
     /// info about where the corresponding inputs were spent
-    SpEnoteSpentContextV1 m_spent_context;
+    SpEnoteSpentContextV1 spent_context;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////

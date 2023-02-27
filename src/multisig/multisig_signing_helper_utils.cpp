@@ -244,8 +244,8 @@ static MultisigSigningErrorVariant try_make_v1_multisig_partial_signatures_v1(
                     signer_pub_nonces_set_temp))
             {
                 return MultisigSigningErrorBadInitSetCollection{
-                        .m_error_code = MultisigSigningErrorBadInitSetCollection::ErrorCode::GET_NONCES_FAIL,
-                        .m_signer_id  = init_set_collection.first
+                        .error_code = MultisigSigningErrorBadInitSetCollection::ErrorCode::GET_NONCES_FAIL,
+                        .signer_id  = init_set_collection.first
                     };
             }
 
@@ -253,8 +253,8 @@ static MultisigSigningErrorVariant try_make_v1_multisig_partial_signatures_v1(
             if (signer_pub_nonces_set_temp.size() != num_expected_proof_basekeys)
             {
                 return MultisigSigningErrorBadInitSetCollection{
-                        .m_error_code = MultisigSigningErrorBadInitSetCollection::ErrorCode::INVALID_NONCES_SET_SIZE,
-                        .m_signer_id  = init_set_collection.first
+                        .error_code = MultisigSigningErrorBadInitSetCollection::ErrorCode::INVALID_NONCES_SET_SIZE,
+                        .signer_id  = init_set_collection.first
                     };
             }
 
@@ -273,8 +273,8 @@ static MultisigSigningErrorVariant try_make_v1_multisig_partial_signatures_v1(
             if (signer_pub_nonce_set.size() != threshold)
             {
                 return MultisigSigningErrorMakePartialSigSet{
-                        .m_error_code = MultisigSigningErrorMakePartialSigSet::ErrorCode::INVALID_NONCES_SET_QUANTITY,
-                        .m_signature_set_filter = filter
+                        .error_code = MultisigSigningErrorMakePartialSigSet::ErrorCode::INVALID_NONCES_SET_QUANTITY,
+                        .signature_set_filter = filter
                     };
             }
         }
@@ -293,17 +293,17 @@ static MultisigSigningErrorVariant try_make_v1_multisig_partial_signatures_v1(
         catch (const std::exception &exception)
         {
             return MultisigSigningErrorMakePartialSigSet{
-                    .m_error_code = MultisigSigningErrorMakePartialSigSet::ErrorCode::MAKE_SIGNATURE_EXCEPTION,
-                    .m_signature_set_filter = filter,
-                    .m_error_message        = exception.what()
+                    .error_code = MultisigSigningErrorMakePartialSigSet::ErrorCode::MAKE_SIGNATURE_EXCEPTION,
+                    .signature_set_filter = filter,
+                    .error_message        = exception.what()
                 };
         }
         catch (...)
         {
             return MultisigSigningErrorMakePartialSigSet{
-                    .m_error_code = MultisigSigningErrorMakePartialSigSet::ErrorCode::MAKE_SIGNATURE_EXCEPTION,
-                    .m_signature_set_filter = filter,
-                    .m_error_message        = "unknown exception"
+                    .error_code = MultisigSigningErrorMakePartialSigSet::ErrorCode::MAKE_SIGNATURE_EXCEPTION,
+                    .signature_set_filter = filter,
+                    .error_message        = "unknown exception"
                 };
         }
     }
@@ -370,8 +370,8 @@ static void make_v1_multisig_partial_sig_sets_v1(const multisig_account &signer_
                 {
                     multisig_errors_inout.emplace_back(
                             MultisigSigningErrorMakePartialSigSet{
-                                    .m_error_code = MultisigSigningErrorMakePartialSigSet::ErrorCode::GET_KEY_FAIL,
-                                    .m_signature_set_filter = filter
+                                    .error_code = MultisigSigningErrorMakePartialSigSet::ErrorCode::GET_KEY_FAIL,
+                                    .signature_set_filter = filter
                                 }
                         );
                     throw dummy_multisig_exception{};
@@ -388,15 +388,15 @@ static void make_v1_multisig_partial_sig_sets_v1(const multisig_account &signer_
                         partial_sig_maker,
                         k_e_temp,
                         nonce_record_inout,
-                        partial_sig_sets_out.back().m_partial_signatures))
+                        partial_sig_sets_out.back().partial_signatures))
                 {
                     multisig_errors_inout.emplace_back(make_sigs_error);
                     throw dummy_multisig_exception{};
                 }
 
                 // 3. copy miscellanea
-                partial_sig_sets_out.back().m_signer_set_filter = filter;
-                partial_sig_sets_out.back().m_signer_id = signer_account.get_base_pubkey();
+                partial_sig_sets_out.back().signer_set_filter = filter;
+                partial_sig_sets_out.back().signer_id = signer_account.get_base_pubkey();
 
                 // 4. sanity check
                 check_v1_multisig_partial_sig_set_semantics_v1(partial_sig_sets_out.back(), signer_account.get_signers());
@@ -412,9 +412,9 @@ static void make_v1_multisig_partial_sig_sets_v1(const multisig_account &signer_
             {
                 multisig_errors_inout.emplace_back(
                         MultisigSigningErrorMakePartialSigSet{
-                                .m_error_code = MultisigSigningErrorMakePartialSigSet::ErrorCode::MAKE_SET_EXCEPTION,
-                                .m_signature_set_filter = filter,
-                                .m_error_message        = exception.what()
+                                .error_code = MultisigSigningErrorMakePartialSigSet::ErrorCode::MAKE_SET_EXCEPTION,
+                                .signature_set_filter = filter,
+                                .error_message        = exception.what()
                             }
                     );
 
@@ -425,9 +425,9 @@ static void make_v1_multisig_partial_sig_sets_v1(const multisig_account &signer_
             {
                 multisig_errors_inout.emplace_back(
                         MultisigSigningErrorMakePartialSigSet{
-                                .m_error_code = MultisigSigningErrorMakePartialSigSet::ErrorCode::MAKE_SET_EXCEPTION,
-                                .m_signature_set_filter = filter,
-                                .m_error_message        = "unknown exception"
+                                .error_code = MultisigSigningErrorMakePartialSigSet::ErrorCode::MAKE_SET_EXCEPTION,
+                                .signature_set_filter = filter,
+                                .error_message        = "unknown exception"
                             }
                     );
 
@@ -459,15 +459,15 @@ void check_v1_multisig_init_set_semantics_v1(const MultisigProofInitSetV1 &init_
     // 1. signer set filter must be valid (at least 'threshold' signers allowed, format is valid)
     CHECK_AND_ASSERT_THROW_MES(validate_aggregate_multisig_signer_set_filter(threshold,
             multisig_signers.size(),
-            init_set.m_aggregate_signer_set_filter),
+            init_set.aggregate_signer_set_filter),
         "multisig init set semantics: invalid aggregate signer set filter.");
 
     // the init's signer must be in allowed signers list, and contained in the aggregate filter
-    CHECK_AND_ASSERT_THROW_MES(std::find(multisig_signers.begin(), multisig_signers.end(), init_set.m_signer_id) !=
+    CHECK_AND_ASSERT_THROW_MES(std::find(multisig_signers.begin(), multisig_signers.end(), init_set.signer_id) !=
         multisig_signers.end(), "multisig init set semantics: initializer from unknown signer.");
-    CHECK_AND_ASSERT_THROW_MES(signer_is_in_filter(init_set.m_signer_id,
+    CHECK_AND_ASSERT_THROW_MES(signer_is_in_filter(init_set.signer_id,
             multisig_signers,
-            init_set.m_aggregate_signer_set_filter),
+            init_set.aggregate_signer_set_filter),
         "multisig init set semantics: signer is not eligible.");
 
     // 2. for each proof key to sign, there should be one nonce set (signing attempt) per signer subgroup that contains the
@@ -477,13 +477,13 @@ void check_v1_multisig_init_set_semantics_v1(const MultisigProofInitSetV1 &init_
     // - remove our init's signer, then choose 'threshold - 1' signers from the remaining 'num signers requested - 1' to
     //   get the number of permutations that include our init's signer
     const std::uint32_t num_sets_with_signer_expected(
-            n_choose_k(get_num_flags_set(init_set.m_aggregate_signer_set_filter) - 1, threshold - 1)
+            n_choose_k(get_num_flags_set(init_set.aggregate_signer_set_filter) - 1, threshold - 1)
         );
 
-    CHECK_AND_ASSERT_THROW_MES(init_set.m_inits.size() == num_sets_with_signer_expected,
+    CHECK_AND_ASSERT_THROW_MES(init_set.inits.size() == num_sets_with_signer_expected,
         "multisig init set semantics: don't have expected number of nonce sets (one per signer set that has signer).");
 
-    for (const std::vector<MultisigPubNonces> &nonce_pubkey_set : init_set.m_inits)
+    for (const std::vector<MultisigPubNonces> &nonce_pubkey_set : init_set.inits)
     {
         CHECK_AND_ASSERT_THROW_MES(nonce_pubkey_set.size() == num_expected_nonce_sets_per_proofkey,
             "multisig init set semantics: don't have expected number of nonce pubkey pairs (each proof key should have "
@@ -501,52 +501,52 @@ MultisigSigningErrorVariant validate_v1_multisig_init_set_v1(const MultisigProof
     const std::size_t num_expected_nonce_sets_per_proofkey)
 {
     // 1. aggregate filter should match the expected aggregate filter
-    if (init_set.m_aggregate_signer_set_filter != expected_aggregate_signer_set_filter)
+    if (init_set.aggregate_signer_set_filter != expected_aggregate_signer_set_filter)
     {
         return MultisigSigningErrorBadInitSet{
-                .m_error_code = MultisigSigningErrorBadInitSet::ErrorCode::UNEXPECTED_FILTER,
-                .m_aggregate_signer_set_filter = init_set.m_aggregate_signer_set_filter,
-                .m_signer_id                   = init_set.m_signer_id,
-                .m_proof_message               = init_set.m_proof_message,
-                .m_proof_key                   = init_set.m_proof_key
+                .error_code = MultisigSigningErrorBadInitSet::ErrorCode::UNEXPECTED_FILTER,
+                .aggregate_signer_set_filter = init_set.aggregate_signer_set_filter,
+                .signer_id                   = init_set.signer_id,
+                .proof_message               = init_set.proof_message,
+                .proof_key                   = init_set.proof_key
             };
     }
 
     // 2. signer should be expected
-    if (!(init_set.m_signer_id == expected_signer_id))
+    if (!(init_set.signer_id == expected_signer_id))
     {
         return MultisigSigningErrorBadInitSet{
-                .m_error_code = MultisigSigningErrorBadInitSet::ErrorCode::UNEXPECTED_SIGNER,
-                .m_aggregate_signer_set_filter = init_set.m_aggregate_signer_set_filter,
-                .m_signer_id                   = init_set.m_signer_id,
-                .m_proof_message               = init_set.m_proof_message,
-                .m_proof_key                   = init_set.m_proof_key
+                .error_code = MultisigSigningErrorBadInitSet::ErrorCode::UNEXPECTED_SIGNER,
+                .aggregate_signer_set_filter = init_set.aggregate_signer_set_filter,
+                .signer_id                   = init_set.signer_id,
+                .proof_message               = init_set.proof_message,
+                .proof_key                   = init_set.proof_key
             };
     }
 
     // 3. proof message should be expected
-    if (!(init_set.m_proof_message == expected_proof_message))
+    if (!(init_set.proof_message == expected_proof_message))
     {
         return MultisigSigningErrorBadInitSet{
-                .m_error_code = MultisigSigningErrorBadInitSet::ErrorCode::UNEXPECTED_PROOF_MESSAGE,
-                .m_aggregate_signer_set_filter = init_set.m_aggregate_signer_set_filter,
-                .m_signer_id                   = init_set.m_signer_id,
-                .m_proof_message               = init_set.m_proof_message,
-                .m_proof_key                   = init_set.m_proof_key
+                .error_code = MultisigSigningErrorBadInitSet::ErrorCode::UNEXPECTED_PROOF_MESSAGE,
+                .aggregate_signer_set_filter = init_set.aggregate_signer_set_filter,
+                .signer_id                   = init_set.signer_id,
+                .proof_message               = init_set.proof_message,
+                .proof_key                   = init_set.proof_key
             };
     }
 
     // 4. proof key should be expected
     // NOTE: the relationship between the main proof key and any auxilliary/secondary keys must be implemented by the
     //       caller
-    if (!(init_set.m_proof_key == expected_main_proof_key))
+    if (!(init_set.proof_key == expected_main_proof_key))
     {
         return MultisigSigningErrorBadInitSet{
-                .m_error_code = MultisigSigningErrorBadInitSet::ErrorCode::UNEXPECTED_MAIN_PROOF_KEY,
-                .m_aggregate_signer_set_filter = init_set.m_aggregate_signer_set_filter,
-                .m_signer_id                   = init_set.m_signer_id,
-                .m_proof_message               = init_set.m_proof_message,
-                .m_proof_key                   = init_set.m_proof_key
+                .error_code = MultisigSigningErrorBadInitSet::ErrorCode::UNEXPECTED_MAIN_PROOF_KEY,
+                .aggregate_signer_set_filter = init_set.aggregate_signer_set_filter,
+                .signer_id                   = init_set.signer_id,
+                .proof_message               = init_set.proof_message,
+                .proof_key                   = init_set.proof_key
             };
     }
 
@@ -565,23 +565,23 @@ MultisigSigningErrorVariant validate_v1_multisig_init_set_v1(const MultisigProof
     catch (const std::exception &exception)
     {
         return MultisigSigningErrorBadInitSet{
-                .m_error_code = MultisigSigningErrorBadInitSet::ErrorCode::SEMANTICS_EXCEPTION,
-                .m_aggregate_signer_set_filter = init_set.m_aggregate_signer_set_filter,
-                .m_signer_id                   = init_set.m_signer_id,
-                .m_proof_message               = init_set.m_proof_message,
-                .m_proof_key                   = init_set.m_proof_key,
-                .m_error_message               = exception.what()
+                .error_code = MultisigSigningErrorBadInitSet::ErrorCode::SEMANTICS_EXCEPTION,
+                .aggregate_signer_set_filter = init_set.aggregate_signer_set_filter,
+                .signer_id                   = init_set.signer_id,
+                .proof_message               = init_set.proof_message,
+                .proof_key                   = init_set.proof_key,
+                .error_message               = exception.what()
             };
     }
     catch (...)
     {
         return MultisigSigningErrorBadInitSet{
-                .m_error_code = MultisigSigningErrorBadInitSet::ErrorCode::SEMANTICS_EXCEPTION,
-                .m_aggregate_signer_set_filter = init_set.m_aggregate_signer_set_filter,
-                .m_signer_id                   = init_set.m_signer_id,
-                .m_proof_message               = init_set.m_proof_message,
-                .m_proof_key                   = init_set.m_proof_key,
-                .m_error_message               = "unknown exception"
+                .error_code = MultisigSigningErrorBadInitSet::ErrorCode::SEMANTICS_EXCEPTION,
+                .aggregate_signer_set_filter = init_set.aggregate_signer_set_filter,
+                .signer_id                   = init_set.signer_id,
+                .proof_message               = init_set.proof_message,
+                .proof_key                   = init_set.proof_key,
+                .error_message               = "unknown exception"
             };
     }
 
@@ -601,8 +601,8 @@ MultisigSigningErrorVariant validate_v1_multisig_init_set_collection_v1(
     if (expected_proof_contexts.size() == 0)
     {
         return MultisigSigningErrorBadInitSetCollection{
-                .m_error_code = MultisigSigningErrorBadInitSetCollection::ErrorCode::EMPTY_COLLECTION_EXPECTED,
-                .m_signer_id  = expected_signer_id
+                .error_code = MultisigSigningErrorBadInitSetCollection::ErrorCode::EMPTY_COLLECTION_EXPECTED,
+                .signer_id  = expected_signer_id
             };
     }
 
@@ -610,8 +610,8 @@ MultisigSigningErrorVariant validate_v1_multisig_init_set_collection_v1(
     if (init_set_collection.size() != expected_proof_contexts.size())
     {
         return MultisigSigningErrorBadInitSetCollection{
-                .m_error_code = MultisigSigningErrorBadInitSetCollection::ErrorCode::PROOF_CONTEXT_MISMATCH,
-                .m_signer_id  = expected_signer_id
+                .error_code = MultisigSigningErrorBadInitSetCollection::ErrorCode::PROOF_CONTEXT_MISMATCH,
+                .signer_id  = expected_signer_id
             };
     }
 
@@ -619,13 +619,13 @@ MultisigSigningErrorVariant validate_v1_multisig_init_set_collection_v1(
     if (!tools::keys_match_internal_values(init_set_collection,
                 [](const rct::key &key, const MultisigProofInitSetV1 &init_set) -> bool
                 {
-                    return key == init_set.m_proof_key;
+                    return key == init_set.proof_key;
                 }
             ))
     {
         return MultisigSigningErrorBadInitSetCollection{
-                .m_error_code = MultisigSigningErrorBadInitSetCollection::ErrorCode::INVALID_MAPPING,
-                .m_signer_id  = expected_signer_id
+                .error_code = MultisigSigningErrorBadInitSetCollection::ErrorCode::INVALID_MAPPING,
+                .signer_id  = expected_signer_id
             };
     }
 
@@ -637,8 +637,8 @@ MultisigSigningErrorVariant validate_v1_multisig_init_set_collection_v1(
         if (expected_proof_contexts.find(init_set.first) == expected_proof_contexts.end())
         {
             return MultisigSigningErrorBadInitSetCollection{
-                    .m_error_code = MultisigSigningErrorBadInitSetCollection::ErrorCode::PROOF_CONTEXT_MISMATCH,
-                    .m_signer_id  = expected_signer_id
+                    .error_code = MultisigSigningErrorBadInitSetCollection::ErrorCode::PROOF_CONTEXT_MISMATCH,
+                    .signer_id  = expected_signer_id
                 };
         }
 
@@ -682,8 +682,8 @@ void make_v1_multisig_init_set_v1(const std::uint32_t threshold,
             n_choose_k(get_num_flags_set(aggregate_signer_set_filter) - 1, threshold - 1)
         };
 
-    init_set_out.m_inits.clear();
-    init_set_out.m_inits.reserve(num_sets_with_signer_expected);
+    init_set_out.inits.clear();
+    init_set_out.inits.reserve(num_sets_with_signer_expected);
 
     // 3. add nonces for every possible signer set that includes the signer
     CHECK_AND_ASSERT_THROW_MES(signer_is_in_filter(local_signer_id, multisig_signers, aggregate_signer_set_filter),
@@ -709,8 +709,8 @@ void make_v1_multisig_init_set_v1(const std::uint32_t threshold,
         nonce_record_inout.try_add_nonces(proof_message, main_proof_key, filter);
 
         // c. add nonces to the inits at this filter permutation for each requested proof base point
-        init_set_out.m_inits.emplace_back();
-        init_set_out.m_inits.back().reserve(proof_key_base_points.size());
+        init_set_out.inits.emplace_back();
+        init_set_out.inits.back().reserve(proof_key_base_points.size());
 
         for (const rct::key &proof_base : proof_key_base_points)
         {
@@ -718,16 +718,16 @@ void make_v1_multisig_init_set_v1(const std::uint32_t threshold,
                     main_proof_key,
                     filter,
                     proof_base,
-                    tools::add_element(init_set_out.m_inits.back())),
+                    tools::add_element(init_set_out.inits.back())),
                 "make multisig proof initializer: could not get nonce pubkeys from nonce record (bug).");
         }
     }
 
     // 5. set cached context
-    init_set_out.m_aggregate_signer_set_filter = aggregate_signer_set_filter;
-    init_set_out.m_signer_id = local_signer_id;
-    init_set_out.m_proof_message = proof_message;
-    init_set_out.m_proof_key = main_proof_key;
+    init_set_out.aggregate_signer_set_filter = aggregate_signer_set_filter;
+    init_set_out.signer_id = local_signer_id;
+    init_set_out.proof_message = proof_message;
+    init_set_out.proof_key = main_proof_key;
 
     // 6. sanity check that the initializer is well-formed
     check_v1_multisig_init_set_semantics_v1(init_set_out, threshold, multisig_signers, proof_key_base_points.size());
@@ -766,13 +766,13 @@ void check_v1_multisig_partial_sig_set_semantics_v1(const MultisigPartialSigSetV
     const std::vector<crypto::public_key> &multisig_signers)
 {
     // 1. signer is in filter
-    CHECK_AND_ASSERT_THROW_MES(signer_is_in_filter(partial_sig_set.m_signer_id,
+    CHECK_AND_ASSERT_THROW_MES(signer_is_in_filter(partial_sig_set.signer_id,
             multisig_signers,
-            partial_sig_set.m_signer_set_filter),
+            partial_sig_set.signer_set_filter),
         "multisig partial sig set semantics: the signer is not a member of the signer group (or the filter is invalid).");
 
     // 2. the partial signatures map to their proof keys properly
-    CHECK_AND_ASSERT_THROW_MES(tools::keys_match_internal_values(partial_sig_set.m_partial_signatures,
+    CHECK_AND_ASSERT_THROW_MES(tools::keys_match_internal_values(partial_sig_set.partial_signatures,
                 [](const rct::key &key, const MultisigPartialSigVariant &partial_sig) -> bool
                 {
                     return key == proof_key_ref(partial_sig);
@@ -781,13 +781,13 @@ void check_v1_multisig_partial_sig_set_semantics_v1(const MultisigPartialSigSetV
         "multisig partial sig set semantics: a partial signature's mapped proof key does not match its stored key.");
 
     // 3. all partial sigs must have the same underlying type
-    CHECK_AND_ASSERT_THROW_MES(std::adjacent_find(partial_sig_set.m_partial_signatures.begin(),
-            partial_sig_set.m_partial_signatures.end(),
+    CHECK_AND_ASSERT_THROW_MES(std::adjacent_find(partial_sig_set.partial_signatures.begin(),
+            partial_sig_set.partial_signatures.end(),
             [](const auto &v1, const auto &v2) -> bool
             {
                 // find an adjacent pair that DONT have the same type
                 return !MultisigPartialSigVariant::same_type(v1.second, v2.second);
-            }) == partial_sig_set.m_partial_signatures.end(),
+            }) == partial_sig_set.partial_signatures.end(),
         "multisig partial sig set semantics: partial signatures are not all the same type.");
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -863,12 +863,12 @@ bool try_make_v1_multisig_partial_sig_sets_v1(const multisig_account &signer_acc
     {
         multisig_errors_inout.emplace_back(
                 MultisigSigningErrorAvailableSigners{
-                        .m_error_code = MultisigSigningErrorAvailableSigners::ErrorCode::INCOMPLETE_AVAILABLE_SIGNERS,
-                        .m_missing_signers =
+                        .error_code = MultisigSigningErrorAvailableSigners::ErrorCode::INCOMPLETE_AVAILABLE_SIGNERS,
+                        .missing_signers =
                             static_cast<signer_set_filter>(
                                     (~available_signers_filter) & aggregate_signer_set_filter
                                 ),
-                        .m_unexpected_available_signers =
+                        .unexpected_available_signers =
                             static_cast<signer_set_filter>(
                                     (~aggregate_signer_set_filter) & available_signers_filter
                                 )
@@ -926,10 +926,10 @@ void filter_multisig_partial_signatures_for_combining_v1(const std::vector<crypt
             {
                 multisig_errors_inout.emplace_back(
                         MultisigSigningErrorBadPartialSigSet{
-                                .m_error_code = MultisigSigningErrorBadPartialSigSet::ErrorCode::SEMANTICS_EXCEPTION,
-                                .m_signature_set_filter = partial_sig_set.m_signer_set_filter,
-                                .m_signer_id            = partial_sig_set.m_signer_id,
-                                .m_error_message        = exception.what()
+                                .error_code = MultisigSigningErrorBadPartialSigSet::ErrorCode::SEMANTICS_EXCEPTION,
+                                .signature_set_filter = partial_sig_set.signer_set_filter,
+                                .signer_id            = partial_sig_set.signer_id,
+                                .error_message        = exception.what()
                             }
                     );
 
@@ -939,10 +939,10 @@ void filter_multisig_partial_signatures_for_combining_v1(const std::vector<crypt
             {
                 multisig_errors_inout.emplace_back(
                         MultisigSigningErrorBadPartialSigSet{
-                                .m_error_code = MultisigSigningErrorBadPartialSigSet::ErrorCode::SEMANTICS_EXCEPTION,
-                                .m_signature_set_filter = partial_sig_set.m_signer_set_filter,
-                                .m_signer_id            = partial_sig_set.m_signer_id,
-                                .m_error_message        = "unknown exception"
+                                .error_code = MultisigSigningErrorBadPartialSigSet::ErrorCode::SEMANTICS_EXCEPTION,
+                                .signature_set_filter = partial_sig_set.signer_set_filter,
+                                .signer_id            = partial_sig_set.signer_id,
+                                .error_message        = "unknown exception"
                             }
                     );
 
@@ -950,13 +950,13 @@ void filter_multisig_partial_signatures_for_combining_v1(const std::vector<crypt
             }
 
             // b. skip sig sets that don't map to their signer ids properly
-            if (!(partial_sig_set.m_signer_id == partial_sigs_for_signer.first))
+            if (!(partial_sig_set.signer_id == partial_sigs_for_signer.first))
             {
                 multisig_errors_inout.emplace_back(
                         MultisigSigningErrorBadPartialSigSet{
-                                .m_error_code = MultisigSigningErrorBadPartialSigSet::ErrorCode::INVALID_MAPPING,
-                                .m_signature_set_filter = partial_sig_set.m_signer_set_filter,
-                                .m_signer_id            = partial_sig_set.m_signer_id
+                                .error_code = MultisigSigningErrorBadPartialSigSet::ErrorCode::INVALID_MAPPING,
+                                .signature_set_filter = partial_sig_set.signer_set_filter,
+                                .signer_id            = partial_sig_set.signer_id
                             }
                     );
 
@@ -966,22 +966,22 @@ void filter_multisig_partial_signatures_for_combining_v1(const std::vector<crypt
             // c. skip sig sets that look like duplicates (same signer group and signer)
             // - do this after checking sig set validity to avoid inserting invalid filters into the collected signers
             //   map, which could allow a malicious signer to block signer groups they aren't a member of
-            if (collected_signers_per_filter[partial_sig_set.m_signer_set_filter].find(partial_sig_set.m_signer_id) !=
-                    collected_signers_per_filter[partial_sig_set.m_signer_set_filter].end())
+            if (collected_signers_per_filter[partial_sig_set.signer_set_filter].find(partial_sig_set.signer_id) !=
+                    collected_signers_per_filter[partial_sig_set.signer_set_filter].end())
                 continue;
 
             // d. record the partial sigs
-            for (const auto &partial_sig : partial_sig_set.m_partial_signatures)
+            for (const auto &partial_sig : partial_sig_set.partial_signatures)
             {
                 // i. skip partial sigs with unknown proof keys
                 if (allowed_proof_contexts.find(partial_sig.first) == allowed_proof_contexts.end())
                 {
                     multisig_errors_inout.emplace_back(
                             MultisigSigningErrorBadPartialSig{
-                                    .m_error_code =
+                                    .error_code =
                                         MultisigSigningErrorBadPartialSig::ErrorCode::UNEXPECTED_MAIN_PROOF_KEY,
-                                    .m_proof_key     = proof_key_ref(partial_sig.second),
-                                    .m_proof_message = message_ref(partial_sig.second)
+                                    .proof_key     = proof_key_ref(partial_sig.second),
+                                    .proof_message = message_ref(partial_sig.second)
                                 }
                         );
 
@@ -993,10 +993,10 @@ void filter_multisig_partial_signatures_for_combining_v1(const std::vector<crypt
                 {
                     multisig_errors_inout.emplace_back(
                             MultisigSigningErrorBadPartialSig{
-                                    .m_error_code =
+                                    .error_code =
                                         MultisigSigningErrorBadPartialSig::ErrorCode::UNEXPECTED_PROOF_MESSAGE,
-                                    .m_proof_key     = proof_key_ref(partial_sig.second),
-                                    .m_proof_message = message_ref(partial_sig.second)
+                                    .proof_key     = proof_key_ref(partial_sig.second),
+                                    .proof_message = message_ref(partial_sig.second)
                                 }
                         );
 
@@ -1008,10 +1008,10 @@ void filter_multisig_partial_signatures_for_combining_v1(const std::vector<crypt
                 {
                     multisig_errors_inout.emplace_back(
                             MultisigSigningErrorBadPartialSig{
-                                    .m_error_code =
+                                    .error_code =
                                         MultisigSigningErrorBadPartialSig::ErrorCode::UNEXPECTED_VARIANT_TYPE,
-                                    .m_proof_key     = proof_key_ref(partial_sig.second),
-                                    .m_proof_message = message_ref(partial_sig.second)
+                                    .proof_key     = proof_key_ref(partial_sig.second),
+                                    .proof_message = message_ref(partial_sig.second)
                                 }
                         );
 
@@ -1019,12 +1019,12 @@ void filter_multisig_partial_signatures_for_combining_v1(const std::vector<crypt
                 }
 
                 // iv. add this signer's partial signature for this proof key for this signer group
-                collected_sigs_per_key_per_filter_out[partial_sig_set.m_signer_set_filter][partial_sig.first]
+                collected_sigs_per_key_per_filter_out[partial_sig_set.signer_set_filter][partial_sig.first]
                     .emplace_back(partial_sig.second);
             }
 
             // e. record that this signer/filter combo has been used
-            collected_signers_per_filter[partial_sig_set.m_signer_set_filter].insert(partial_sig_set.m_signer_id);
+            collected_signers_per_filter[partial_sig_set.signer_set_filter].insert(partial_sig_set.signer_id);
         }
     }
 }

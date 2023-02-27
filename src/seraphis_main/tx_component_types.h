@@ -60,12 +60,12 @@ namespace sp
 struct SpCoinbaseEnoteV1 final
 {
     /// enote core (onetime address, amount)
-    SpCoinbaseEnoteCore m_core;
+    SpCoinbaseEnoteCore core;
 
     /// addr_tag_enc
-    jamtis::encrypted_address_tag_t m_addr_tag_enc;
+    jamtis::encrypted_address_tag_t addr_tag_enc;
     /// view_tag
-    jamtis::view_tag_t m_view_tag;
+    jamtis::view_tag_t view_tag;
 };
 inline const boost::string_ref container_name(const SpCoinbaseEnoteV1&) { return "SpCoinbaseEnoteV1"; }
 void append_to_transcript(const SpCoinbaseEnoteV1 &container, SpTranscriptBuilder &transcript_inout);
@@ -79,14 +79,14 @@ std::size_t sp_coinbase_enote_v1_size_bytes();
 struct SpEnoteV1 final
 {
     /// enote core (onetime address, amount commitment)
-    SpEnoteCore m_core;
+    SpEnoteCore core;
 
     /// enc(a)
-    jamtis::encoded_amount_t m_encoded_amount;
+    jamtis::encoded_amount_t encoded_amount;
     /// addr_tag_enc
-    jamtis::encrypted_address_tag_t m_addr_tag_enc;
+    jamtis::encrypted_address_tag_t addr_tag_enc;
     /// view_tag
-    jamtis::view_tag_t m_view_tag;
+    jamtis::view_tag_t view_tag;
 };
 inline const boost::string_ref container_name(const SpEnoteV1&) { return "SpEnoteV1"; }
 void append_to_transcript(const SpEnoteV1 &container, SpTranscriptBuilder &transcript_inout);
@@ -118,7 +118,7 @@ jamtis::view_tag_t view_tag_ref(const SpEnoteVariant &variant);
 struct SpEnoteImageV1 final
 {
     /// enote image core (masked address, masked amount commitment, key image)
-    SpEnoteImageCore m_core;
+    SpEnoteImageCore core;
 };
 inline const boost::string_ref container_name(const SpEnoteImageV1&) { return "SpEnoteImageV1"; }
 void append_to_transcript(const SpEnoteImageV1 &container, SpTranscriptBuilder &transcript_inout);
@@ -138,12 +138,12 @@ const rct::key& masked_commitment_ref(const SpEnoteImageV1 &enote_image);
 struct SpMembershipProofV1 final
 {
     /// a grootle proof
-    GrootleProof m_grootle_proof;
+    GrootleProof grootle_proof;
     /// binned representation of ledger indices of enotes referenced by the proof
-    SpBinnedReferenceSetV1 m_binned_reference_set;
+    SpBinnedReferenceSetV1 binned_reference_set;
     /// ref set size = n^m
-    std::size_t m_ref_set_decomp_n;
-    std::size_t m_ref_set_decomp_m;
+    std::size_t ref_set_decomp_n;
+    std::size_t ref_set_decomp_m;
 };
 inline const boost::string_ref container_name(const SpMembershipProofV1&) { return "SpMembershipProofV1"; }
 void append_to_transcript(const SpMembershipProofV1 &container, SpTranscriptBuilder &transcript_inout);
@@ -167,7 +167,7 @@ std::size_t sp_membership_proof_v1_size_bytes_compact(const SpMembershipProofV1 
 struct SpImageProofV1 final
 {
     /// a seraphis composition proof
-    SpCompositionProof m_composition_proof;
+    SpCompositionProof composition_proof;
 };
 inline const boost::string_ref container_name(const SpImageProofV1&) { return "SpImageProofV1"; }
 void append_to_transcript(const SpImageProofV1 &container, SpTranscriptBuilder &transcript_inout);
@@ -183,9 +183,9 @@ inline std::size_t sp_image_proof_v1_size_bytes() { return sp_composition_size_b
 struct SpBalanceProofV1 final
 {
     /// an aggregate set of BP+ proofs
-    BulletproofPlus2 m_bpp2_proof;
+    BulletproofPlus2 bpp2_proof;
     /// the remainder blinding factor
-    rct::key m_remainder_blinding_factor;
+    rct::key remainder_blinding_factor;
 };
 inline const boost::string_ref container_name(const SpBalanceProofV1&) { return "SpBalanceProofV1"; }
 void append_to_transcript(const SpBalanceProofV1 &container, SpTranscriptBuilder &transcript_inout);
@@ -209,9 +209,9 @@ std::size_t sp_balance_proof_v1_weight(const SpBalanceProofV1 &proof);
 struct SpTxSupplementV1 final
 {
     /// xKe: enote ephemeral pubkeys for outputs
-    std::vector<crypto::x25519_pubkey> m_output_enote_ephemeral_pubkeys;
+    std::vector<crypto::x25519_pubkey> output_enote_ephemeral_pubkeys;
     /// tx memo
-    TxExtra m_tx_extra;
+    TxExtra tx_extra;
 };
 inline const boost::string_ref container_name(const SpTxSupplementV1&) { return "SpTxSupplementV1"; }
 void append_to_transcript(const SpTxSupplementV1 &container, SpTranscriptBuilder &transcript_inout);

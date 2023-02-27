@@ -171,13 +171,13 @@ static auto convert_skv_to_rctv(const std::vector<crypto::secret_key> &skv, rct:
 //-------------------------------------------------------------------------------------------------------------------
 static bool same_key_image(const LegacyInputV1 &input, const LegacyInputProposalV1 &input_proposal)
 {
-    return input.m_input_image.m_key_image == input_proposal.m_key_image;
+    return input.input_image.key_image == input_proposal.key_image;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static bool same_key_image(const SpPartialInputV1 &partial_input, const SpInputProposalV1 &input_proposal)
 {
-    return key_image_ref(partial_input.m_input_image) == key_image_ref(input_proposal);
+    return key_image_ref(partial_input.input_image) == key_image_ref(input_proposal);
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -191,7 +191,7 @@ static void legacy_enote_records_to_input_proposals(
     for (const LegacyContextualEnoteRecordV1 &legacy_contextual_input : legacy_contextual_records)
     {
         // convert legacy inputs to input proposals
-        make_v1_legacy_input_proposal_v1(legacy_contextual_input.m_record,
+        make_v1_legacy_input_proposal_v1(legacy_contextual_input.record,
             rct::rct2sk(rct::skGen()),
             tools::add_element(legacy_input_proposals_out));
     }
@@ -207,7 +207,7 @@ static void sp_enote_records_to_input_proposals(const std::vector<SpContextualEn
     for (const SpContextualEnoteRecordV1 &sp_contextual_input : sp_contextual_records)
     {
         // convert seraphis inputs to input proposals
-        make_v1_input_proposal_v1(sp_contextual_input.m_record,
+        make_v1_input_proposal_v1(sp_contextual_input.record,
             rct::rct2sk(rct::skGen()),
             rct::rct2sk(rct::skGen()),
             tools::add_element(sp_input_proposals_out));
@@ -230,7 +230,7 @@ static void prepare_sp_membership_proof_prep_for_tx_simulation_v1(const rct::key
 
     CHECK_AND_ASSERT_THROW_MES(simulated_ledger_squashed_enotes.size() > 0,
         "prepare sp membership proof prep v1 (tx simulation): insufficient reference elements.");
-    CHECK_AND_ASSERT_THROW_MES(simulated_ledger_squashed_enotes.size() >= compute_bin_width(bin_config.m_bin_radius),
+    CHECK_AND_ASSERT_THROW_MES(simulated_ledger_squashed_enotes.size() >= compute_bin_width(bin_config.bin_radius),
         "prepare sp membership proof prep v1 (tx simulation): insufficient reference elements.");
     CHECK_AND_ASSERT_THROW_MES(real_reference_index < simulated_ledger_squashed_enotes.size(),
         "prepare sp membership proof prep v1 (tx simulation): real reference is out of bounds.");
@@ -257,34 +257,34 @@ static void prepare_sp_membership_proof_prep_for_tx_simulation_v1(const rct::key
         generator_seed,
         ref_set_size,
         real_reference_index,
-        prep_out.m_binned_reference_set);
+        prep_out.binned_reference_set);
 
 
     /// copy all referenced enotes from the simulated ledger (in squashed enote representation)
     std::vector<std::uint64_t> reference_indices;
-    CHECK_AND_ASSERT_THROW_MES(try_get_reference_indices_from_binned_reference_set_v1(prep_out.m_binned_reference_set,
+    CHECK_AND_ASSERT_THROW_MES(try_get_reference_indices_from_binned_reference_set_v1(prep_out.binned_reference_set,
             reference_indices),
         "prepare sp membership proof prep v1 (tx simulation): could not extract reference indices from binned "
         "representation (bug).");
 
-    prep_out.m_referenced_enotes_squashed.clear();
-    prep_out.m_referenced_enotes_squashed.reserve(reference_indices.size());
+    prep_out.referenced_enotes_squashed.clear();
+    prep_out.referenced_enotes_squashed.reserve(reference_indices.size());
 
     for (const std::uint64_t reference_index : reference_indices)
     {
         CHECK_AND_ASSERT_THROW_MES(reference_index < simulated_ledger_squashed_enotes.size(),
             "prepare sp membership proof prep v1 (tx simulation): invalid index recovered from binned representation "
             "(bug).");
-        prep_out.m_referenced_enotes_squashed.emplace_back(simulated_ledger_squashed_enotes.at(reference_index));
+        prep_out.referenced_enotes_squashed.emplace_back(simulated_ledger_squashed_enotes.at(reference_index));
     }
 
 
     /// copy misc pieces
-    prep_out.m_ref_set_decomp_n = ref_set_decomp_n;
-    prep_out.m_ref_set_decomp_m = ref_set_decomp_m;
-    prep_out.m_real_reference_enote = real_reference_enote;
-    prep_out.m_address_mask = address_mask;
-    prep_out.m_commitment_mask = commitment_mask;
+    prep_out.ref_set_decomp_n = ref_set_decomp_n;
+    prep_out.ref_set_decomp_m = ref_set_decomp_m;
+    prep_out.real_reference_enote = real_reference_enote;
+    prep_out.address_mask = address_mask;
+    prep_out.commitment_mask = commitment_mask;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -314,7 +314,7 @@ static void prepare_sp_membership_proof_preps_for_tx_simulation_v1(
     // - the enotes' indices in the input vectors will be treated as their indices in the simulated ledger
     rct::keyV simulated_ledger_squashed_enotes;
     simulated_ledger_squashed_enotes.reserve(
-            std::max(static_cast<std::uint64_t>(real_reference_enotes.size()), compute_bin_width(bin_config.m_bin_radius))
+            std::max(static_cast<std::uint64_t>(real_reference_enotes.size()), compute_bin_width(bin_config.bin_radius))
         );
 
     for (std::size_t proof_index{0}; proof_index < real_reference_enotes.size(); ++proof_index)
@@ -329,7 +329,7 @@ static void prepare_sp_membership_proof_preps_for_tx_simulation_v1(
 
     // 2. pad the simulated ledger's squashed enotes so there are enough to satisfy the binning config
     for (std::size_t ref_set_index{simulated_ledger_squashed_enotes.size()};
-        ref_set_index < compute_bin_width(bin_config.m_bin_radius);
+        ref_set_index < compute_bin_width(bin_config.bin_radius);
         ++ref_set_index)
     {
         simulated_ledger_squashed_enotes.emplace_back(rct::pkGen());
@@ -410,7 +410,7 @@ static void check_tx_proposal_semantics_selfsend_outputs_v1(const std::size_t nu
     if (num_normal_payment_proposals == 0 &&
         selfsend_payment_proposals.size() == 2)
     {
-        CHECK_AND_ASSERT_THROW_MES(selfsend_payment_proposals[0].m_type != selfsend_payment_proposals[1].m_type,
+        CHECK_AND_ASSERT_THROW_MES(selfsend_payment_proposals[0].type != selfsend_payment_proposals[1].type,
             "Semantics check tx proposal selfsends v1: there are two self-send outputs of the same type but no other "
             "outputs (not allowed).");
     }
@@ -442,9 +442,9 @@ static void check_tx_proposal_semantics_output_proposals_v1(const std::vector<Sp
         output_enotes,
         output_amounts_out,
         output_amount_commitment_blinding_factors,
-        tx_supplement.m_output_enote_ephemeral_pubkeys);
+        tx_supplement.output_enote_ephemeral_pubkeys);
 
-    finalize_tx_extra_v1(partial_memo, output_proposals, tx_supplement.m_tx_extra);
+    finalize_tx_extra_v1(partial_memo, output_proposals, tx_supplement.tx_extra);
 
     // 3. at least two outputs are expected
     // note: this rule exists because the vast majority of txs normally have at least 2 outputs (i.e. 1+ outputs and
@@ -459,7 +459,7 @@ static void check_tx_proposal_semantics_output_proposals_v1(const std::vector<Sp
     // 5. onetime addresses should be canonical (sanity check so our tx outputs don't end up with duplicate key images)
     for (const SpEnoteV1 &output_enote : output_enotes)
     {
-        CHECK_AND_ASSERT_THROW_MES(onetime_address_is_canonical(output_enote.m_core),
+        CHECK_AND_ASSERT_THROW_MES(onetime_address_is_canonical(output_enote.core),
             "Semantics check tx proposal outputs v1: an output onetime address is not in the prime subgroup.");
     }
 
@@ -471,7 +471,7 @@ static void check_tx_proposal_semantics_output_proposals_v1(const std::vector<Sp
 
     for (std::size_t output_index{0}; output_index < output_enotes.size(); ++output_index)
     {
-        CHECK_AND_ASSERT_THROW_MES(output_enotes[output_index].m_core.m_amount_commitment ==
+        CHECK_AND_ASSERT_THROW_MES(output_enotes[output_index].core.amount_commitment ==
                 rct::commit(output_amounts_out[output_index],
                     rct::sk2rct(output_amount_commitment_blinding_factors[output_index])),
             "Semantics check tx proposal outputs v1: could not reproduce an output's amount commitment.");
@@ -494,14 +494,14 @@ static void collect_legacy_ring_signature_ring_members(const std::vector<LegacyR
 
     for (std::size_t legacy_input_index{0}; legacy_input_index < legacy_ring_signatures.size(); ++legacy_input_index)
     {
-        CHECK_AND_ASSERT_THROW_MES(legacy_ring_signatures[legacy_input_index].m_reference_set.size() ==
+        CHECK_AND_ASSERT_THROW_MES(legacy_ring_signatures[legacy_input_index].reference_set.size() ==
                 legacy_ring_signature_rings[legacy_input_index].size(),
             "collect legacy ring signature ring members: a reference set doesn't line up with the corresponding ring.");
 
         for (std::size_t ring_index{0}; ring_index < legacy_ring_signature_rings[legacy_input_index].size(); ++ring_index)
         {
             legacy_reference_set_proof_elements_out[
-                    legacy_ring_signatures[legacy_input_index].m_reference_set[ring_index]
+                    legacy_ring_signatures[legacy_input_index].reference_set[ring_index]
                 ] = legacy_ring_signature_rings[legacy_input_index][ring_index];
         }
     }
@@ -583,7 +583,7 @@ void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
     sp_input_key_images.reserve(input_sp_enote_images.size());
 
     for (const LegacyEnoteImageV2 &legacy_enote_image : input_legacy_enote_images)
-        legacy_input_key_images.emplace_back(legacy_enote_image.m_key_image);
+        legacy_input_key_images.emplace_back(legacy_enote_image.key_image);
 
     for (const SpEnoteImageV1 &sp_enote_image : input_sp_enote_images)
         sp_input_key_images.emplace_back(key_image_ref(sp_enote_image));
@@ -616,10 +616,10 @@ void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
         output_enotes,
         output_amounts,
         output_amount_commitment_blinding_factors,
-        tx_supplement.m_output_enote_ephemeral_pubkeys);
+        tx_supplement.output_enote_ephemeral_pubkeys);
 
     // collect full memo
-    finalize_tx_extra_v1(partial_memo, output_proposals, tx_supplement.m_tx_extra);
+    finalize_tx_extra_v1(partial_memo, output_proposals, tx_supplement.tx_extra);
 
     // get proposal prefix
     make_tx_proposal_prefix_v1(tx_version,
@@ -646,10 +646,10 @@ void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
     sp_input_key_images.reserve(sp_partial_inputs.size());
 
     for (const LegacyInputV1 &legacy_input : legacy_inputs)
-        legacy_input_key_images.emplace_back(legacy_input.m_input_image.m_key_image);
+        legacy_input_key_images.emplace_back(legacy_input.input_image.key_image);
 
     for (const SpPartialInputV1 &sp_partial_input : sp_partial_inputs)
-        sp_input_key_images.emplace_back(key_image_ref(sp_partial_input.m_input_image));
+        sp_input_key_images.emplace_back(key_image_ref(sp_partial_input.input_image));
 
     // get proposal prefix
     make_tx_proposal_prefix_v1(tx_version,
@@ -676,7 +676,7 @@ void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
     sp_input_key_images.reserve(sp_input_proposals.size());
 
     for (const LegacyInputProposalV1 &legacy_input_proposal : legacy_input_proposals)
-        legacy_input_key_images.emplace_back(legacy_input_proposal.m_key_image);
+        legacy_input_key_images.emplace_back(legacy_input_proposal.key_image);
 
     for (const SpInputProposalV1 &sp_input_proposal : sp_input_proposals)
         sp_input_key_images.emplace_back(key_image_ref(sp_input_proposal));
@@ -694,12 +694,12 @@ void make_tx_proposal_prefix_v1(const tx_version_t &tx_version,
 void make_tx_proposal_prefix_v1(const SpTxSquashedV1 &tx, rct::key &tx_proposal_prefix_out)
 {
     // get proposal prefix
-    make_tx_proposal_prefix_v1(tx_version_from(tx.m_tx_semantic_rules_version),
-        tx.m_legacy_input_images,
-        tx.m_sp_input_images,
-        tx.m_outputs,
-        tx.m_tx_fee,
-        tx.m_tx_supplement,
+    make_tx_proposal_prefix_v1(tx_version_from(tx.tx_semantic_rules_version),
+        tx.legacy_input_images,
+        tx.sp_input_images,
+        tx.outputs,
+        tx.tx_fee,
+        tx.tx_supplement,
         tx_proposal_prefix_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -829,8 +829,8 @@ void check_v1_coinbase_tx_proposal_semantics_v1(const SpCoinbaseTxProposalV1 &tx
     std::vector<SpCoinbaseEnoteV1> output_enotes;
     SpTxSupplementV1 tx_supplement;
 
-    make_v1_coinbase_outputs_v1(output_proposals, output_enotes, tx_supplement.m_output_enote_ephemeral_pubkeys);
-    finalize_tx_extra_v1(tx_proposal.m_partial_memo, output_proposals, tx_supplement.m_tx_extra);
+    make_v1_coinbase_outputs_v1(output_proposals, output_enotes, tx_supplement.output_enote_ephemeral_pubkeys);
+    finalize_tx_extra_v1(tx_proposal.partial_memo, output_proposals, tx_supplement.tx_extra);
 
     // 3. outputs should be sorted and unique
     CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(output_enotes, compare_Ko),
@@ -839,7 +839,7 @@ void check_v1_coinbase_tx_proposal_semantics_v1(const SpCoinbaseTxProposalV1 &tx
     // 4. onetime addresses should be canonical (sanity check so our tx outputs don't end up with duplicate key images)
     for (const SpCoinbaseEnoteV1 &output_enote : output_enotes)
     {
-        CHECK_AND_ASSERT_THROW_MES(onetime_address_is_canonical(output_enote.m_core),
+        CHECK_AND_ASSERT_THROW_MES(onetime_address_is_canonical(output_enote.core),
             "Semantics check coinbase tx proposal v1: an output onetime address is not in the prime subgroup.");
     }
 
@@ -848,7 +848,7 @@ void check_v1_coinbase_tx_proposal_semantics_v1(const SpCoinbaseTxProposalV1 &tx
     check_v1_tx_supplement_semantics_v1(tx_supplement, output_enotes.size());
 
     // 6. check balance
-    CHECK_AND_ASSERT_THROW_MES(validate_sp_coinbase_amount_balance_v1(tx_proposal.m_block_reward, output_enotes),
+    CHECK_AND_ASSERT_THROW_MES(validate_sp_coinbase_amount_balance_v1(tx_proposal.block_reward, output_enotes),
         "Semantics check coinbase tx proposal v1: outputs do not balance the block reward.");
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -859,8 +859,8 @@ void check_v1_tx_proposal_semantics_v1(const SpTxProposalV1 &tx_proposal,
 {
     // 1. check inputs
     std::vector<rct::xmr_amount> in_amounts;
-    check_tx_proposal_semantics_inputs_v1(tx_proposal.m_legacy_input_proposals,
-        tx_proposal.m_sp_input_proposals,
+    check_tx_proposal_semantics_inputs_v1(tx_proposal.legacy_input_proposals,
+        tx_proposal.sp_input_proposals,
         legacy_spend_pubkey,
         jamtis_spend_pubkey,
         k_view_balance,
@@ -868,10 +868,10 @@ void check_v1_tx_proposal_semantics_v1(const SpTxProposalV1 &tx_proposal,
 
     // 2. check self-send payment proposals
     rct::key input_context;
-    make_standard_input_context_v1(tx_proposal.m_legacy_input_proposals, tx_proposal.m_sp_input_proposals, input_context);
+    make_standard_input_context_v1(tx_proposal.legacy_input_proposals, tx_proposal.sp_input_proposals, input_context);
 
-    check_tx_proposal_semantics_selfsend_outputs_v1(tx_proposal.m_normal_payment_proposals.size(),
-        tx_proposal.m_selfsend_payment_proposals,
+    check_tx_proposal_semantics_selfsend_outputs_v1(tx_proposal.normal_payment_proposals.size(),
+        tx_proposal.selfsend_payment_proposals,
         input_context,
         jamtis_spend_pubkey,
         k_view_balance);
@@ -881,11 +881,11 @@ void check_v1_tx_proposal_semantics_v1(const SpTxProposalV1 &tx_proposal,
     get_output_proposals_v1(tx_proposal, k_view_balance, output_proposals);
 
     std::vector<rct::xmr_amount> output_amounts;
-    check_tx_proposal_semantics_output_proposals_v1(output_proposals, tx_proposal.m_partial_memo, output_amounts);
+    check_tx_proposal_semantics_output_proposals_v1(output_proposals, tx_proposal.partial_memo, output_amounts);
 
     // 4. try to extract the fee value
     rct::xmr_amount raw_transaction_fee;
-    CHECK_AND_ASSERT_THROW_MES(try_get_fee_value(tx_proposal.m_tx_fee, raw_transaction_fee),
+    CHECK_AND_ASSERT_THROW_MES(try_get_fee_value(tx_proposal.tx_fee, raw_transaction_fee),
         "Semantics check tx proposal v1: could not extract fee value from discretized fee.");
 
     // 5. check balance: sum(input amnts) == sum(output amnts) + fee
@@ -900,10 +900,10 @@ void make_v1_coinbase_tx_proposal_v1(const std::uint64_t block_height,
     SpCoinbaseTxProposalV1 &tx_proposal_out)
 {
     // set fields
-    tx_proposal_out.m_block_height             = block_height;
-    tx_proposal_out.m_block_reward             = block_reward;
-    tx_proposal_out.m_normal_payment_proposals = std::move(normal_payment_proposals);
-    make_tx_extra(std::move(additional_memo_elements), tx_proposal_out.m_partial_memo);
+    tx_proposal_out.block_height             = block_height;
+    tx_proposal_out.block_reward             = block_reward;
+    tx_proposal_out.normal_payment_proposals = std::move(normal_payment_proposals);
+    make_tx_extra(std::move(additional_memo_elements), tx_proposal_out.partial_memo);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_v1_tx_proposal_v1(std::vector<LegacyInputProposalV1> legacy_input_proposals,
@@ -921,12 +921,12 @@ void make_v1_tx_proposal_v1(std::vector<LegacyInputProposalV1> legacy_input_prop
     std::sort(sp_input_proposals.begin(), sp_input_proposals.end(), tools::compare_func<SpInputProposalV1>(compare_KI));
 
     // set fields
-    tx_proposal_out.m_legacy_input_proposals     = std::move(legacy_input_proposals);
-    tx_proposal_out.m_sp_input_proposals         = std::move(sp_input_proposals);
-    tx_proposal_out.m_normal_payment_proposals   = std::move(normal_payment_proposals);
-    tx_proposal_out.m_selfsend_payment_proposals = std::move(selfsend_payment_proposals);
-    tx_proposal_out.m_tx_fee                     = discretized_transaction_fee;
-    make_tx_extra(std::move(additional_memo_elements), tx_proposal_out.m_partial_memo);
+    tx_proposal_out.legacy_input_proposals     = std::move(legacy_input_proposals);
+    tx_proposal_out.sp_input_proposals         = std::move(sp_input_proposals);
+    tx_proposal_out.normal_payment_proposals   = std::move(normal_payment_proposals);
+    tx_proposal_out.selfsend_payment_proposals = std::move(selfsend_payment_proposals);
+    tx_proposal_out.tx_fee                     = discretized_transaction_fee;
+    make_tx_extra(std::move(additional_memo_elements), tx_proposal_out.partial_memo);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_v1_tx_proposal_v1(const std::vector<LegacyContextualEnoteRecordV1> &legacy_contextual_inputs,
@@ -1039,7 +1039,7 @@ void make_v1_balance_proof_v1(const std::vector<rct::xmr_amount> &legacy_input_a
     auto vec_wiper = convert_skv_to_rctv(range_proof_blinding_factors, range_proof_amount_commitment_blinding_factors);
     make_bpp2_rangeproofs(range_proof_amounts, range_proof_amount_commitment_blinding_factors, range_proofs);
 
-    balance_proof_out.m_bpp2_proof = std::move(range_proofs);
+    balance_proof_out.bpp2_proof = std::move(range_proofs);
 
     // 4. set the remainder blinding factor
     // blinding_factor = sum(legacy input blinding factors) + sum(sp input blinding factors) - sum(output blinding factors)
@@ -1053,7 +1053,7 @@ void make_v1_balance_proof_v1(const std::vector<rct::xmr_amount> &legacy_input_a
         output_amount_commitment_blinding_factors,
         remainder_blinding_factor);
 
-    balance_proof_out.m_remainder_blinding_factor = rct::sk2rct(remainder_blinding_factor);
+    balance_proof_out.remainder_blinding_factor = rct::sk2rct(remainder_blinding_factor);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void check_v1_partial_tx_semantics_v1(const SpPartialTxV1 &partial_tx,
@@ -1062,19 +1062,19 @@ void check_v1_partial_tx_semantics_v1(const SpPartialTxV1 &partial_tx,
     // 1. get parameters for making mock seraphis ref sets (use minimum parameters for efficiency when possible)
     const SemanticConfigSpRefSetV1 ref_set_config{semantic_config_sp_ref_sets_v1(semantic_rules_version)};
     const SpBinnedReferenceSetConfigV1 bin_config{
-            .m_bin_radius = static_cast<ref_set_bin_dimension_v1_t>(ref_set_config.m_bin_radius_min),
-            .m_num_bin_members = static_cast<ref_set_bin_dimension_v1_t>(ref_set_config.m_num_bin_members_min),
+            .bin_radius = static_cast<ref_set_bin_dimension_v1_t>(ref_set_config.bin_radius_min),
+            .num_bin_members = static_cast<ref_set_bin_dimension_v1_t>(ref_set_config.num_bin_members_min),
         };
 
     // 2. make mock membership proof ref sets
     std::vector<SpMembershipProofPrepV1> sp_membership_proof_preps;
     std::unordered_map<std::uint64_t, rct::key> sp_reference_set_proof_elements;
 
-    prepare_sp_membership_proof_preps_for_tx_simulation_v1(partial_tx.m_sp_input_enotes,
-        partial_tx.m_sp_address_masks,
-        partial_tx.m_sp_commitment_masks,
-        ref_set_config.m_decomp_n_min,
-        ref_set_config.m_decomp_m_min,
+    prepare_sp_membership_proof_preps_for_tx_simulation_v1(partial_tx.sp_input_enotes,
+        partial_tx.sp_address_masks,
+        partial_tx.sp_commitment_masks,
+        ref_set_config.decomp_n_min,
+        ref_set_config.decomp_m_min,
         bin_config,
         sp_membership_proof_preps,
         sp_reference_set_proof_elements);
@@ -1086,23 +1086,23 @@ void check_v1_partial_tx_semantics_v1(const SpPartialTxV1 &partial_tx,
     // 4. collect legacy ring signature ring members for mock validation context
     std::unordered_map<std::uint64_t, rct::ctkey> legacy_reference_set_proof_elements;
 
-    collect_legacy_ring_signature_ring_members(partial_tx.m_legacy_ring_signatures,
-        partial_tx.m_legacy_ring_signature_rings,
+    collect_legacy_ring_signature_ring_members(partial_tx.legacy_ring_signatures,
+        partial_tx.legacy_ring_signature_rings,
         legacy_reference_set_proof_elements);
 
     // 5. make tx (use raw constructor instead of partial tx constructor which would call this function in an infinite
     //    recursion)
     SpTxSquashedV1 test_tx;
     make_seraphis_tx_squashed_v1(semantic_rules_version,
-        partial_tx.m_legacy_input_images,
-        partial_tx.m_sp_input_images,
-        partial_tx.m_outputs,
-        partial_tx.m_balance_proof,
-        partial_tx.m_legacy_ring_signatures,
-        partial_tx.m_sp_image_proofs,
+        partial_tx.legacy_input_images,
+        partial_tx.sp_input_images,
+        partial_tx.outputs,
+        partial_tx.balance_proof,
+        partial_tx.legacy_ring_signatures,
+        partial_tx.sp_image_proofs,
         std::move(sp_membership_proofs),
-        partial_tx.m_tx_supplement,
-        partial_tx.m_tx_fee,
+        partial_tx.tx_supplement,
+        partial_tx.tx_fee,
         test_tx);
 
     // 6. validate tx
@@ -1152,10 +1152,10 @@ void make_v1_partial_tx_v1(std::vector<LegacyInputV1> legacy_inputs,
         output_enotes,
         output_amounts,
         output_amount_commitment_blinding_factors,
-        tx_supplement.m_output_enote_ephemeral_pubkeys);
+        tx_supplement.output_enote_ephemeral_pubkeys);
 
     // 5. collect full memo
-    finalize_tx_extra_v1(partial_memo, output_proposals, tx_supplement.m_tx_extra);
+    finalize_tx_extra_v1(partial_memo, output_proposals, tx_supplement.tx_extra);
 
     // 6. check: inputs and proposal must have consistent proposal prefixes
     rct::key tx_proposal_prefix;
@@ -1169,13 +1169,13 @@ void make_v1_partial_tx_v1(std::vector<LegacyInputV1> legacy_inputs,
 
     for (const LegacyInputV1 &legacy_input : legacy_inputs)
     {
-        CHECK_AND_ASSERT_THROW_MES(legacy_input.m_tx_proposal_prefix == tx_proposal_prefix,
+        CHECK_AND_ASSERT_THROW_MES(legacy_input.tx_proposal_prefix == tx_proposal_prefix,
             "making partial tx v1: a legacy input's proposal prefix is invalid/inconsistent.");
     }
 
     for (const SpPartialInputV1 &partial_input : sp_partial_inputs)
     {
-        CHECK_AND_ASSERT_THROW_MES(partial_input.m_tx_proposal_prefix == tx_proposal_prefix,
+        CHECK_AND_ASSERT_THROW_MES(partial_input.tx_proposal_prefix == tx_proposal_prefix,
             "making partial tx v1: a seraphis partial input's proposal prefix is invalid/inconsistent.");
     }
 
@@ -1208,43 +1208,43 @@ void make_v1_partial_tx_v1(std::vector<LegacyInputV1> legacy_inputs,
         legacy_input_image_amount_commitment_blinding_factors,
         sp_input_image_amount_commitment_blinding_factors,
         output_amount_commitment_blinding_factors,
-        partial_tx_out.m_balance_proof);
+        partial_tx_out.balance_proof);
 
 
     /// copy misc tx pieces
 
     // 1. gather legacy tx input parts
-    partial_tx_out.m_legacy_input_images.reserve(legacy_inputs.size());
-    partial_tx_out.m_legacy_ring_signatures.reserve(legacy_inputs.size());
-    partial_tx_out.m_legacy_ring_signature_rings.reserve(legacy_inputs.size());
+    partial_tx_out.legacy_input_images.reserve(legacy_inputs.size());
+    partial_tx_out.legacy_ring_signatures.reserve(legacy_inputs.size());
+    partial_tx_out.legacy_ring_signature_rings.reserve(legacy_inputs.size());
 
     for (LegacyInputV1 &legacy_input : legacy_inputs)
     {
-        partial_tx_out.m_legacy_input_images.emplace_back(legacy_input.m_input_image);
-        partial_tx_out.m_legacy_ring_signatures.emplace_back(std::move(legacy_input.m_ring_signature));
-        partial_tx_out.m_legacy_ring_signature_rings.emplace_back(std::move(legacy_input.m_ring_members));
+        partial_tx_out.legacy_input_images.emplace_back(legacy_input.input_image);
+        partial_tx_out.legacy_ring_signatures.emplace_back(std::move(legacy_input.ring_signature));
+        partial_tx_out.legacy_ring_signature_rings.emplace_back(std::move(legacy_input.ring_members));
     }
 
     // 2. gather seraphis tx input parts
-    partial_tx_out.m_sp_input_images.reserve(sp_partial_inputs.size());
-    partial_tx_out.m_sp_image_proofs.reserve(sp_partial_inputs.size());
-    partial_tx_out.m_sp_input_enotes.reserve(sp_partial_inputs.size());
-    partial_tx_out.m_sp_address_masks.reserve(sp_partial_inputs.size());
-    partial_tx_out.m_sp_commitment_masks.reserve(sp_partial_inputs.size());
+    partial_tx_out.sp_input_images.reserve(sp_partial_inputs.size());
+    partial_tx_out.sp_image_proofs.reserve(sp_partial_inputs.size());
+    partial_tx_out.sp_input_enotes.reserve(sp_partial_inputs.size());
+    partial_tx_out.sp_address_masks.reserve(sp_partial_inputs.size());
+    partial_tx_out.sp_commitment_masks.reserve(sp_partial_inputs.size());
 
     for (SpPartialInputV1 &partial_input : sp_partial_inputs)
     {
-        partial_tx_out.m_sp_input_images.emplace_back(partial_input.m_input_image);
-        partial_tx_out.m_sp_image_proofs.emplace_back(std::move(partial_input.m_image_proof));
-        partial_tx_out.m_sp_input_enotes.emplace_back(partial_input.m_input_enote_core);
-        partial_tx_out.m_sp_address_masks.emplace_back(partial_input.m_address_mask);
-        partial_tx_out.m_sp_commitment_masks.emplace_back(partial_input.m_commitment_mask);
+        partial_tx_out.sp_input_images.emplace_back(partial_input.input_image);
+        partial_tx_out.sp_image_proofs.emplace_back(std::move(partial_input.image_proof));
+        partial_tx_out.sp_input_enotes.emplace_back(partial_input.input_enote_core);
+        partial_tx_out.sp_address_masks.emplace_back(partial_input.address_mask);
+        partial_tx_out.sp_commitment_masks.emplace_back(partial_input.commitment_mask);
     }
 
     // 3. gather tx output parts
-    partial_tx_out.m_outputs       = std::move(output_enotes);
-    partial_tx_out.m_tx_fee        = discretized_transaction_fee;
-    partial_tx_out.m_tx_supplement = std::move(tx_supplement);
+    partial_tx_out.outputs       = std::move(output_enotes);
+    partial_tx_out.tx_fee        = discretized_transaction_fee;
+    partial_tx_out.tx_supplement = std::move(tx_supplement);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_v1_partial_tx_v1(const SpTxProposalV1 &tx_proposal,
@@ -1264,24 +1264,24 @@ void make_v1_partial_tx_v1(const SpTxProposalV1 &tx_proposal,
     std::sort(sp_partial_inputs.begin(), sp_partial_inputs.end(), tools::compare_func<SpPartialInputV1>(compare_KI));
 
     // 3. legacy inputs must line up with legacy input proposals in the tx proposal
-    CHECK_AND_ASSERT_THROW_MES(legacy_inputs.size() == tx_proposal.m_legacy_input_proposals.size(),
+    CHECK_AND_ASSERT_THROW_MES(legacy_inputs.size() == tx_proposal.legacy_input_proposals.size(),
         "making partial tx v1: number of legacy inputs doesn't match number of legacy input proposals.");
 
     for (std::size_t input_index{0}; input_index < legacy_inputs.size(); ++input_index)
     {
         CHECK_AND_ASSERT_THROW_MES(same_key_image(legacy_inputs[input_index],
-                tx_proposal.m_legacy_input_proposals[input_index]),
+                tx_proposal.legacy_input_proposals[input_index]),
             "making partial tx v1: legacy inputs and input proposals don't line up (inconsistent key images).");
     }
 
     // 4. seraphis partial inputs must line up with seraphis input proposals in the tx proposal
-    CHECK_AND_ASSERT_THROW_MES(sp_partial_inputs.size() == tx_proposal.m_sp_input_proposals.size(),
+    CHECK_AND_ASSERT_THROW_MES(sp_partial_inputs.size() == tx_proposal.sp_input_proposals.size(),
         "making partial tx v1: number of seraphis partial inputs doesn't match number of seraphis input proposals.");
 
     for (std::size_t input_index{0}; input_index < sp_partial_inputs.size(); ++input_index)
     {
         CHECK_AND_ASSERT_THROW_MES(same_key_image(sp_partial_inputs[input_index],
-                tx_proposal.m_sp_input_proposals[input_index]),
+                tx_proposal.sp_input_proposals[input_index]),
             "making partial tx v1: seraphis partial inputs and input proposals don't line up (inconsistent key "
             "images).");
     }
@@ -1294,8 +1294,8 @@ void make_v1_partial_tx_v1(const SpTxProposalV1 &tx_proposal,
     make_v1_partial_tx_v1(std::move(legacy_inputs),
         std::move(sp_partial_inputs),
         std::move(output_proposals),
-        tx_proposal.m_tx_fee,
-        tx_proposal.m_partial_memo,
+        tx_proposal.tx_fee,
+        tx_proposal.partial_memo,
         tx_version,
         partial_tx_out);
 }

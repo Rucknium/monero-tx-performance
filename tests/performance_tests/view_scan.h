@@ -229,12 +229,12 @@ public:
         const sp::jamtis::JamtisPaymentProposalV1 payment_proposal{user_address, rct::xmr_amount{0}, enote_privkey};
         sp::SpOutputProposalV1 output_proposal;
         make_v1_output_proposal_v1(payment_proposal, rct::zero(), output_proposal);
-        m_enote_ephemeral_pubkey = output_proposal.m_enote_ephemeral_pubkey;
+        m_enote_ephemeral_pubkey = output_proposal.enote_ephemeral_pubkey;
         get_enote_v1(output_proposal, m_enote);
 
         // invalidate the view tag to test the performance of short-circuiting on failed view tags
         if (m_test_view_tag_check)
-            ++m_enote.m_view_tag;
+            ++m_enote.view_tag;
 
         return true;
     }
@@ -325,7 +325,7 @@ public:
         // convert to basic enote record (we will use a bunch of copies of this)
         sp::SpBasicEnoteRecordV1 basic_record;
         if (!sp::try_get_basic_enote_record_v1(real_enote,
-                output_proposal.m_enote_ephemeral_pubkey,
+                output_proposal.enote_ephemeral_pubkey,
                 rct::zero(),
                 m_keys.xk_fr,
                 basic_record))
@@ -348,9 +348,9 @@ public:
             if (m_mode == ScannerClientModes::ONE_FAKE_TAG_MATCH &&
                 record_index == num_records - 1)
             {
-                sp::SpEnoteV1 temp_enote{m_basic_records.back().m_enote.unwrap<sp::SpEnoteV1>()};
-                temp_enote.m_core.m_onetime_address = rct::pkGen();
-                m_basic_records.back().m_enote = temp_enote;
+                sp::SpEnoteV1 temp_enote{m_basic_records.back().enote.unwrap<sp::SpEnoteV1>()};
+                temp_enote.core.onetime_address = rct::pkGen();
+                m_basic_records.back().enote = temp_enote;
                 continue;
             }
 
@@ -359,9 +359,9 @@ public:
             sp::jamtis::address_index_t j_temp;
             do
             {
-                sp::jamtis::gen_address_tag(m_basic_records.back().m_nominal_address_tag);
+                sp::jamtis::gen_address_tag(m_basic_records.back().nominal_address_tag);
             } while(sp::jamtis::try_decipher_address_index(*m_cipher_context,
-                m_basic_records.back().m_nominal_address_tag,
+                m_basic_records.back().nominal_address_tag,
                 j_temp));
         }
 
@@ -395,7 +395,7 @@ public:
                 m_mode == ScannerClientModes::ONE_OWNED &&
                 record_index == m_basic_records.size() - 1)
             {
-                return enote_record.m_address_index == m_real_address_index;  //should have succeeded
+                return enote_record.address_index == m_real_address_index;  //should have succeeded
             }
             else if (result)
                 return false;

@@ -289,8 +289,8 @@ bool try_assemble_multisig_partial_sigs_signer_group_attempts(const std::size_t 
         {
             multisig_errors_inout.emplace_back(
                     MultisigSigningErrorBadSigAssembly{
-                            .m_error_code = MultisigSigningErrorBadSigAssembly::ErrorCode::PROOF_KEYS_MISMATCH,
-                            .m_signer_set_filter = signer_group_partial_sigs.first
+                            .error_code = MultisigSigningErrorBadSigAssembly::ErrorCode::PROOF_KEYS_MISMATCH,
+                            .signer_set_filter = signer_group_partial_sigs.first
                         }
                 );
             continue;
@@ -307,8 +307,8 @@ bool try_assemble_multisig_partial_sigs_signer_group_attempts(const std::size_t 
         {
             multisig_errors_inout.emplace_back(
                     MultisigSigningErrorBadSigAssembly{
-                            .m_error_code = MultisigSigningErrorBadSigAssembly::ErrorCode::SIG_ASSEMBLY_FAIL,
-                            .m_signer_set_filter = signer_group_partial_sigs.first
+                            .error_code = MultisigSigningErrorBadSigAssembly::ErrorCode::SIG_ASSEMBLY_FAIL,
+                            .signer_set_filter = signer_group_partial_sigs.first
                         }
                 );
         }
@@ -318,7 +318,7 @@ bool try_assemble_multisig_partial_sigs_signer_group_attempts(const std::size_t 
     {
         multisig_errors_inout.emplace_back(
                 MultisigSigningErrorBadSigSet{
-                        .m_error_code = MultisigSigningErrorBadSigSet::ErrorCode::INVALID_SIG_SET
+                        .error_code = MultisigSigningErrorBadSigSet::ErrorCode::INVALID_SIG_SET
                     }
             );
         return false;

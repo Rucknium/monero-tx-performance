@@ -69,16 +69,16 @@ struct SpTxCoinbaseV1 final
     };
 
     /// semantic rules version
-    SemanticRulesVersion m_tx_semantic_rules_version;
+    SemanticRulesVersion tx_semantic_rules_version;
 
     /// height of the block whose block reward this coinbase tx disperses
-    std::uint64_t m_block_height;
+    std::uint64_t block_height;
     /// block reward dispersed by this coinbase tx
-    rct::xmr_amount m_block_reward;
+    rct::xmr_amount block_reward;
     /// tx outputs (new coinbase enotes)
-    std::vector<SpCoinbaseEnoteV1> m_outputs;
+    std::vector<SpCoinbaseEnoteV1> outputs;
     /// supplemental data for tx
-    SpTxSupplementV1 m_tx_supplement;
+    SpTxSupplementV1 tx_supplement;
 };
 
 /// get size of a possible tx

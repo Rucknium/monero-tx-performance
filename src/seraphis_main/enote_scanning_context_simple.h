@@ -74,7 +74,7 @@ public:
     void get_onchain_chunk(EnoteScanningChunkLedgerV1 &chunk_out) override
     {
         m_enote_finding_context.get_onchain_chunk(m_next_start_index, m_max_chunk_size, chunk_out);
-        m_next_start_index = chunk_out.m_start_index + chunk_out.m_block_ids.size();
+        m_next_start_index = chunk_out.start_index + chunk_out.block_ids.size();
     }
     /// get a scanning chunk for the unconfirmed txs in a ledger
     void get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) override

@@ -123,15 +123,15 @@ LegacyRingSignaturePrepV1 gen_mock_legacy_ring_signature_prep_for_enote_at_pos_v
     gen_mock_legacy_ring_signature_members_for_enote_at_pos_v1(real_reference_index_in_ledger,
         ring_size,
         ledger_context,
-        proof_prep.m_reference_set,
-        proof_prep.m_referenced_enotes,
-        proof_prep.m_real_reference_index);
+        proof_prep.reference_set,
+        proof_prep.referenced_enotes,
+        proof_prep.real_reference_index);
 
     // 2. copy misc pieces
-    proof_prep.m_tx_proposal_prefix        = tx_proposal_prefix;
-    proof_prep.m_reference_image           = real_reference_image;
-    proof_prep.m_reference_view_privkey    = real_reference_view_privkey;
-    proof_prep.m_reference_commitment_mask = commitment_mask;
+    proof_prep.tx_proposal_prefix        = tx_proposal_prefix;
+    proof_prep.reference_image           = real_reference_image;
+    proof_prep.reference_view_privkey    = real_reference_view_privkey;
+    proof_prep.reference_commitment_mask = commitment_mask;
 
     return proof_prep;
 }
@@ -160,8 +160,8 @@ LegacyRingSignaturePrepV1 gen_mock_legacy_ring_signature_prep_v1(const rct::key 
 
         if (enote_to_add == add_real_at_pos)
         {
-            temp.m_onetime_address   = real_reference_enote.dest;
-            temp.m_amount_commitment = real_reference_enote.mask;
+            temp.onetime_address   = real_reference_enote.dest;
+            temp.amount_commitment = real_reference_enote.mask;
         }
 
         mock_enotes.emplace_back(temp);
@@ -237,17 +237,17 @@ std::vector<LegacyRingSignaturePrepV1> gen_mock_legacy_ring_signature_preps_v1(c
     for (const LegacyInputProposalV1 &input_proposal : input_proposals)
     {
         input_enotes.emplace_back(
-                rct::ctkey{ .dest = input_proposal.m_onetime_address, .mask = input_proposal.m_amount_commitment}
+                rct::ctkey{ .dest = input_proposal.onetime_address, .mask = input_proposal.amount_commitment}
             );
         input_images.emplace_back();
 
-        input_images.back().m_key_image = input_proposal.m_key_image;
-        mask_key(input_proposal.m_commitment_mask,
-            input_proposal.m_amount_commitment,
-            input_images.back().m_masked_commitment);
+        input_images.back().key_image = input_proposal.key_image;
+        mask_key(input_proposal.commitment_mask,
+            input_proposal.amount_commitment,
+            input_images.back().masked_commitment);
 
-        input_enote_view_extensions.emplace_back(input_proposal.m_enote_view_extension);
-        commitment_masks.emplace_back(input_proposal.m_commitment_mask);
+        input_enote_view_extensions.emplace_back(input_proposal.enote_view_extension);
+        commitment_masks.emplace_back(input_proposal.commitment_mask);
     }
 
     return gen_mock_legacy_ring_signature_preps_v1(tx_proposal_prefix,
@@ -274,18 +274,18 @@ void make_mock_legacy_ring_signature_preps_for_inputs_v1(const rct::key &tx_prop
 
     for (const LegacyInputProposalV1 &input_proposal : input_proposals)
     {
-        CHECK_AND_ASSERT_THROW_MES(input_ledger_mappings.find(input_proposal.m_key_image) != input_ledger_mappings.end(),
+        CHECK_AND_ASSERT_THROW_MES(input_ledger_mappings.find(input_proposal.key_image) != input_ledger_mappings.end(),
             "make mock legacy ring signature preps: the enote ledger indices map is missing an expected key image.");
 
         rct::key masked_commitment;
-        mask_key(input_proposal.m_commitment_mask, input_proposal.m_amount_commitment, masked_commitment);
+        mask_key(input_proposal.commitment_mask, input_proposal.amount_commitment, masked_commitment);
 
         ring_signature_preps_out.emplace_back(
                 gen_mock_legacy_ring_signature_prep_for_enote_at_pos_v1(tx_proposal_prefix,
-                        input_ledger_mappings.at(input_proposal.m_key_image),
-                        LegacyEnoteImageV2{masked_commitment, input_proposal.m_key_image},
-                        input_proposal.m_enote_view_extension,
-                        input_proposal.m_commitment_mask,
+                        input_ledger_mappings.at(input_proposal.key_image),
+                        LegacyEnoteImageV2{masked_commitment, input_proposal.key_image},
+                        input_proposal.enote_view_extension,
+                        input_proposal.commitment_mask,
                         ring_size,
                         ledger_context)
             );
@@ -307,14 +307,14 @@ bool try_gen_legacy_multisig_ring_signature_preps_v1(const std::vector<LegacyCon
     for (const auto &enote_ledger_mapping : enote_ledger_mappings)
     {
         LegacyMultisigRingSignaturePrepV1 &prep = mapped_preps_out[enote_ledger_mapping.first];
-        prep.m_key_image = enote_ledger_mapping.first;
+        prep.key_image = enote_ledger_mapping.first;
 
         gen_mock_legacy_ring_signature_members_for_enote_at_pos_v1(enote_ledger_mapping.second,
             legacy_ring_size,
             ledger_context,
-            prep.m_reference_set,
-            prep.m_referenced_enotes,
-            prep.m_real_reference_index);
+            prep.reference_set,
+            prep.referenced_enotes,
+            prep.real_reference_index);
     }
 
     return true;

@@ -66,7 +66,7 @@ namespace sp
 struct SpInputProposalV1 final
 {
     /// core of the proposal
-    SpInputProposalCore m_core;
+    SpInputProposalCore core;
 };
 
 /// get the proposal's amount
@@ -80,12 +80,12 @@ const crypto::key_image& key_image_ref(const SpInputProposalV1 &proposal);
 struct SpCoinbaseOutputProposalV1 final
 {
     /// proposed enote
-    SpCoinbaseEnoteV1 m_enote;
+    SpCoinbaseEnoteV1 enote;
 
     /// xK_e: enote ephemeral pubkey
-    crypto::x25519_pubkey m_enote_ephemeral_pubkey;
+    crypto::x25519_pubkey enote_ephemeral_pubkey;
     /// memo elements to add to the tx memo
-    TxExtra m_partial_memo;
+    TxExtra partial_memo;
 };
 
 /// get the proposal's amount
@@ -97,19 +97,19 @@ rct::xmr_amount amount_ref(const SpCoinbaseOutputProposalV1 &proposal);
 struct SpOutputProposalV1 final
 {
     /// core of the proposal
-    SpOutputProposalCore m_core;
+    SpOutputProposalCore core;
 
     /// xK_e: enote ephemeral pubkey
-    crypto::x25519_pubkey m_enote_ephemeral_pubkey;
+    crypto::x25519_pubkey enote_ephemeral_pubkey;
     /// enc_a
-    jamtis::encoded_amount_t m_encoded_amount;
+    jamtis::encoded_amount_t encoded_amount;
     /// addr_tag_enc
-    jamtis::encrypted_address_tag_t m_addr_tag_enc;
+    jamtis::encrypted_address_tag_t addr_tag_enc;
     /// view_tag
-    jamtis::view_tag_t m_view_tag;
+    jamtis::view_tag_t view_tag;
 
     /// memo elements to add to the tx memo
-    TxExtra m_partial_memo;
+    TxExtra partial_memo;
 };
 
 /// get the proposal's amount
@@ -122,18 +122,18 @@ rct::xmr_amount amount_ref(const SpOutputProposalV1 &proposal);
 struct SpMembershipProofPrepV1 final
 {
     /// ref set size = n^m
-    std::size_t m_ref_set_decomp_n;
-    std::size_t m_ref_set_decomp_m;
+    std::size_t ref_set_decomp_n;
+    std::size_t ref_set_decomp_m;
     /// binned representation of ledger indices of enotes referenced by the proof
     /// - only enotes in the ledger can have a membership proof
-    SpBinnedReferenceSetV1 m_binned_reference_set;
+    SpBinnedReferenceSetV1 binned_reference_set;
     /// the referenced enotes (squashed representation)
-    std::vector<rct::key> m_referenced_enotes_squashed;
+    std::vector<rct::key> referenced_enotes_squashed;
     /// the real enote being referenced (plain enote representation)
-    SpEnoteCoreVariant m_real_reference_enote;
+    SpEnoteCoreVariant real_reference_enote;
     /// image masks for the real reference
-    crypto::secret_key m_address_mask;
-    crypto::secret_key m_commitment_mask;
+    crypto::secret_key address_mask;
+    crypto::secret_key commitment_mask;
 };
 
 ////
@@ -145,9 +145,9 @@ struct SpMembershipProofPrepV1 final
 struct SpAlignableMembershipProofV1 final
 {
     /// masked address used in the membership proof (for matching with corresponding input image)
-    rct::key m_masked_address;
+    rct::key masked_address;
     /// the membership proof
-    SpMembershipProofV1 m_membership_proof;
+    SpMembershipProofV1 membership_proof;
 };
 
 ////
@@ -157,13 +157,13 @@ struct SpAlignableMembershipProofV1 final
 struct SpCoinbaseTxProposalV1 final
 {
     /// block height
-    std::uint64_t m_block_height;
+    std::uint64_t block_height;
     /// block reward
-    rct::xmr_amount m_block_reward;
+    rct::xmr_amount block_reward;
     /// outputs (SORTED)
-    std::vector<jamtis::JamtisPaymentProposalV1> m_normal_payment_proposals;
+    std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals;
     /// partial memo
-    TxExtra m_partial_memo;
+    TxExtra partial_memo;
 };
 
 ////
@@ -173,16 +173,16 @@ struct SpCoinbaseTxProposalV1 final
 struct SpTxProposalV1 final
 {
     /// legacy input proposals (SORTED)
-    std::vector<LegacyInputProposalV1> m_legacy_input_proposals;
+    std::vector<LegacyInputProposalV1> legacy_input_proposals;
     /// seraphis input proposals (SORTED)
-    std::vector<SpInputProposalV1> m_sp_input_proposals;
+    std::vector<SpInputProposalV1> sp_input_proposals;
     /// outputs (SORTED)
-    std::vector<jamtis::JamtisPaymentProposalV1> m_normal_payment_proposals;
-    std::vector<jamtis::JamtisPaymentProposalSelfSendV1> m_selfsend_payment_proposals;
+    std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals;
+    std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals;
     /// tx fee
-    DiscretizedFee m_tx_fee;
+    DiscretizedFee tx_fee;
     /// partial memo
-    TxExtra m_partial_memo;
+    TxExtra partial_memo;
 };
 
 ////
@@ -195,22 +195,22 @@ struct SpTxProposalV1 final
 struct SpPartialInputV1 final
 {
     /// input's image
-    SpEnoteImageV1 m_input_image;
+    SpEnoteImageV1 input_image;
     /// input image's proof (demonstrates ownership of the underlying enote and that the key image is correct)
-    SpImageProofV1 m_image_proof;
+    SpImageProofV1 image_proof;
     /// image masks
-    crypto::secret_key m_address_mask;
-    crypto::secret_key m_commitment_mask;
+    crypto::secret_key address_mask;
+    crypto::secret_key commitment_mask;
 
     /// tx proposal prefix (represents the tx inputs/outputs/fee/memo; signed by this partial input's image proof)
-    rct::key m_tx_proposal_prefix;
+    rct::key tx_proposal_prefix;
 
     /// the input enote's core; used for making a membership proof
-    SpEnoteCoreVariant m_input_enote_core;
+    SpEnoteCoreVariant input_enote_core;
     /// input amount
-    rct::xmr_amount m_input_amount;
+    rct::xmr_amount input_amount;
     /// input amount commitment's blinding factor; used for making the balance proof
-    crypto::secret_key m_input_amount_blinding_factor;
+    crypto::secret_key input_amount_blinding_factor;
 };
 
 ////
@@ -220,30 +220,30 @@ struct SpPartialInputV1 final
 struct SpPartialTxV1 final
 {
     /// legacy tx input images  (spent legacy enotes) (SORTED)
-    std::vector<LegacyEnoteImageV2> m_legacy_input_images;
+    std::vector<LegacyEnoteImageV2> legacy_input_images;
     /// seraphis tx input images  (spent seraphis enotes) (SORTED)
-    std::vector<SpEnoteImageV1> m_sp_input_images;
+    std::vector<SpEnoteImageV1> sp_input_images;
     /// tx outputs (new enotes) (SORTED)
-    std::vector<SpEnoteV1> m_outputs;
+    std::vector<SpEnoteV1> outputs;
     /// balance proof (balance proof and range proofs)
-    SpBalanceProofV1 m_balance_proof;
+    SpBalanceProofV1 balance_proof;
     /// legacy ring signatures: membership/ownership/unspentness for each legacy input (ALIGNED TO LEGACY INPUTS)
-    std::vector<LegacyRingSignatureV4> m_legacy_ring_signatures;
+    std::vector<LegacyRingSignatureV4> legacy_ring_signatures;
     /// composition proofs: ownership/unspentness for each seraphis input (ALIGNED TO SERAPHIS INPUTS)
-    std::vector<SpImageProofV1> m_sp_image_proofs;
+    std::vector<SpImageProofV1> sp_image_proofs;
     /// tx fee (discretized representation)
-    DiscretizedFee m_tx_fee;
+    DiscretizedFee tx_fee;
     /// supplemental data for tx
-    SpTxSupplementV1 m_tx_supplement;
+    SpTxSupplementV1 tx_supplement;
 
     /// ring members for each legacy input; for validating ring signatures stored here (ALIGNED TO LEGACY INPUTS)
-    std::vector<rct::ctkeyV> m_legacy_ring_signature_rings;
+    std::vector<rct::ctkeyV> legacy_ring_signature_rings;
 
     /// seraphis input enotes; for creating seraphis input membership proofs (ALIGNED TO SERAPHIS INPUTS)
-    std::vector<SpEnoteCoreVariant> m_sp_input_enotes;
+    std::vector<SpEnoteCoreVariant> sp_input_enotes;
     /// seraphis image masks; for creating seraphis input membership proofs (ALIGNED TO SERAPHIS INPUTS)
-    std::vector<crypto::secret_key> m_sp_address_masks;
-    std::vector<crypto::secret_key> m_sp_commitment_masks;
+    std::vector<crypto::secret_key> sp_address_masks;
+    std::vector<crypto::secret_key> sp_commitment_masks;
 };
 
 /// comparison method for sorting: a.Ko < b.Ko

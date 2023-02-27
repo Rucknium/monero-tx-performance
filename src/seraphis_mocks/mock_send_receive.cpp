@@ -81,10 +81,10 @@ void convert_outlay_to_payment_proposal(const rct::xmr_amount outlay_amount,
     jamtis::JamtisPaymentProposalV1 &payment_proposal_out)
 {
     payment_proposal_out = jamtis::JamtisPaymentProposalV1{
-            .m_destination             = destination,
-            .m_amount                  = outlay_amount,
-            .m_enote_ephemeral_privkey = crypto::x25519_secret_key_gen(),
-            .m_partial_memo            = partial_memo_for_destination
+            .destination             = destination,
+            .amount                  = outlay_amount,
+            .enote_ephemeral_privkey = crypto::x25519_secret_key_gen(),
+            .partial_memo            = partial_memo_for_destination
         };
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -296,7 +296,7 @@ void construct_tx_for_mock_ledger_v1(const legacy_mock_keys &local_user_legacy_k
     std::vector<LegacyRingSignaturePrepV1> legacy_ring_signature_preps;
     make_mock_legacy_ring_signature_preps_for_inputs_v1(tx_proposal_prefix,
         legacy_input_ledger_mappings,
-        tx_proposal.m_legacy_input_proposals,
+        tx_proposal.legacy_input_proposals,
         legacy_ring_size,
         ledger_context,
         legacy_ring_signature_preps);
@@ -304,7 +304,7 @@ void construct_tx_for_mock_ledger_v1(const legacy_mock_keys &local_user_legacy_k
     // 8. prepare for membership proofs
     std::vector<SpMembershipProofPrepV1> sp_membership_proof_preps;
     make_mock_sp_membership_proof_preps_for_inputs_v1(sp_input_ledger_mappings,
-        tx_proposal.m_sp_input_proposals,
+        tx_proposal.sp_input_proposals,
         ref_set_decomp_n,
         ref_set_decomp_m,
         bin_config,

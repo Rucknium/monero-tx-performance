@@ -29,7 +29,7 @@
 // Interface for robust balance recovery framework (works for both legacy and seraphis backends).
 // PRECONDITIONS:
 // 1. chunks must be built from an atomic view of the source cache (ledger, unconfirmed cache, offchain cache)
-// 2. per chunk: m_contextual_key_images must reference a tx recorded in m_basic_records_per_tx (even if you
+// 2. per chunk: contextual_key_images must reference a tx recorded in basic_records_per_tx (even if you
 //    need to add empty map entries to achieve that)
 // 3. any call to get a chunk from an enote scanning context should produce a chunk that is at least as fresh as any
 //    other chunk obtained from that context (atomic ordering)
@@ -77,15 +77,15 @@ namespace sp
 struct EnoteScanningChunkLedgerV1 final
 {
     /// start index
-    std::uint64_t m_start_index;
+    std::uint64_t start_index;
     /// block id at 'start index - 1'  (implicitly ignored if start_index == 0)
-    rct::key m_prefix_block_id;
+    rct::key prefix_block_id;
     /// block ids in range [start index, end index)
-    std::vector<rct::key> m_block_ids;
+    std::vector<rct::key> block_ids;
     /// owned enote candidates in range [start index, end index)  (mapped to tx id)
-    std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> m_basic_records_per_tx;
+    std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> basic_records_per_tx;
     /// key images from txs with owned enote candidates in range [start index, end index)
-    std::list<SpContextualKeyImageSetV1> m_contextual_key_images;
+    std::list<SpContextualKeyImageSetV1> contextual_key_images;
 };
 
 ////
@@ -96,9 +96,9 @@ struct EnoteScanningChunkLedgerV1 final
 struct EnoteScanningChunkNonLedgerV1 final
 {
     /// owned enote candidates in a non-ledger context (mapped to tx id)
-    std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> m_basic_records_per_tx;
+    std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> basic_records_per_tx;
     /// key images from txs with owned enote candidates in the non-ledger context
-    std::list<SpContextualKeyImageSetV1> m_contextual_key_images;
+    std::list<SpContextualKeyImageSetV1> contextual_key_images;
 };
 
 ////
@@ -108,11 +108,11 @@ struct EnoteScanningChunkNonLedgerV1 final
 struct RefreshLedgerEnoteStoreConfig final
 {
     /// number of blocks below highest known contiguous block to start scanning
-    std::uint64_t m_reorg_avoidance_depth{10};
+    std::uint64_t reorg_avoidance_depth{10};
     /// max number of blocks per on-chain scanning chunk
-    std::uint64_t m_max_chunk_size{100};
+    std::uint64_t max_chunk_size{100};
     /// maximum number of times to try rescanning if a partial reorg is detected
-    std::uint64_t m_max_partialscan_attempts{3};
+    std::uint64_t max_partialscan_attempts{3};
 };
 
 /**

@@ -327,19 +327,19 @@ void make_enote_ownership_proof_v1_sender_plain(const crypto::x25519_secret_key 
     // 1. compute the enote ephemeral pubkey
     crypto::x25519_pubkey enote_ephemeral_pubkey;
     jamtis::make_jamtis_enote_ephemeral_pubkey(enote_ephemeral_privkey,
-        recipient_destination.m_addr_K3,
+        recipient_destination.addr_K3,
         enote_ephemeral_pubkey);
 
     // 2. prepare the sender-receiver secret
     rct::key sender_receiver_secret;
     jamtis::make_jamtis_sender_receiver_secret_plain(enote_ephemeral_privkey,
-        recipient_destination.m_addr_K2,
+        recipient_destination.addr_K2,
         enote_ephemeral_pubkey,
         input_context,
         sender_receiver_secret);
 
     // 3. complete the proof
-    make_enote_ownership_proof_v1(recipient_destination.m_addr_K1,
+    make_enote_ownership_proof_v1(recipient_destination.addr_K1,
         sender_receiver_secret,
         amount_commitment,
         onetime_address,
@@ -396,41 +396,41 @@ void make_enote_ownership_proof_v1_receiver(const SpEnoteRecordV1 &enote_record,
     rct::key jamtis_address_spend_key;
     jamtis::make_jamtis_address_spend_key(jamtis_spend_pubkey,
         s_generate_address,
-        enote_record.m_address_index,
+        enote_record.address_index,
         jamtis_address_spend_key);
 
     // 3. prepare the sender-receiver secret
     rct::key sender_receiver_secret;
     jamtis::JamtisSelfSendType self_send_type;
 
-    if (jamtis::try_get_jamtis_self_send_type(enote_record.m_type, self_send_type))
+    if (jamtis::try_get_jamtis_self_send_type(enote_record.type, self_send_type))
     {
         jamtis::make_jamtis_sender_receiver_secret_selfsend(k_view_balance,
-            enote_record.m_enote_ephemeral_pubkey,
-            enote_record.m_input_context,
+            enote_record.enote_ephemeral_pubkey,
+            enote_record.input_context,
             self_send_type,
             sender_receiver_secret);
     }
     else
     {
         jamtis::make_jamtis_sender_receiver_secret_plain(xk_find_received,
-            enote_record.m_enote_ephemeral_pubkey,
-            enote_record.m_enote_ephemeral_pubkey,
-            enote_record.m_input_context,
+            enote_record.enote_ephemeral_pubkey,
+            enote_record.enote_ephemeral_pubkey,
+            enote_record.input_context,
             sender_receiver_secret);
     }
 
     // 4. complete the proof
     make_enote_ownership_proof_v1(jamtis_address_spend_key,
         sender_receiver_secret,
-        amount_commitment_ref(enote_record.m_enote),
-        onetime_address_ref(enote_record.m_enote),
+        amount_commitment_ref(enote_record.enote),
+        onetime_address_ref(enote_record.enote),
         proof_out);
 
     // 5. verify that the proof was created successfully
     CHECK_AND_ASSERT_THROW_MES(verify_enote_ownership_proof_v1(proof_out,
-            amount_commitment_ref(enote_record.m_enote),
-            onetime_address_ref(enote_record.m_enote)),
+            amount_commitment_ref(enote_record.enote),
+            onetime_address_ref(enote_record.enote)),
         "make enote ownership proof (v1 recipient): failed to make proof.");
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -513,15 +513,15 @@ void make_enote_key_image_proof_v1(const SpEnoteRecordV1 &enote_record,
 {
     // 1. y = k_x + k_vb
     crypto::secret_key y;
-    sc_add(to_bytes(y), to_bytes(enote_record.m_enote_view_extension_x), to_bytes(k_view_balance));
+    sc_add(to_bytes(y), to_bytes(enote_record.enote_view_extension_x), to_bytes(k_view_balance));
 
     // 2. z = k_u + k_m
     crypto::secret_key z;
-    sc_add(to_bytes(z), to_bytes(enote_record.m_enote_view_extension_u), to_bytes(sp_spend_privkey));
+    sc_add(to_bytes(z), to_bytes(enote_record.enote_view_extension_u), to_bytes(sp_spend_privkey));
 
     // 3. complete the full proof
-    make_enote_key_image_proof_v1(onetime_address_ref(enote_record.m_enote),
-        enote_record.m_enote_view_extension_g,
+    make_enote_key_image_proof_v1(onetime_address_ref(enote_record.enote),
+        enote_record.enote_view_extension_g,
         y,
         z,
         proof_out);
@@ -562,19 +562,19 @@ void make_enote_unspent_proof_v1(const SpEnoteRecordV1 &enote_record,
     // 1. prepare private key components
     // note: pubkey components will be stored in the matrix proofs
     // a. ko_g = k_g
-    const crypto::secret_key kog_skey{enote_record.m_enote_view_extension_g};
+    const crypto::secret_key kog_skey{enote_record.enote_view_extension_g};
 
     // b. ko_x = (k_x + k_vb)
     crypto::secret_key kox_skey;
-    sc_add(to_bytes(kox_skey), to_bytes(enote_record.m_enote_view_extension_x), to_bytes(k_view_balance));
+    sc_add(to_bytes(kox_skey), to_bytes(enote_record.enote_view_extension_x), to_bytes(k_view_balance));
 
     // c. ko_u = (k_u + k_m)
     crypto::secret_key kou_skey;
-    sc_add(to_bytes(kou_skey), to_bytes(enote_record.m_enote_view_extension_u), to_bytes(sp_spend_privkey));
+    sc_add(to_bytes(kou_skey), to_bytes(enote_record.enote_view_extension_u), to_bytes(sp_spend_privkey));
 
     // 2. message to sign in the proofs
     rct::key message;
-    make_enote_unspent_proof_message_v1(onetime_address_ref(enote_record.m_enote), test_KI, message);
+    make_enote_unspent_proof_message_v1(onetime_address_ref(enote_record.enote), test_KI, message);
 
     // 3. proof: k_g G on G
     MatrixProof kog_proof;
@@ -590,7 +590,7 @@ void make_enote_unspent_proof_v1(const SpEnoteRecordV1 &enote_record,
 
     // 6. assemble full proof
     proof_out = EnoteUnspentProofV1{
-            .Ko                          = onetime_address_ref(enote_record.m_enote),
+            .Ko                          = onetime_address_ref(enote_record.enote),
             .test_KI                     = test_KI,
             .g_component_proof           = std::move(kog_proof),
             .x_component_transform_proof = std::move(kox_proof),
@@ -678,20 +678,20 @@ void make_tx_funded_proof_v1(const rct::key &message,
     const crypto::secret_key t_k_new{rct::rct2sk(rct::skGen())};
 
     rct::key masked_address;
-    mask_key(t_k_new, onetime_address_ref(enote_record.m_enote), masked_address);  //K" = t_k_new G + Ko
+    mask_key(t_k_new, onetime_address_ref(enote_record.enote), masked_address);  //K" = t_k_new G + Ko
 
     // 2. prepare privkeys of K"
     // a. x = t_k_new + k_g
     crypto::secret_key x;
-    sc_add(to_bytes(x), to_bytes(t_k_new), to_bytes(enote_record.m_enote_view_extension_g));
+    sc_add(to_bytes(x), to_bytes(t_k_new), to_bytes(enote_record.enote_view_extension_g));
 
     // b. y = k_x + k_vb
     crypto::secret_key y;
-    sc_add(to_bytes(y), to_bytes(enote_record.m_enote_view_extension_x), to_bytes(k_view_balance));
+    sc_add(to_bytes(y), to_bytes(enote_record.enote_view_extension_x), to_bytes(k_view_balance));
 
     // c. z = k_u + k_m
     crypto::secret_key z;
-    sc_add(to_bytes(z), to_bytes(enote_record.m_enote_view_extension_u), to_bytes(sp_spend_privkey));
+    sc_add(to_bytes(z), to_bytes(enote_record.enote_view_extension_u), to_bytes(sp_spend_privkey));
 
     // 3. make the composition proof
     SpCompositionProof composition_proof;
@@ -701,7 +701,7 @@ void make_tx_funded_proof_v1(const rct::key &message,
     proof_out = TxFundedProofV1{
             .message           = message,
             .masked_address    = masked_address,
-            .KI                = enote_record.m_key_image,
+            .KI                = enote_record.key_image,
             .composition_proof = composition_proof
         };
 }
@@ -774,21 +774,21 @@ void make_reserved_enote_proof_v1(const SpContextualEnoteRecordV1 &contextual_re
 {
     // 1. make enote ownership proof
     EnoteOwnershipProofV1 enote_ownership_proof;
-    make_enote_ownership_proof_v1_receiver(contextual_record.m_record,
+    make_enote_ownership_proof_v1_receiver(contextual_record.record,
         jamtis_spend_pubkey,
         k_view_balance,
         enote_ownership_proof);
 
     // 2. make amount proof
     EnoteAmountProofV1 amount_proof;
-    make_enote_amount_proof_v1(contextual_record.m_record.m_amount,
-        contextual_record.m_record.m_amount_blinding_factor,
-        amount_commitment_ref(contextual_record.m_record.m_enote),
+    make_enote_amount_proof_v1(contextual_record.record.amount,
+        contextual_record.record.amount_blinding_factor,
+        amount_commitment_ref(contextual_record.record.enote),
         amount_proof);
 
     // 3. make key image proof
     EnoteKeyImageProofV1 key_image_proof;
-    make_enote_key_image_proof_v1(contextual_record.m_record,
+    make_enote_key_image_proof_v1(contextual_record.record,
         sp_spend_privkey,
         k_view_balance,
         key_image_proof);
@@ -797,7 +797,7 @@ void make_reserved_enote_proof_v1(const SpContextualEnoteRecordV1 &contextual_re
     make_reserved_enote_proof_v1(enote_ownership_proof,
         amount_proof,
         key_image_proof,
-        contextual_record.m_origin_context.m_enote_ledger_index,
+        contextual_record.origin_context.enote_ledger_index,
         proof_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -874,11 +874,11 @@ void make_reserve_proof_v1(const rct::key &message,
     for (const SpContextualEnoteRecordV1 &record : reserved_enote_records)
     {
         // a. skip records that aren't onchain
-        if (record.m_origin_context.m_origin_status != SpEnoteOriginStatus::ONCHAIN)
+        if (record.origin_context.origin_status != SpEnoteOriginStatus::ONCHAIN)
             continue;
 
         // b. skip records that aren't unspent
-        if (record.m_spent_context.m_spent_status != SpEnoteSpentStatus::UNSPENT)
+        if (record.spent_context.spent_status != SpEnoteSpentStatus::UNSPENT)
             continue;
 
         // c. make a reserved enote proof
@@ -889,7 +889,7 @@ void make_reserve_proof_v1(const rct::key &message,
             tools::add_element(reserved_enote_proofs));
 
         // d. save the address index
-        address_indices.insert(record.m_record.m_address_index);
+        address_indices.insert(record.record.address_index);
     }
 
     // 2. make address ownership proofs for all the unique addresses that own records in the reserve proof

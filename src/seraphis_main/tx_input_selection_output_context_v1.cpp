@@ -100,16 +100,16 @@ OutputSetContextForInputSelectionV1::OutputSetContextForInputSelectionV1(
     m_self_send_output_types.reserve(selfsend_payment_proposals.size());
 
     for (const jamtis::JamtisPaymentProposalSelfSendV1 &selfsend_proposal : selfsend_payment_proposals)
-        m_self_send_output_types.emplace_back(selfsend_proposal.m_type);
+        m_self_send_output_types.emplace_back(selfsend_proposal.type);
 
     // 2. collect total amount
     m_total_output_amount = 0;
 
     for (const jamtis::JamtisPaymentProposalV1 &normal_proposal : normal_payment_proposals)
-        m_total_output_amount += normal_proposal.m_amount;
+        m_total_output_amount += normal_proposal.amount;
 
     for (const jamtis::JamtisPaymentProposalSelfSendV1 &selfsend_proposal : selfsend_payment_proposals)
-        m_total_output_amount += selfsend_proposal.m_amount;
+        m_total_output_amount += selfsend_proposal.amount;
 }
 //-------------------------------------------------------------------------------------------------------------------
 boost::multiprecision::uint128_t OutputSetContextForInputSelectionV1::total_amount() const

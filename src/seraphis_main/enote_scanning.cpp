@@ -141,9 +141,9 @@ enum class ScanStatus
 struct ChainContiguityMarker final
 {
     /// index of the block
-    std::uint64_t m_block_index;
+    std::uint64_t block_index;
     /// id of the block (optional)
-    boost::optional<rct::key> m_block_id;
+    boost::optional<rct::key> block_id;
 };
 
 //-------------------------------------------------------------------------------------------------------------------
@@ -179,15 +179,15 @@ static void set_initial_contiguity_marker(const EnoteStoreUpdater &enote_store_u
     ChainContiguityMarker &contiguity_marker_inout)
 {
     // 1. set the block index
-    contiguity_marker_inout.m_block_index = initial_refresh_index - 1;
+    contiguity_marker_inout.block_index = initial_refresh_index - 1;
 
     // 2. set the block id if we aren't at the updater's prefix block
-    if (contiguity_marker_inout.m_block_index != enote_store_updater.refresh_index() - 1)
+    if (contiguity_marker_inout.block_index != enote_store_updater.refresh_index() - 1)
     {
         // getting a block id should always succeed if we are starting past the prefix block of the updater
-        contiguity_marker_inout.m_block_id = rct::zero();
+        contiguity_marker_inout.block_id = rct::zero();
         CHECK_AND_ASSERT_THROW_MES(enote_store_updater.try_get_block_id(initial_refresh_index - 1,
-                *(contiguity_marker_inout.m_block_id)),
+                *(contiguity_marker_inout.block_id)),
             "refresh ledger for enote store: could not get block id for start of scanning but a block id was "
             "expected (bug).");
     }
@@ -205,10 +205,10 @@ static void check_enote_scan_chunk_map_semantics_v1(
     {
         for (const ContextualBasicRecordVariant &contextual_basic_record : tx_basic_records.second)
         {
-            CHECK_AND_ASSERT_THROW_MES(origin_context_ref(contextual_basic_record).m_origin_status ==
+            CHECK_AND_ASSERT_THROW_MES(origin_context_ref(contextual_basic_record).origin_status ==
                     expected_origin_status,
                 "enote chunk semantics check: contextual basic record doesn't have expected origin status.");
-            CHECK_AND_ASSERT_THROW_MES(origin_context_ref(contextual_basic_record).m_transaction_id ==
+            CHECK_AND_ASSERT_THROW_MES(origin_context_ref(contextual_basic_record).transaction_id ==
                     tx_basic_records.first,
                 "enote chunk semantics check: contextual basic record doesn't have origin tx id matching mapped id.");
         }
@@ -217,7 +217,7 @@ static void check_enote_scan_chunk_map_semantics_v1(
     // 2. check contextual key images
     for (const auto &contextual_key_image_set : chunk_contextual_key_images)
     {
-        CHECK_AND_ASSERT_THROW_MES(contextual_key_image_set.m_spent_context.m_spent_status == expected_spent_status,
+        CHECK_AND_ASSERT_THROW_MES(contextual_key_image_set.spent_context.spent_status == expected_spent_status,
             "enote chunk semantics check: contextual key image doesn't have expected spent status.");
 
         // notes:
@@ -232,7 +232,7 @@ static void check_enote_scan_chunk_map_semantics_v1(
         //   - when doing legacy scanning, you need to include all key images from the chain since legacy tx construction
         //     does/did not require all txs to have a self-send output
         CHECK_AND_ASSERT_THROW_MES(
-                chunk_basic_records_per_tx.find(contextual_key_image_set.m_spent_context.m_transaction_id) !=
+                chunk_basic_records_per_tx.find(contextual_key_image_set.spent_context.transaction_id) !=
                 chunk_basic_records_per_tx.end(),
             "enote chunk semantics check: contextual key image transaction id is not mirrored in basic records map.");
     }
@@ -241,14 +241,14 @@ static void check_enote_scan_chunk_map_semantics_v1(
 //-------------------------------------------------------------------------------------------------------------------
 static bool chunk_is_empty(const EnoteScanningChunkLedgerV1 &chunk)
 {
-    return chunk.m_block_ids.size() == 0;
+    return chunk.block_ids.size() == 0;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static bool chunk_is_empty(const EnoteScanningChunkNonLedgerV1 &chunk)
 {
-    return chunk.m_basic_records_per_tx.size() == 0 &&
-        chunk.m_contextual_key_images.size() == 0;
+    return chunk.basic_records_per_tx.size() == 0 &&
+        chunk.contextual_key_images.size() == 0;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -259,22 +259,22 @@ static bool contiguity_check(const ChainContiguityMarker &marker_A, const ChainC
     // note: this odd rule exists so that if the chain index is below our start index, we will be considered
     //       contiguous with it and won't erroneously think we have encountered a reorg (i.e. a broken contiguity);
     //       to explore that situation, change the '<=' to '==' then step through the unit tests that break
-    if (!marker_A.m_block_id &&
-        marker_B.m_block_index + 1 <= marker_A.m_block_index + 1)
+    if (!marker_A.block_id &&
+        marker_B.block_index + 1 <= marker_A.block_index + 1)
         return true;
 
-    if (!marker_B.m_block_id &&
-        marker_A.m_block_index + 1 <= marker_B.m_block_index + 1)
+    if (!marker_B.block_id &&
+        marker_A.block_index + 1 <= marker_B.block_index + 1)
         return true;
 
     // 2. otherwise, indices must match
-    if (marker_A.m_block_index != marker_B.m_block_index)
+    if (marker_A.block_index != marker_B.block_index)
         return false;
 
     // 3. specified block ids must match
-    if (marker_A.m_block_id &&
-        marker_B.m_block_id &&
-        marker_A.m_block_id != marker_B.m_block_id)
+    if (marker_A.block_id &&
+        marker_B.block_id &&
+        marker_A.block_id != marker_B.block_id)
         return false;
 
     // 4. unspecified block ids automatically match with specified and unspecified block ids
@@ -288,7 +288,7 @@ static ScanStatus get_scan_status(const ChainContiguityMarker &contiguity_marker
     const std::uint64_t full_discontinuity_test_index)
 {
     // 1. success case: check if this chunk is contiguous with our marker
-    if (contiguity_check(contiguity_marker, ChainContiguityMarker{chunk.m_start_index - 1, chunk.m_prefix_block_id}))
+    if (contiguity_check(contiguity_marker, ChainContiguityMarker{chunk.start_index - 1, chunk.prefix_block_id}))
         return ScanStatus::SUCCESS;
 
     // 2. failure case: the chunk is not contiguous, check if we need to full scan
@@ -319,8 +319,8 @@ static void update_alignment_marker(const EnoteStoreUpdater &enote_store_updater
         if (!(next_block_id == block_ids[block_index]))
             return;
 
-        alignment_marker_inout.m_block_index = start_index + block_index;
-        alignment_marker_inout.m_block_id    = next_block_id;
+        alignment_marker_inout.block_index = start_index + block_index;
+        alignment_marker_inout.block_id    = next_block_id;
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -331,20 +331,20 @@ static void align_block_ids(const EnoteStoreUpdater &enote_store_updater,
     std::vector<rct::key> &scanned_block_ids_cropped_inout)
 {
     // 1. update the alignment marker
-    update_alignment_marker(enote_store_updater, chunk.m_start_index, chunk.m_block_ids, alignment_marker_inout);
+    update_alignment_marker(enote_store_updater, chunk.start_index, chunk.block_ids, alignment_marker_inout);
 
     // 2. sanity checks
-    CHECK_AND_ASSERT_THROW_MES(alignment_marker_inout.m_block_index + 1 >= chunk.m_start_index,
+    CHECK_AND_ASSERT_THROW_MES(alignment_marker_inout.block_index + 1 >= chunk.start_index,
         "enote scanning (align block ids): chunk start index exceeds the post-alignment block (bug).");
-    CHECK_AND_ASSERT_THROW_MES(alignment_marker_inout.m_block_index + 1 - chunk.m_start_index <=
-            chunk.m_block_ids.size(),
+    CHECK_AND_ASSERT_THROW_MES(alignment_marker_inout.block_index + 1 - chunk.start_index <=
+            chunk.block_ids.size(),
         "enote scanning (align block ids): the alignment range is larger than the chunk's block range (bug).");
 
     // 3. crop the chunk block ids
     scanned_block_ids_cropped_inout.clear();
     scanned_block_ids_cropped_inout.insert(scanned_block_ids_cropped_inout.end(),
-        std::next(chunk.m_block_ids.begin(), alignment_marker_inout.m_block_index + 1 - chunk.m_start_index),
-        chunk.m_block_ids.end());
+        std::next(chunk.block_ids.begin(), alignment_marker_inout.block_index + 1 - chunk.start_index),
+        chunk.block_ids.end());
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -365,7 +365,7 @@ static ScanStatus process_ledger_onchain_pass(const std::uint64_t first_contigui
         ChainContiguityMarker alignment_marker{contiguity_marker_inout};
 
         // b. validate chunk semantics (this should check all array bounds to prevent out-of-range accesses below)
-        check_v1_enote_scan_chunk_ledger_semantics_v1(new_onchain_chunk, contiguity_marker_inout.m_block_index);
+        check_v1_enote_scan_chunk_ledger_semantics_v1(new_onchain_chunk, contiguity_marker_inout.block_index);
 
         // c. check if this chunk is contiguous with the contiguity marker
         // - if not contiguous, then there must have been a reorg, so we need to rescan
@@ -373,7 +373,7 @@ static ScanStatus process_ledger_onchain_pass(const std::uint64_t first_contigui
                 get_scan_status(contiguity_marker_inout,
                     new_onchain_chunk,
                     first_contiguity_index,
-                    contiguity_marker_inout.m_block_index)
+                    contiguity_marker_inout.block_index)
             };
 
         if (scan_status != ScanStatus::SUCCESS)
@@ -391,23 +391,23 @@ static ScanStatus process_ledger_onchain_pass(const std::uint64_t first_contigui
         //   to the top of this chunk
         if (scanned_block_ids_cropped.size() > 0)
         {
-            enote_store_updater_inout.consume_onchain_chunk(new_onchain_chunk.m_basic_records_per_tx,
-                new_onchain_chunk.m_contextual_key_images,
-                alignment_marker.m_block_index + 1,
-                alignment_marker.m_block_id ? *(alignment_marker.m_block_id) : rct::zero(),
+            enote_store_updater_inout.consume_onchain_chunk(new_onchain_chunk.basic_records_per_tx,
+                new_onchain_chunk.contextual_key_images,
+                alignment_marker.block_index + 1,
+                alignment_marker.block_id ? *(alignment_marker.block_id) : rct::zero(),
                 scanned_block_ids_cropped);
         }
 
         // f. set contiguity marker to last block of this chunk
-        contiguity_marker_inout.m_block_index = new_onchain_chunk.m_start_index + new_onchain_chunk.m_block_ids.size() - 1;
-        contiguity_marker_inout.m_block_id    = new_onchain_chunk.m_block_ids.back();
+        contiguity_marker_inout.block_index = new_onchain_chunk.start_index + new_onchain_chunk.block_ids.size() - 1;
+        contiguity_marker_inout.block_id    = new_onchain_chunk.block_ids.back();
 
         // g. get next chunk
         scan_process_inout.get_onchain_chunk(new_onchain_chunk);
     }
 
     // 2. verify that the last chunk obtained is an empty chunk representing the top of the current blockchain
-    CHECK_AND_ASSERT_THROW_MES(new_onchain_chunk.m_block_ids.size() == 0,
+    CHECK_AND_ASSERT_THROW_MES(new_onchain_chunk.block_ids.size() == 0,
         "process ledger for onchain pass: final chunk does not have zero block ids as expected.");
 
     // 3. check if the scan process is aborted
@@ -428,7 +428,7 @@ static ScanStatus process_ledger_onchain_pass(const std::uint64_t first_contigui
             get_scan_status(contiguity_marker_inout,
                 new_onchain_chunk,
                 first_contiguity_index,
-                new_onchain_chunk.m_start_index - 1)
+                new_onchain_chunk.start_index - 1)
         };
 
     if (scan_status != ScanStatus::SUCCESS)
@@ -439,8 +439,8 @@ static ScanStatus process_ledger_onchain_pass(const std::uint64_t first_contigui
     //   its state
     enote_store_updater_inout.consume_onchain_chunk({},
         {},
-        contiguity_marker_inout.m_block_index + 1,
-        contiguity_marker_inout.m_block_id ? *(contiguity_marker_inout.m_block_id) : rct::zero(),
+        contiguity_marker_inout.block_index + 1,
+        contiguity_marker_inout.block_id ? *(contiguity_marker_inout.block_id) : rct::zero(),
         {});
 
     return ScanStatus::SUCCESS;
@@ -462,8 +462,8 @@ static ScanStatus process_ledger_unconfirmed_pass(EnoteScanProcessLedger &scan_p
 
     // 3. consume the chunk
     enote_store_updater_inout.consume_nonledger_chunk(SpEnoteOriginStatus::UNCONFIRMED,
-        unconfirmed_chunk.m_basic_records_per_tx,
-        unconfirmed_chunk.m_contextual_key_images);
+        unconfirmed_chunk.basic_records_per_tx,
+        unconfirmed_chunk.contextual_key_images);
 
     return ScanStatus::SUCCESS;
 }
@@ -477,7 +477,7 @@ static ScanStatus process_ledger_for_full_refresh(const std::uint64_t max_chunk_
     EnoteStoreUpdater &enote_store_updater_inout)
 {
     // 1. save the initial index of our existing known contiguous chain
-    const std::uint64_t first_contiguity_index{contiguity_marker.m_block_index};
+    const std::uint64_t first_contiguity_index{contiguity_marker.block_index};
 
     // 2. create the scan process (initiates the scan process on construction)
     EnoteScanProcessLedger scan_process{first_contiguity_index + 1, max_chunk_size, scanning_context_inout};
@@ -518,46 +518,46 @@ void check_v1_enote_scan_chunk_ledger_semantics_v1(const EnoteScanningChunkLedge
     const std::uint64_t expected_prefix_index)
 {
     // 1. misc. checks
-    CHECK_AND_ASSERT_THROW_MES(onchain_chunk.m_start_index - 1 == expected_prefix_index,
+    CHECK_AND_ASSERT_THROW_MES(onchain_chunk.start_index - 1 == expected_prefix_index,
         "enote scan chunk semantics check (ledger): chunk range doesn't start at expected prefix index.");
 
-    const std::uint64_t num_blocks_in_chunk{onchain_chunk.m_block_ids.size()};
+    const std::uint64_t num_blocks_in_chunk{onchain_chunk.block_ids.size()};
     CHECK_AND_ASSERT_THROW_MES(num_blocks_in_chunk >= 1,
         "enote scan chunk semantics check (ledger): chunk has no blocks.");    
 
-    check_enote_scan_chunk_map_semantics_v1(onchain_chunk.m_basic_records_per_tx,
-        onchain_chunk.m_contextual_key_images,
+    check_enote_scan_chunk_map_semantics_v1(onchain_chunk.basic_records_per_tx,
+        onchain_chunk.contextual_key_images,
         SpEnoteOriginStatus::ONCHAIN,
         SpEnoteSpentStatus::SPENT_ONCHAIN);
 
     // 2. get start and end block indices
     // - start block = prefix block + 1
-    const std::uint64_t allowed_lowest_index{onchain_chunk.m_start_index};
+    const std::uint64_t allowed_lowest_index{onchain_chunk.start_index};
     // - end block
-    const std::uint64_t allowed_heighest_index{onchain_chunk.m_start_index + num_blocks_in_chunk - 1};
+    const std::uint64_t allowed_heighest_index{onchain_chunk.start_index + num_blocks_in_chunk - 1};
 
     // 3. contextual basic records: index checks
-    for (const auto &tx_basic_records : onchain_chunk.m_basic_records_per_tx)
+    for (const auto &tx_basic_records : onchain_chunk.basic_records_per_tx)
     {
         for (const ContextualBasicRecordVariant &contextual_basic_record : tx_basic_records.second)
         {
-            CHECK_AND_ASSERT_THROW_MES(origin_context_ref(contextual_basic_record).m_block_index ==
-                    origin_context_ref(*tx_basic_records.second.begin()).m_block_index,
+            CHECK_AND_ASSERT_THROW_MES(origin_context_ref(contextual_basic_record).block_index ==
+                    origin_context_ref(*tx_basic_records.second.begin()).block_index,
                 "enote chunk semantics check (ledger): contextual record tx index doesn't match other records in tx.");
 
             CHECK_AND_ASSERT_THROW_MES(
-                    origin_context_ref(contextual_basic_record).m_block_index >= allowed_lowest_index &&
-                    origin_context_ref(contextual_basic_record).m_block_index <= allowed_heighest_index,
+                    origin_context_ref(contextual_basic_record).block_index >= allowed_lowest_index &&
+                    origin_context_ref(contextual_basic_record).block_index <= allowed_heighest_index,
                 "enote chunk semantics check (ledger): contextual record block index is out of the expected range.");
         }
     }
 
     // 4. contextual key images: index checks
-    for (const SpContextualKeyImageSetV1 &contextual_key_image_set : onchain_chunk.m_contextual_key_images)
+    for (const SpContextualKeyImageSetV1 &contextual_key_image_set : onchain_chunk.contextual_key_images)
     {
         CHECK_AND_ASSERT_THROW_MES(
-                contextual_key_image_set.m_spent_context.m_block_index >= allowed_lowest_index &&
-                contextual_key_image_set.m_spent_context.m_block_index <= allowed_heighest_index,
+                contextual_key_image_set.spent_context.block_index >= allowed_lowest_index &&
+                contextual_key_image_set.spent_context.block_index <= allowed_heighest_index,
             "enote chunk semantics check (ledger): contextual key image block index is out of the expected range.");
     }
 }
@@ -566,8 +566,8 @@ void check_v1_enote_scan_chunk_nonledger_semantics_v1(const EnoteScanningChunkNo
     const SpEnoteOriginStatus expected_origin_status,
     const SpEnoteSpentStatus expected_spent_status)
 {
-    check_enote_scan_chunk_map_semantics_v1(nonledger_chunk.m_basic_records_per_tx,
-        nonledger_chunk.m_contextual_key_images,
+    check_enote_scan_chunk_map_semantics_v1(nonledger_chunk.basic_records_per_tx,
+        nonledger_chunk.contextual_key_images,
         expected_origin_status,
         expected_spent_status);
 }
@@ -598,7 +598,7 @@ bool refresh_enote_store_ledger(const RefreshLedgerEnoteStoreConfig &config,
         // note: we start at '0', which means if a NEED_PARTIALSCAN is detected before any NEED_FULLSCANs then we will
         //       have to loop through and get a NEED_FULLSCAN before the reorg can be resolved (it should be fairly cheap)
         const std::uint64_t reorg_avoidance_depth{
-                get_reorg_avoidance_depth(config.m_reorg_avoidance_depth, fullscan_attempts)
+                get_reorg_avoidance_depth(config.reorg_avoidance_depth, fullscan_attempts)
             };
 
         // 3. initial block to scan = max(desired first block - reorg depth, enote store's min scan index)
@@ -626,7 +626,7 @@ bool refresh_enote_store_ledger(const RefreshLedgerEnoteStoreConfig &config,
 
         // 6. fail if we have exceeded the max number of partial scanning attempts (i.e. too many reorgs were detected,
         //    so now we abort)
-        if (partialscan_attempts > config.m_max_partialscan_attempts)
+        if (partialscan_attempts > config.max_partialscan_attempts)
         {
             scan_status = ScanStatus::FAIL;
             break;
@@ -635,7 +635,7 @@ bool refresh_enote_store_ledger(const RefreshLedgerEnoteStoreConfig &config,
         // 7. process the ledger
         try
         {
-            scan_status = process_ledger_for_full_refresh(config.m_max_chunk_size,
+            scan_status = process_ledger_for_full_refresh(config.max_chunk_size,
                 contiguity_marker,
                 scanning_context_inout,
                 enote_store_updater_inout);
@@ -675,8 +675,8 @@ bool refresh_enote_store_offchain(const EnoteFindingContextOffchain &enote_findi
     try
     {
         enote_store_updater_inout.consume_nonledger_chunk(SpEnoteOriginStatus::OFFCHAIN,
-            offchain_chunk.m_basic_records_per_tx,
-            offchain_chunk.m_contextual_key_images);
+            offchain_chunk.basic_records_per_tx,
+            offchain_chunk.contextual_key_images);
     } catch (...)
     {
         LOG_ERROR("refresh offchain for enote store: consume chunk failed.");

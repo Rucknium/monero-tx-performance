@@ -61,14 +61,14 @@ struct MultisigProofInitSetV1 final
 {
     /// all multisig signers who should participate in attempting to make these multisig proofs (get this from e.g. a
     ///   multisig proof proposal)
-    signer_set_filter m_aggregate_signer_set_filter;
+    signer_set_filter aggregate_signer_set_filter;
     /// id of signer who made this proof initializer set
-    crypto::public_key m_signer_id;
+    crypto::public_key signer_id;
     /// message to be signed by the multisig proofs
-    rct::key m_proof_message;
+    rct::key proof_message;
     /// main proof key to be signed by the multisig proofs (any additional/auxilliary proof keys aren't recorded here,
     ///   since they are assumed to be implicitly tied to the main proof key)
-    rct::key m_proof_key;
+    rct::key proof_key;
 
     /// proof initializers
     // - for each signer set in permutations of the aggregate signer set that includes the specified signer id, record a
@@ -81,7 +81,7 @@ struct MultisigProofInitSetV1 final
         std::vector<           //proof base keys
             MultisigPubNonces  //nonces
         >
-    > m_inits;
+    > inits;
 };
 
 ////
@@ -102,12 +102,12 @@ const rct::key& message_ref(const MultisigPartialSigVariant &variant);
 struct MultisigPartialSigSetV1 final
 {
     /// multisig signer subgroup these partial signatures were created for
-    signer_set_filter m_signer_set_filter;
+    signer_set_filter signer_set_filter;
     /// id of signer who made these partial signatures
-    crypto::public_key m_signer_id;
+    crypto::public_key signer_id;
 
     /// [ proof key : partial signatures ] partial signatures mapped to their internally cached proof keys
-    std::unordered_map<rct::key, MultisigPartialSigVariant> m_partial_signatures;
+    std::unordered_map<rct::key, MultisigPartialSigVariant> partial_signatures;
 };
 
 /// get set of nonces from an init set for a given filter (returns false if the location doesn't exist)

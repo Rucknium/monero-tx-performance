@@ -54,10 +54,10 @@ namespace jamtis
 //-------------------------------------------------------------------------------------------------------------------
 bool operator==(const JamtisDestinationV1 &a, const JamtisDestinationV1 &b)
 {
-    return (a.m_addr_K1  == b.m_addr_K1) &&
-           (a.m_addr_K2  == b.m_addr_K2) &&
-           (a.m_addr_K3  == b.m_addr_K3) &&
-           (a.m_addr_tag == b.m_addr_tag);
+    return (a.addr_K1  == b.addr_K1) &&
+           (a.addr_K2  == b.addr_K2) &&
+           (a.addr_K3  == b.addr_K3) &&
+           (a.addr_tag == b.addr_tag);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_jamtis_destination_v1(const rct::key &spend_pubkey,
@@ -68,22 +68,22 @@ void make_jamtis_destination_v1(const rct::key &spend_pubkey,
     JamtisDestinationV1 &destination_out)
 {
     // K_1 = k^j_g G + k^j_x X + k^j_u U + K_s
-    make_jamtis_address_spend_key(spend_pubkey, s_generate_address, j, destination_out.m_addr_K1);
+    make_jamtis_address_spend_key(spend_pubkey, s_generate_address, j, destination_out.addr_K1);
 
     // xK_2 = xk^j_a xK_fr
     crypto::x25519_secret_key address_privkey;
     make_jamtis_address_privkey(spend_pubkey, s_generate_address, j, address_privkey);  //xk^j_a
 
-    x25519_scmul_key(address_privkey, findreceived_pubkey, destination_out.m_addr_K2);
+    x25519_scmul_key(address_privkey, findreceived_pubkey, destination_out.addr_K2);
 
     // xK_3 = xk^j_a xK_ua
-    x25519_scmul_key(address_privkey, unlockamounts_pubkey, destination_out.m_addr_K3);
+    x25519_scmul_key(address_privkey, unlockamounts_pubkey, destination_out.addr_K3);
 
     // addr_tag = cipher[k](j) || H_2(k, cipher[k](j))
     crypto::secret_key ciphertag_secret;
     make_jamtis_ciphertag_secret(s_generate_address, ciphertag_secret);
 
-    destination_out.m_addr_tag = cipher_address_index(ciphertag_secret, j);
+    destination_out.addr_tag = cipher_address_index(ciphertag_secret, j);
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool try_get_jamtis_index_from_destination_v1(const JamtisDestinationV1 &destination,
@@ -99,7 +99,7 @@ bool try_get_jamtis_index_from_destination_v1(const JamtisDestinationV1 &destina
 
     // get the nominal address index from the destination's address tag
     address_index_t nominal_address_index;
-    if (!try_decipher_address_index(ciphertag_secret, destination.m_addr_tag, nominal_address_index))
+    if (!try_decipher_address_index(ciphertag_secret, destination.addr_tag, nominal_address_index))
         return false;
 
     // recreate the destination
@@ -124,10 +124,10 @@ bool try_get_jamtis_index_from_destination_v1(const JamtisDestinationV1 &destina
 JamtisDestinationV1 gen_jamtis_destination_v1()
 {
     JamtisDestinationV1 temp;
-    temp.m_addr_K1 = rct::pkGen();
-    temp.m_addr_K2 = crypto::x25519_pubkey_gen();
-    temp.m_addr_K3 = crypto::x25519_pubkey_gen();
-    crypto::rand(sizeof(address_tag_t), temp.m_addr_tag.bytes);
+    temp.addr_K1 = rct::pkGen();
+    temp.addr_K2 = crypto::x25519_pubkey_gen();
+    temp.addr_K3 = crypto::x25519_pubkey_gen();
+    crypto::rand(sizeof(address_tag_t), temp.addr_tag.bytes);
 
     return temp;
 }

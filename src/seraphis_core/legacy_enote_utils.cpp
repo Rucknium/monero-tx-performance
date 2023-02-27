@@ -71,10 +71,10 @@ void make_legacy_enote_v1(const rct::key &destination_spendkey,
         output_index,
         enote_ephemeral_privkey,
         hw::get_device("default"),
-        enote_out.m_onetime_address);
+        enote_out.onetime_address);
 
     // amount: a
-    enote_out.m_amount = amount;
+    enote_out.amount = amount;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_legacy_enote_v2(const rct::key &destination_spendkey,
@@ -90,11 +90,11 @@ void make_legacy_enote_v2(const rct::key &destination_spendkey,
         output_index,
         enote_ephemeral_privkey,
         hw::get_device("default"),
-        enote_out.m_onetime_address);
+        enote_out.onetime_address);
 
     // amount commitment: x G + a H
     const crypto::secret_key amount_mask{rct::rct2sk(rct::skGen())};
-    enote_out.m_amount_commitment = rct::commit(amount, rct::sk2rct(amount_mask));
+    enote_out.amount_commitment = rct::commit(amount, rct::sk2rct(amount_mask));
 
     // encoded amount blinding factor: enc(x) = x + Hn(Hn(r K^v, t))
     // encoded amount: enc(a) = to_key(a) + Hn(Hn(Hn(r K^v, t)))
@@ -104,8 +104,8 @@ void make_legacy_enote_v2(const rct::key &destination_spendkey,
         amount_mask,
         amount,
         hw::get_device("default"),
-        enote_out.m_encoded_amount_blinding_factor,
-        enote_out.m_encoded_amount);
+        enote_out.encoded_amount_blinding_factor,
+        enote_out.encoded_amount);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_legacy_enote_v3(const rct::key &destination_spendkey,
@@ -121,7 +121,7 @@ void make_legacy_enote_v3(const rct::key &destination_spendkey,
         output_index,
         enote_ephemeral_privkey,
         hw::get_device("default"),
-        enote_out.m_onetime_address);
+        enote_out.onetime_address);
 
     // amount commitment: Hn("commitment_mask", Hn(r K^v, t)) G + a H
     crypto::secret_key amount_mask;
@@ -131,7 +131,7 @@ void make_legacy_enote_v3(const rct::key &destination_spendkey,
         hw::get_device("default"),
         amount_mask);
 
-    enote_out.m_amount_commitment = rct::commit(amount, rct::sk2rct(amount_mask));
+    enote_out.amount_commitment = rct::commit(amount, rct::sk2rct(amount_mask));
 
     // encoded amount: enc(a) = a XOR_8 H32("amount", Hn(r K^v, t))
     make_legacy_encoded_amount_v2(destination_viewkey,
@@ -139,7 +139,7 @@ void make_legacy_enote_v3(const rct::key &destination_spendkey,
         enote_ephemeral_privkey,
         amount,
         hw::get_device("default"),
-        enote_out.m_encoded_amount);
+        enote_out.encoded_amount);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_legacy_enote_v4(const rct::key &destination_spendkey,
@@ -155,17 +155,17 @@ void make_legacy_enote_v4(const rct::key &destination_spendkey,
         output_index,
         enote_ephemeral_privkey,
         hw::get_device("default"),
-        enote_out.m_onetime_address);
+        enote_out.onetime_address);
 
     // amount: a
-    enote_out.m_amount = amount;
+    enote_out.amount = amount;
 
     // view tag: 
     make_legacy_view_tag(destination_viewkey,
         output_index,
         enote_ephemeral_privkey,
         hw::get_device("default"),
-        enote_out.m_view_tag);
+        enote_out.view_tag);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_legacy_enote_v5(const rct::key &destination_spendkey,
@@ -181,7 +181,7 @@ void make_legacy_enote_v5(const rct::key &destination_spendkey,
         output_index,
         enote_ephemeral_privkey,
         hw::get_device("default"),
-        enote_out.m_onetime_address);
+        enote_out.onetime_address);
 
     // amount commitment: Hn("commitment_mask", Hn(r K^v, t)) G + a H
     crypto::secret_key amount_mask;
@@ -191,7 +191,7 @@ void make_legacy_enote_v5(const rct::key &destination_spendkey,
         hw::get_device("default"),
         amount_mask);
 
-    enote_out.m_amount_commitment = rct::commit(amount, rct::sk2rct(amount_mask));
+    enote_out.amount_commitment = rct::commit(amount, rct::sk2rct(amount_mask));
 
     // encoded amount: enc(a) = a XOR_8 H32("amount", Hn(r K^v, t))
     make_legacy_encoded_amount_v2(destination_viewkey,
@@ -199,14 +199,14 @@ void make_legacy_enote_v5(const rct::key &destination_spendkey,
         enote_ephemeral_privkey,
         amount,
         hw::get_device("default"),
-        enote_out.m_encoded_amount);
+        enote_out.encoded_amount);
 
     // view tag: 
     make_legacy_view_tag(destination_viewkey,
         output_index,
         enote_ephemeral_privkey,
         hw::get_device("default"),
-        enote_out.m_view_tag);
+        enote_out.view_tag);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_legacy_ephemeral_pubkey_shared(const crypto::secret_key &enote_ephemeral_privkey,

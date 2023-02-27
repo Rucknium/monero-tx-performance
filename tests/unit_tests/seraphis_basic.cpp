@@ -122,27 +122,27 @@ static void check_is_owned_with_intermediate_record(const SpEnoteVariant &enote,
         intermediate_enote_record));
 
     // check misc fields
-    EXPECT_TRUE(intermediate_enote_record.m_amount == amount_expected);
-    EXPECT_TRUE(intermediate_enote_record.m_address_index == j_expected);
+    EXPECT_TRUE(intermediate_enote_record.amount == amount_expected);
+    EXPECT_TRUE(intermediate_enote_record.address_index == j_expected);
 
     // get full enote record from intermediate record
     SpEnoteRecordV1 enote_record;
     EXPECT_TRUE(try_get_enote_record_v1_plain(intermediate_enote_record, keys.K_1_base, keys.k_vb, enote_record));
 
     // check misc fields
-    EXPECT_TRUE(enote_record.m_type == JamtisEnoteType::PLAIN);
-    EXPECT_TRUE(enote_record.m_amount == amount_expected);
-    EXPECT_TRUE(enote_record.m_address_index == j_expected);
+    EXPECT_TRUE(enote_record.type == JamtisEnoteType::PLAIN);
+    EXPECT_TRUE(enote_record.amount == amount_expected);
+    EXPECT_TRUE(enote_record.address_index == j_expected);
 
     // check key image
     rct::key spendkey_U_component{keys.K_1_base};
     reduce_seraphis_spendkey_x(keys.k_vb, spendkey_U_component);
-    extend_seraphis_spendkey_u(enote_record.m_enote_view_extension_u, spendkey_U_component);
+    extend_seraphis_spendkey_u(enote_record.enote_view_extension_u, spendkey_U_component);
     crypto::key_image reproduced_key_image;
-    make_seraphis_key_image(add_secrets(enote_record.m_enote_view_extension_x, keys.k_vb),
+    make_seraphis_key_image(add_secrets(enote_record.enote_view_extension_x, keys.k_vb),
         rct::rct2pk(spendkey_U_component),
         reproduced_key_image);
-    EXPECT_TRUE(enote_record.m_key_image == reproduced_key_image);
+    EXPECT_TRUE(enote_record.key_image == reproduced_key_image);
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -164,31 +164,31 @@ static void check_is_owned(const SpEnoteVariant &enote,
         enote_record));
 
     // check misc fields
-    EXPECT_TRUE(enote_record.m_type == type_expected);
-    EXPECT_TRUE(enote_record.m_amount == amount_expected);
-    EXPECT_TRUE(enote_record.m_address_index == j_expected);
+    EXPECT_TRUE(enote_record.type == type_expected);
+    EXPECT_TRUE(enote_record.amount == amount_expected);
+    EXPECT_TRUE(enote_record.address_index == j_expected);
 
     // check onetime address can be recomputed from the enote record
     rct::key recipient_address_spend_key;
     make_jamtis_address_spend_key(keys.K_1_base, keys.s_ga, j_expected, recipient_address_spend_key);
 
     rct::key sender_receiver_secret;
-    if (enote_record.m_type == JamtisEnoteType::PLAIN)
+    if (enote_record.type == JamtisEnoteType::PLAIN)
     {
         make_jamtis_sender_receiver_secret_plain(keys.xk_fr,
-            enote_record.m_enote_ephemeral_pubkey,
-            enote_record.m_enote_ephemeral_pubkey,
-            enote_record.m_input_context,
+            enote_record.enote_ephemeral_pubkey,
+            enote_record.enote_ephemeral_pubkey,
+            enote_record.input_context,
             sender_receiver_secret);
     }
     else
     {
         JamtisSelfSendType selfsend_type;
-        EXPECT_TRUE(try_get_jamtis_self_send_type(enote_record.m_type, selfsend_type));
+        EXPECT_TRUE(try_get_jamtis_self_send_type(enote_record.type, selfsend_type));
 
         make_jamtis_sender_receiver_secret_selfsend(keys.k_vb,
-            enote_record.m_enote_ephemeral_pubkey,
-            enote_record.m_input_context,
+            enote_record.enote_ephemeral_pubkey,
+            enote_record.input_context,
             selfsend_type,
             sender_receiver_secret);
     }
@@ -201,15 +201,15 @@ static void check_is_owned(const SpEnoteVariant &enote,
     // check key image
     rct::key spendkey_U_component{keys.K_1_base};
     reduce_seraphis_spendkey_x(keys.k_vb, spendkey_U_component);
-    extend_seraphis_spendkey_u(enote_record.m_enote_view_extension_u, spendkey_U_component);
+    extend_seraphis_spendkey_u(enote_record.enote_view_extension_u, spendkey_U_component);
     crypto::key_image reproduced_key_image;
-    make_seraphis_key_image(add_secrets(enote_record.m_enote_view_extension_x, keys.k_vb),
+    make_seraphis_key_image(add_secrets(enote_record.enote_view_extension_x, keys.k_vb),
         rct::rct2pk(spendkey_U_component),
         reproduced_key_image);
-    EXPECT_TRUE(enote_record.m_key_image == reproduced_key_image);
+    EXPECT_TRUE(enote_record.key_image == reproduced_key_image);
 
     // for plain enotes, double-check ownership with an intermediate record
-    if (enote_record.m_type == JamtisEnoteType::PLAIN)
+    if (enote_record.type == JamtisEnoteType::PLAIN)
     {
         check_is_owned_with_intermediate_record(enote,
             enote_ephemeral_pubkey,
@@ -233,8 +233,8 @@ static void check_is_owned(const SpCoinbaseOutputProposalV1 &test_proposal,
     make_jamtis_input_context_coinbase(block_height, input_context);
 
     // check info
-    check_is_owned(test_proposal.m_enote,
-        test_proposal.m_enote_ephemeral_pubkey,
+    check_is_owned(test_proposal.enote,
+        test_proposal.enote_ephemeral_pubkey,
         input_context,
         keys,
         j_expected,
@@ -255,7 +255,7 @@ static void check_is_owned(const SpOutputProposalV1 &test_proposal,
 
     // check info
     check_is_owned(enote,
-        test_proposal.m_enote_ephemeral_pubkey,
+        test_proposal.enote_ephemeral_pubkey,
         rct::zero(),
         keys,
         j_expected,
@@ -288,8 +288,8 @@ static bool test_binned_reference_set(const std::uint64_t distribution_min_index
 {
     const SpRefSetIndexMapperFlat flat_index_mapper{distribution_min_index, distribution_max_index};
     const SpBinnedReferenceSetConfigV1 bin_config{
-            .m_bin_radius = bin_radius,
-            .m_num_bin_members = num_bin_members
+            .bin_radius = bin_radius,
+            .num_bin_members = num_bin_members
         };
 
     for (std::size_t i{0}; i < 50; ++i)
@@ -304,11 +304,11 @@ static bool test_binned_reference_set(const std::uint64_t distribution_min_index
             binned_reference_set);
 
         // bin config should persist
-        if (binned_reference_set.m_bin_config != bin_config)
+        if (binned_reference_set.bin_config != bin_config)
             return false;
 
         // bins should be sorted
-        if (!std::is_sorted(binned_reference_set.m_bin_loci.begin(), binned_reference_set.m_bin_loci.end()))
+        if (!std::is_sorted(binned_reference_set.bin_loci.begin(), binned_reference_set.bin_loci.end()))
             return false;
 
         // extract the references twice (should get the same results)
@@ -395,7 +395,7 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
 
     // for 2-out txs, can only have one unique enote ephemeral pubkey
     if (output_proposals.size() == 2)
-        output_proposals[1].m_enote_ephemeral_pubkey = output_proposals[0].m_enote_ephemeral_pubkey;
+        output_proposals[1].enote_ephemeral_pubkey = output_proposals[0].enote_ephemeral_pubkey;
 
     // pre-sort inputs and outputs (doing this here makes everything else easier)
     std::sort(legacy_input_proposals.begin(),
@@ -445,10 +445,10 @@ static void make_sp_txtype_squashed_v1(const std::size_t legacy_ring_size,
         outputs,
         output_amounts,
         output_amount_commitment_blinding_factors,
-        tx_supplement.m_output_enote_ephemeral_pubkeys);
+        tx_supplement.output_enote_ephemeral_pubkeys);
     for (const SpOutputProposalV1 &output_proposal : output_proposals)
-        accumulate_extra_field_elements(output_proposal.m_partial_memo, additional_memo_elements);
-    make_tx_extra(std::move(additional_memo_elements), tx_supplement.m_tx_extra);
+        accumulate_extra_field_elements(output_proposal.partial_memo, additional_memo_elements);
+    make_tx_extra(std::move(additional_memo_elements), tx_supplement.tx_extra);
     for (const LegacyInputProposalV1 &legacy_input_proposal : legacy_input_proposals)
     {
         legacy_input_images.emplace_back();
@@ -792,20 +792,20 @@ TEST(seraphis_basic, finalize_v1_output_proposal_set_v1)
 
     // prepare self-spend payment proposals
     JamtisPaymentProposalSelfSendV1 self_spend_payment_proposal1_amnt_1;
-    self_spend_payment_proposal1_amnt_1.m_destination = selfspend_dest;
-    self_spend_payment_proposal1_amnt_1.m_amount = 1;
-    self_spend_payment_proposal1_amnt_1.m_type = JamtisSelfSendType::SELF_SPEND;
-    make_secret_key(self_spend_payment_proposal1_amnt_1.m_enote_ephemeral_privkey);
+    self_spend_payment_proposal1_amnt_1.destination = selfspend_dest;
+    self_spend_payment_proposal1_amnt_1.amount      = 1;
+    self_spend_payment_proposal1_amnt_1.type        = JamtisSelfSendType::SELF_SPEND;
+    make_secret_key(self_spend_payment_proposal1_amnt_1.enote_ephemeral_privkey);
 
     JamtisPaymentProposalSelfSendV1 self_spend_payment_proposal2_amnt_1{self_spend_payment_proposal1_amnt_1};
-    make_secret_key(self_spend_payment_proposal2_amnt_1.m_enote_ephemeral_privkey);
+    make_secret_key(self_spend_payment_proposal2_amnt_1.enote_ephemeral_privkey);
 
     // prepare change output
     JamtisPaymentProposalSelfSendV1 change_payment_proposal_amnt_1;
-    change_payment_proposal_amnt_1.m_destination = change_dest;
-    change_payment_proposal_amnt_1.m_amount = 1;
-    change_payment_proposal_amnt_1.m_type = JamtisSelfSendType::CHANGE;
-    make_secret_key(change_payment_proposal_amnt_1.m_enote_ephemeral_privkey);
+    change_payment_proposal_amnt_1.destination = change_dest;
+    change_payment_proposal_amnt_1.amount      = 1;
+    change_payment_proposal_amnt_1.type        = JamtisSelfSendType::CHANGE;
+    make_secret_key(change_payment_proposal_amnt_1.enote_ephemeral_privkey);
 
     // sanity checks
     SpOutputProposalV1 self_spend_proposal1_amnt_1;
@@ -886,8 +886,8 @@ TEST(seraphis_basic, finalize_v1_output_proposal_set_v1)
     normal_proposals.resize(2);
     normal_proposals[0] = gen_jamtis_payment_proposal_v1(1, 0);
     normal_proposals[1] = gen_jamtis_payment_proposal_v1(1, 0);
-    normal_proposals[1].m_enote_ephemeral_privkey = normal_proposals[0].m_enote_ephemeral_privkey;
-    normal_proposals[1].m_destination.m_addr_K3 = normal_proposals[0].m_destination.m_addr_K3;
+    normal_proposals[1].enote_ephemeral_privkey = normal_proposals[0].enote_ephemeral_privkey;
+    normal_proposals[1].destination.addr_K3 = normal_proposals[0].destination.addr_K3;
     selfsend_proposals.clear();
     EXPECT_ANY_THROW(finalize_outputs_for_test(normal_proposals, selfsend_proposals));
 
@@ -896,8 +896,8 @@ TEST(seraphis_basic, finalize_v1_output_proposal_set_v1)
     normal_proposals.resize(2);
     normal_proposals[0] = gen_jamtis_payment_proposal_v1(1, 0);
     normal_proposals[1] = gen_jamtis_payment_proposal_v1(1, 0);  //change = 1
-    normal_proposals[1].m_enote_ephemeral_privkey = normal_proposals[0].m_enote_ephemeral_privkey;
-    normal_proposals[1].m_destination.m_addr_K3 = normal_proposals[0].m_destination.m_addr_K3;
+    normal_proposals[1].enote_ephemeral_privkey = normal_proposals[0].enote_ephemeral_privkey;
+    normal_proposals[1].destination.addr_K3 = normal_proposals[0].destination.addr_K3;
     selfsend_proposals.clear();
     EXPECT_ANY_THROW(finalize_outputs_for_test(normal_proposals, selfsend_proposals));
 
@@ -933,7 +933,7 @@ TEST(seraphis_basic, finalize_v1_output_proposal_set_v1)
     EXPECT_NO_THROW(finalize_outputs_for_test(normal_proposals, selfsend_proposals));
     EXPECT_TRUE(normal_proposals.size() == 1);
     EXPECT_TRUE(selfsend_proposals.size() == 1);
-    EXPECT_TRUE(normal_proposals[0].m_amount == 0);
+    EXPECT_TRUE(normal_proposals[0].amount == 0);
     check_is_owned(selfsend_proposals[0], keys, j_selfspend, 1, JamtisEnoteType::SELF_SPEND);
 
     // 1 self-send output, >0 change: 2 outputs (1 change)
@@ -960,8 +960,8 @@ TEST(seraphis_basic, finalize_v1_output_proposal_set_v1)
     normal_proposals[0] = gen_jamtis_payment_proposal_v1(1, 0);
     selfsend_proposals.resize(1);
     selfsend_proposals[0] = self_spend_payment_proposal1_amnt_1;
-    normal_proposals[0].m_enote_ephemeral_privkey = selfsend_proposals[0].m_enote_ephemeral_privkey;
-    normal_proposals[0].m_destination.m_addr_K3 = selfsend_proposals[0].m_destination.m_addr_K3;
+    normal_proposals[0].enote_ephemeral_privkey = selfsend_proposals[0].enote_ephemeral_privkey;
+    normal_proposals[0].destination.addr_K3 = selfsend_proposals[0].destination.addr_K3;
     EXPECT_NO_THROW(finalize_outputs_for_test(normal_proposals, selfsend_proposals));
     EXPECT_TRUE(normal_proposals.size() == 1);
     EXPECT_TRUE(selfsend_proposals.size() == 1);
@@ -973,8 +973,8 @@ TEST(seraphis_basic, finalize_v1_output_proposal_set_v1)
     normal_proposals[0] = gen_jamtis_payment_proposal_v1(1, 0);
     selfsend_proposals.resize(1);
     selfsend_proposals[0] = self_spend_payment_proposal1_amnt_1;  //change = 1
-    normal_proposals[0].m_enote_ephemeral_privkey = selfsend_proposals[0].m_enote_ephemeral_privkey;
-    normal_proposals[0].m_destination.m_addr_K3 = selfsend_proposals[0].m_destination.m_addr_K3;
+    normal_proposals[0].enote_ephemeral_privkey = selfsend_proposals[0].enote_ephemeral_privkey;
+    normal_proposals[0].destination.addr_K3 = selfsend_proposals[0].destination.addr_K3;
     EXPECT_ANY_THROW(finalize_outputs_for_test(normal_proposals, selfsend_proposals));
 
     // 1 self-send output, 1 normal output, 0 change: 3 outputs (1 dummy)
@@ -986,7 +986,7 @@ TEST(seraphis_basic, finalize_v1_output_proposal_set_v1)
     EXPECT_NO_THROW(finalize_outputs_for_test(normal_proposals, selfsend_proposals));
     EXPECT_TRUE(normal_proposals.size() == 2);
     EXPECT_TRUE(selfsend_proposals.size() == 1);
-    EXPECT_TRUE(normal_proposals[1].m_amount == 0);
+    EXPECT_TRUE(normal_proposals[1].amount == 0);
     check_is_owned(selfsend_proposals[0], keys, j_selfspend, 1, JamtisEnoteType::SELF_SPEND);
 
     // 1 self-send output, 1 normal output, >0 change: 3 outputs (1 change)
@@ -1051,7 +1051,7 @@ TEST(seraphis_basic, finalize_v1_output_proposal_set_v1)
     EXPECT_NO_THROW(finalize_outputs_for_test(normal_proposals, selfsend_proposals));
     EXPECT_TRUE(normal_proposals.size() == 1);
     EXPECT_TRUE(selfsend_proposals.size() == 2);
-    EXPECT_TRUE(normal_proposals[0].m_amount == 0);
+    EXPECT_TRUE(normal_proposals[0].amount == 0);
     check_is_owned(selfsend_proposals[0], keys, j_selfspend, 1, JamtisEnoteType::SELF_SPEND);
     check_is_owned(selfsend_proposals[1], keys, j_selfspend, 1, JamtisEnoteType::SELF_SPEND);
 
@@ -1076,20 +1076,20 @@ TEST(seraphis_basic, tx_extra)
     extra_field_elements.resize(3);
 
     // rct::key
-    extra_field_elements[0].m_type = 1;
-    extra_field_elements[0].m_value.resize(32);
-    memcpy(extra_field_elements[0].m_value.data(), rct::identity().bytes, 32);
+    extra_field_elements[0].type = 1;
+    extra_field_elements[0].value.resize(32);
+    memcpy(extra_field_elements[0].value.data(), rct::identity().bytes, 32);
 
     // std::uint64_t
     std::uint64_t one{1};
-    extra_field_elements[1].m_type = 2;
-    extra_field_elements[1].m_value.resize(8);
-    memcpy(extra_field_elements[1].m_value.data(), &one, 8);
+    extra_field_elements[1].type = 2;
+    extra_field_elements[1].value.resize(8);
+    memcpy(extra_field_elements[1].value.data(), &one, 8);
 
     // std::uint64_t
-    extra_field_elements[2].m_type = 0;
-    extra_field_elements[2].m_value.resize(8);
-    memcpy(extra_field_elements[2].m_value.data(), &one, 8);
+    extra_field_elements[2].type = 0;
+    extra_field_elements[2].value.resize(8);
+    memcpy(extra_field_elements[2].value.data(), &one, 8);
 
 
     /// make an extra field
@@ -1104,20 +1104,20 @@ TEST(seraphis_basic, tx_extra)
             extra_field_elements.clear();
             EXPECT_TRUE(try_get_extra_field_elements(tx_extra, extra_field_elements));
             ASSERT_TRUE(extra_field_elements.size() == 3);
-            EXPECT_TRUE(extra_field_elements[0].m_type == 0);
-            EXPECT_TRUE(extra_field_elements[0].m_value.size() == 8);
+            EXPECT_TRUE(extra_field_elements[0].type == 0);
+            EXPECT_TRUE(extra_field_elements[0].value.size() == 8);
             std::uint64_t element0;
-            memcpy(&element0, extra_field_elements[0].m_value.data(), 8);
+            memcpy(&element0, extra_field_elements[0].value.data(), 8);
             EXPECT_TRUE(element0 == one);
-            EXPECT_TRUE(extra_field_elements[1].m_type == 1);
-            EXPECT_TRUE(extra_field_elements[1].m_value.size() == 32);
+            EXPECT_TRUE(extra_field_elements[1].type == 1);
+            EXPECT_TRUE(extra_field_elements[1].value.size() == 32);
             rct::key element1;
-            memcpy(element1.bytes, extra_field_elements[1].m_value.data(), 32);
+            memcpy(element1.bytes, extra_field_elements[1].value.data(), 32);
             EXPECT_TRUE(element1 == rct::identity());
-            EXPECT_TRUE(extra_field_elements[2].m_type == 2);
-            EXPECT_TRUE(extra_field_elements[2].m_value.size() == 8);
+            EXPECT_TRUE(extra_field_elements[2].type == 2);
+            EXPECT_TRUE(extra_field_elements[2].value.size() == 8);
             std::uint64_t element2;
-            memcpy(&element2, extra_field_elements[2].m_value.data(), 8);
+            memcpy(&element2, extra_field_elements[2].value.data(), 8);
             EXPECT_TRUE(element2 == one);
         };
 
@@ -1230,7 +1230,7 @@ TEST(seraphis_basic, discretized_fees)
     EXPECT_TRUE(discretized_fee == test_fee_value);
 
     // unknown fee level
-    discretized_fee.m_fee_encoding = static_cast<discretized_fee_encoding_t>(-1);
+    discretized_fee.fee_encoding = static_cast<discretized_fee_encoding_t>(-1);
     EXPECT_FALSE(try_get_fee_value(discretized_fee, fee_value));
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -1278,8 +1278,8 @@ TEST(seraphis_basic, txtype_squashed_v1)
             2,
             2,
             SpBinnedReferenceSetConfigV1{
-                .m_bin_radius = 1,
-                .m_num_bin_members = 2
+                .bin_radius = 1,
+                .num_bin_members = 2
             },
             3,
             in_legacy_amounts,

@@ -56,13 +56,13 @@ static void prepare_enote_store(const std::vector<rct::xmr_amount> &legacy_amoun
     {
         LegacyEnoteRecord temp_record{};
         LegacyEnoteV5 temp_enote{gen_legacy_enote_v5()};
-        temp_record.m_enote = temp_enote;
-        temp_record.m_amount = legacy_amount;
-        temp_record.m_key_image = rct::rct2ki(rct::pkGen());
+        temp_record.enote     = temp_enote;
+        temp_record.amount    = legacy_amount;
+        temp_record.key_image = rct::rct2ki(rct::pkGen());
 
         enote_store_inout.add_record(
                 LegacyContextualEnoteRecordV1{
-                    .m_record = temp_record
+                    .record = temp_record
                 }
             );
     }
@@ -70,13 +70,13 @@ static void prepare_enote_store(const std::vector<rct::xmr_amount> &legacy_amoun
     for (const rct::xmr_amount sp_amount : sp_amounts)
     {
         SpEnoteRecordV1 temp_record{};
-        temp_record.m_enote = gen_sp_enote_v1();
-        temp_record.m_amount = sp_amount;
-        temp_record.m_key_image = rct::rct2ki(rct::pkGen());
+        temp_record.enote     = gen_sp_enote_v1();
+        temp_record.amount    = sp_amount;
+        temp_record.key_image = rct::rct2ki(rct::pkGen());
 
         enote_store_inout.add_record(
                 SpContextualEnoteRecordV1{
-                    .m_record = temp_record
+                    .record = temp_record
                 }
             );
     }

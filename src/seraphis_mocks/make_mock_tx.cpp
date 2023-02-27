@@ -110,10 +110,10 @@ void make_mock_tx<SpTxCoinbaseV1>(const SpTxParamPackV1 &params,
     // 6. extract info from output proposals
     std::vector<SpCoinbaseEnoteV1> output_enotes;
     SpTxSupplementV1 tx_supplement;
-    make_v1_coinbase_outputs_v1(output_proposals, output_enotes, tx_supplement.m_output_enote_ephemeral_pubkeys);
+    make_v1_coinbase_outputs_v1(output_proposals, output_enotes, tx_supplement.output_enote_ephemeral_pubkeys);
 
     // 7. collect full memo
-    finalize_tx_extra_v1(partial_memo, output_proposals, tx_supplement.m_tx_extra);
+    finalize_tx_extra_v1(partial_memo, output_proposals, tx_supplement.tx_extra);
 
     // 8. finish tx
     make_seraphis_tx_coinbase_v1(semantic_rules_version,
@@ -168,7 +168,7 @@ void make_mock_tx<SpTxSquashedV1>(const SpTxParamPackV1 &params,
 
     // 7. for 2-out txs, the enote ephemeral pubkey is shared by both outputs
     if (output_proposals.size() == 2)
-        output_proposals[1].m_enote_ephemeral_pubkey = output_proposals[0].m_enote_ephemeral_pubkey;
+        output_proposals[1].enote_ephemeral_pubkey = output_proposals[0].enote_ephemeral_pubkey;
 
     // 8. expect amounts to balance
     CHECK_AND_ASSERT_THROW_MES(balance_check_in_out_amnts_v2(legacy_input_proposals,

@@ -79,26 +79,26 @@ struct SpTxSquashedV1 final
     };
 
     /// semantic rules version
-    SemanticRulesVersion m_tx_semantic_rules_version;
+    SemanticRulesVersion tx_semantic_rules_version;
 
     /// legacy tx input images (spent legacy enotes)
-    std::vector<LegacyEnoteImageV2> m_legacy_input_images;
+    std::vector<LegacyEnoteImageV2> legacy_input_images;
     /// seraphis tx input images (spent seraphis enotes)
-    std::vector<SpEnoteImageV1> m_sp_input_images;
+    std::vector<SpEnoteImageV1> sp_input_images;
     /// tx outputs (new seraphis enotes)
-    std::vector<SpEnoteV1> m_outputs;
+    std::vector<SpEnoteV1> outputs;
     /// balance proof (balance proof and range proofs)
-    SpBalanceProofV1 m_balance_proof;
+    SpBalanceProofV1 balance_proof;
     /// ring signature proofs: membership and ownership/key-image-legitimacy for each legacy input
-    std::vector<LegacyRingSignatureV4> m_legacy_ring_signatures;
+    std::vector<LegacyRingSignatureV4> legacy_ring_signatures;
     /// composition proofs: ownership/key-image-legitimacy for each seraphis input
-    std::vector<SpImageProofV1> m_sp_image_proofs;
+    std::vector<SpImageProofV1> sp_image_proofs;
     /// Grootle proofs on squashed enotes: membership for each seraphis input
-    std::vector<SpMembershipProofV1> m_sp_membership_proofs;
+    std::vector<SpMembershipProofV1> sp_membership_proofs;
     /// supplemental data for tx
-    SpTxSupplementV1 m_tx_supplement;
+    SpTxSupplementV1 tx_supplement;
     /// the transaction fee (discretized representation)
-    DiscretizedFee m_tx_fee;
+    DiscretizedFee tx_fee;
 };
 
 /// get size of a possible tx (assuming compact components)

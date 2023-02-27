@@ -207,7 +207,7 @@ static void prepare_mock_v5_legacy_enote_for_transfer(const rct::key &destinatio
         hw::get_device("default"),
         full_record_recovered));
 
-    key_image_out = full_record_recovered.m_key_image;
+    key_image_out = full_record_recovered.key_image;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -235,17 +235,17 @@ TEST(seraphis_enote_scanning, trivial_ledger)
     SpTxSupplementV1 mock_tx_supplement{};
 
     const JamtisPaymentProposalV1 payment_proposal{
-            .m_destination = user_address,
-            .m_amount = enote_amount,
-            .m_enote_ephemeral_privkey = crypto::x25519_secret_key_gen(),
-            .m_partial_memo = mock_tx_supplement.m_tx_extra
+            .destination = user_address,
+            .amount = enote_amount,
+            .enote_ephemeral_privkey = crypto::x25519_secret_key_gen(),
+            .partial_memo = mock_tx_supplement.tx_extra
         };
     SpOutputProposalV1 output_proposal;
     make_v1_output_proposal_v1(payment_proposal, mock_input_context, output_proposal);
 
     SpEnoteV1 single_enote;
     get_enote_v1(output_proposal, single_enote);
-    mock_tx_supplement.m_output_enote_ephemeral_pubkeys.emplace_back(output_proposal.m_enote_ephemeral_pubkey);
+    mock_tx_supplement.output_enote_ephemeral_pubkeys.emplace_back(output_proposal.enote_ephemeral_pubkey);
 
     // add enote to mock ledger context as a coinbase enote
     MockLedgerContext ledger_context{0, 0};
@@ -257,9 +257,9 @@ TEST(seraphis_enote_scanning, trivial_ledger)
     // make and refresh enote store with mock ledger context
     SpEnoteStoreMockV1 user_enote_store{0, 0, 0};
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
     const EnoteFindingContextLedgerMockSp enote_finding_context{ledger_context, user_keys.xk_fr};
     EnoteScanningContextLedgerSimple enote_scanning_context{enote_finding_context};
@@ -271,14 +271,14 @@ TEST(seraphis_enote_scanning, trivial_ledger)
     SpEnoteRecordV1 single_enote_record;
 
     ASSERT_TRUE(try_get_enote_record_v1(single_enote,
-        output_proposal.m_enote_ephemeral_pubkey,
+        output_proposal.enote_ephemeral_pubkey,
         mock_input_context,
         user_keys.K_1_base,
         user_keys.k_vb,
         single_enote_record));
 
     // expect the enote to be found
-    ASSERT_TRUE(user_enote_store.has_enote_with_key_image(single_enote_record.m_key_image));
+    ASSERT_TRUE(user_enote_store.has_enote_with_key_image(single_enote_record.key_image));
 }
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, simple_ledger_1)
@@ -287,9 +287,9 @@ TEST(seraphis_enote_scanning, simple_ledger_1)
 
     // 1. config
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 0,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 0,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     // 2. user keys
@@ -325,9 +325,9 @@ TEST(seraphis_enote_scanning, simple_ledger_2)
 
     // 1. config
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 0,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 0,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     // 2. user keys
@@ -363,9 +363,9 @@ TEST(seraphis_enote_scanning, simple_ledger_3)
 
     // 1. config
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 0,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 0,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     // 2. user keys
@@ -407,9 +407,9 @@ TEST(seraphis_enote_scanning, simple_ledger_4)
 
     // 1. config
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 0,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 0,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     // 2. user keys
@@ -453,9 +453,9 @@ TEST(seraphis_enote_scanning, simple_ledger_5)
 
     // 1. config
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     // 2. user keys
@@ -515,9 +515,9 @@ TEST(seraphis_enote_scanning, simple_ledger_6)
 
     // 1. config
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     // 2. user keys
@@ -587,9 +587,9 @@ TEST(seraphis_enote_scanning, simple_ledger_locked)
 
     // 1. config
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 0,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 0,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     // 2. user keys
@@ -671,16 +671,16 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_1)
     const std::size_t ref_set_decomp_m{2};
 
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     const FeeCalculatorMockTrivial fee_calculator;  //just do a trivial calculator here (fee = fee/weight * 1 weight)
 
     const SpBinnedReferenceSetConfigV1 bin_config{
-            .m_bin_radius = 1,
-            .m_num_bin_members = 2
+            .bin_radius = 1,
+            .num_bin_members = 2
         };
 
     // 2. user keys
@@ -772,16 +772,16 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_2)
     const std::size_t ref_set_decomp_m{2};
 
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     const FeeCalculatorMockTrivial fee_calculator;  //just do a trivial calculator here (fee = fee/weight * 1 weight)
 
     const SpBinnedReferenceSetConfigV1 bin_config{
-            .m_bin_radius = 1,
-            .m_num_bin_members = 2
+            .bin_radius = 1,
+            .num_bin_members = 2
         };
 
     // 2. user keys
@@ -863,16 +863,16 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_3)
     const std::size_t ref_set_decomp_m{2};
 
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     const FeeCalculatorMockTrivial fee_calculator;  //just do a trivial calculator here (fee = fee/weight * 1 weight)
 
     const SpBinnedReferenceSetConfigV1 bin_config{
-            .m_bin_radius = 1,
-            .m_num_bin_members = 2
+            .bin_radius = 1,
+            .num_bin_members = 2
         };
 
     // 2. user keys
@@ -955,16 +955,16 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_4)
     const std::size_t ref_set_decomp_m{2};
 
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     const FeeCalculatorMockTrivial fee_calculator;  //just do a trivial calculator here (fee = fee/weight * 1 weight)
 
     const SpBinnedReferenceSetConfigV1 bin_config{
-            .m_bin_radius = 1,
-            .m_num_bin_members = 2
+            .bin_radius = 1,
+            .num_bin_members = 2
         };
 
     // 2. user keys
@@ -1135,16 +1135,16 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_5)
     const std::size_t ref_set_decomp_m{2};
 
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     const FeeCalculatorMockTrivial fee_calculator;  //just do a trivial calculator here (fee = fee/weight * 1 weight)
 
     const SpBinnedReferenceSetConfigV1 bin_config{
-            .m_bin_radius = 1,
-            .m_num_bin_members = 2
+            .bin_radius = 1,
+            .num_bin_members = 2
         };
 
     // 2. user keys
@@ -1332,16 +1332,16 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_6)
     const std::size_t ref_set_decomp_m{2};
 
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 5,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 5,
+            .max_partialscan_attempts = 0
         };
 
     const FeeCalculatorMockTrivial fee_calculator;  //just do a trivial calculator here (fee = fee/weight * 1 weight)
 
     const SpBinnedReferenceSetConfigV1 bin_config{
-            .m_bin_radius = 1,
-            .m_num_bin_members = 2
+            .bin_radius = 1,
+            .num_bin_members = 2
         };
 
     // 2. user keys
@@ -1578,8 +1578,8 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_1)
     const FeeCalculatorMockTrivial fee_calculator;  //just do a trivial calculator here (fee = fee/weight * 1 weight)
 
     const SpBinnedReferenceSetConfigV1 bin_config{
-            .m_bin_radius = 1,
-            .m_num_bin_members = 2
+            .bin_radius = 1,
+            .num_bin_members = 2
         };
 
     // 2. user keys
@@ -1599,9 +1599,9 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_1)
 
     // 1. full internal reorg
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
     MockLedgerContext ledger_context{0, 0};
     SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
@@ -1688,8 +1688,8 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_2)
     const FeeCalculatorMockTrivial fee_calculator;  //just do a trivial calculator here (fee = fee/weight * 1 weight)
 
     const SpBinnedReferenceSetConfigV1 bin_config{
-            .m_bin_radius = 1,
-            .m_num_bin_members = 2
+            .bin_radius = 1,
+            .num_bin_members = 2
         };
 
     // 2. user keys
@@ -1709,9 +1709,9 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_2)
 
     // 2. full internal reorg with replacement
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
     MockLedgerContext ledger_context{0, 0};
     SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
@@ -1814,8 +1814,8 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_3)
     const FeeCalculatorMockTrivial fee_calculator;  //just do a trivial calculator here (fee = fee/weight * 1 weight)
 
     const SpBinnedReferenceSetConfigV1 bin_config{
-            .m_bin_radius = 1,
-            .m_num_bin_members = 2
+            .bin_radius = 1,
+            .num_bin_members = 2
         };
 
     // 2. user keys
@@ -1835,9 +1835,9 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_3)
 
     // 3. partial internal reorg with replacement
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 1
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 1
         };
     MockLedgerContext ledger_context{0, 0};
     SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
@@ -1942,8 +1942,8 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_4)
     const FeeCalculatorMockTrivial fee_calculator;  //just do a trivial calculator here (fee = fee/weight * 1 weight)
 
     const SpBinnedReferenceSetConfigV1 bin_config{
-            .m_bin_radius = 1,
-            .m_num_bin_members = 2
+            .bin_radius = 1,
+            .num_bin_members = 2
         };
 
     // 2. user keys
@@ -1963,9 +1963,9 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_4)
 
     // 4. partial internal reorgs to failure
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 4
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 4
         };
     MockLedgerContext ledger_context{0, 0};
     SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
@@ -2035,8 +2035,8 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_5)
     const FeeCalculatorMockTrivial fee_calculator;  //just do a trivial calculator here (fee = fee/weight * 1 weight)
 
     const SpBinnedReferenceSetConfigV1 bin_config{
-            .m_bin_radius = 1,
-            .m_num_bin_members = 2
+            .bin_radius = 1,
+            .num_bin_members = 2
         };
 
     // 2. user keys
@@ -2056,9 +2056,9 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_5)
 
     // 5. sneaky tx found in follow-up loop
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 4
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 4
         };
     MockLedgerContext ledger_context{0, 0};
     SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
@@ -2156,9 +2156,9 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_1)
 
     // 1. config
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     // 2. user keys
@@ -2358,9 +2358,9 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_2)
 
     // 1. config
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     // 2. user keys
@@ -2488,7 +2488,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_2)
         };
 
     //import key images for onetime addresses of intermediate records in the enote store
-    ASSERT_TRUE(enote_store.try_import_legacy_key_image(key_image, enote_1.m_onetime_address, changes));
+    ASSERT_TRUE(enote_store.try_import_legacy_key_image(key_image, enote_1.onetime_address, changes));
 
     ASSERT_TRUE(enote_store.top_legacy_fullscanned_block_index() == -1);
     ASSERT_TRUE(enote_store.legacy_intermediate_records().size() == 0);
@@ -2590,9 +2590,9 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_3)
 
     // 1. config
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     // 2. user keys
@@ -2735,7 +2735,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_3)
         };
 
     //import key images: enote 1 in block 0
-    ASSERT_TRUE(enote_store.try_import_legacy_key_image(key_image_1, enote_1.m_onetime_address, changes));
+    ASSERT_TRUE(enote_store.try_import_legacy_key_image(key_image_1, enote_1.onetime_address, changes));
 
     ASSERT_TRUE(enote_store.top_legacy_partialscanned_block_index() == 0);
     ASSERT_TRUE(enote_store.top_legacy_fullscanned_block_index() == -1);
@@ -2794,7 +2794,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_3)
         };
 
     //import key image: enote 2 in block 1
-    ASSERT_TRUE(enote_store.try_import_legacy_key_image(key_image_2, enote_2.m_onetime_address, changes));
+    ASSERT_TRUE(enote_store.try_import_legacy_key_image(key_image_2, enote_2.onetime_address, changes));
 
     ASSERT_TRUE(enote_store.top_legacy_partialscanned_block_index() == 1);
     ASSERT_TRUE(enote_store.top_legacy_fullscanned_block_index() == 0);
@@ -3083,9 +3083,9 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_4)
 
     // 1. config
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     // 2. user keys
@@ -3235,8 +3235,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_4)
             {EnoteStoreBalanceUpdateExclusions::LEGACY_INTERMEDIATE}) == 0);
 
     //import key images: enote 1 in block 0, enote 2 in block 1
-    ASSERT_TRUE(enote_store.try_import_legacy_key_image(key_image_1, enote_1.m_onetime_address, changes));
-    ASSERT_FALSE(enote_store.try_import_legacy_key_image(key_image_2, enote_2.m_onetime_address, changes));  //ignore failed import
+    ASSERT_TRUE(enote_store.try_import_legacy_key_image(key_image_1, enote_1.onetime_address, changes));
+    ASSERT_FALSE(enote_store.try_import_legacy_key_image(key_image_2, enote_2.onetime_address, changes));  //ignore failed import
 
     ASSERT_TRUE(enote_store.top_legacy_partialscanned_block_index() == 0);
     ASSERT_TRUE(enote_store.top_legacy_fullscanned_block_index() == -1);
@@ -3278,9 +3278,9 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_5)
 
     // 1. config
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     // 2. user keys
@@ -3439,8 +3439,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_5)
             {EnoteStoreBalanceUpdateExclusions::LEGACY_INTERMEDIATE}) == 0);
 
     //import key images: enote 1 in block 0, enote 2 in block 1
-    ASSERT_TRUE(enote_store.try_import_legacy_key_image(key_image_1, enote_1.m_onetime_address, changes));
-    ASSERT_FALSE(enote_store.try_import_legacy_key_image(key_image_2, enote_2.m_onetime_address, changes));  //ignore failed import
+    ASSERT_TRUE(enote_store.try_import_legacy_key_image(key_image_1, enote_1.onetime_address, changes));
+    ASSERT_FALSE(enote_store.try_import_legacy_key_image(key_image_2, enote_2.onetime_address, changes));  //ignore failed import
 
     ASSERT_TRUE(enote_store.top_legacy_partialscanned_block_index() == 1);
     ASSERT_TRUE(enote_store.top_legacy_fullscanned_block_index() == -1);
@@ -3482,9 +3482,9 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_6)
 
     // 1. config
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     // 2. user keys
@@ -3604,7 +3604,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_6)
 
     ASSERT_TRUE(enote_store_int.legacy_intermediate_records().size() == 1);
     ASSERT_TRUE(
-            enote_store_int.legacy_intermediate_records().begin()->second.m_origin_context.m_block_index == 0
+            enote_store_int.legacy_intermediate_records().begin()->second.origin_context.block_index == 0
         );
     ASSERT_TRUE(enote_store_int.get_balance({SpEnoteOriginStatus::ONCHAIN},
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) == 1);
@@ -3639,7 +3639,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_6)
 
     ASSERT_TRUE(enote_store_int.legacy_intermediate_records().size() == 1);
     ASSERT_TRUE(
-            enote_store_int.legacy_intermediate_records().begin()->second.m_origin_context.m_block_index == 0
+            enote_store_int.legacy_intermediate_records().begin()->second.origin_context.block_index == 0
         );
     ASSERT_TRUE(enote_store_int.get_balance({SpEnoteOriginStatus::ONCHAIN},
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) == 1);
@@ -3653,7 +3653,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_6)
         };
 
     //import key image: enote 1
-    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image_1, enote_1.m_onetime_address, changes));
+    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image_1, enote_1.onetime_address, changes));
 
     ASSERT_TRUE(enote_store_int.top_legacy_partialscanned_block_index() == 0);
     ASSERT_TRUE(enote_store_int.top_legacy_fullscanned_block_index() == -1);
@@ -3923,9 +3923,9 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_7)
 
     // 1. config
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     // 2. user keys
@@ -4107,7 +4107,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_7)
         };
 
     //import key image: enote 1
-    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image, enote_1a.m_onetime_address, changes));
+    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image, enote_1a.onetime_address, changes));
 
     ASSERT_TRUE(enote_store_int.top_legacy_partialscanned_block_index() == 1);
     ASSERT_TRUE(enote_store_int.top_legacy_fullscanned_block_index() == -1);
@@ -4382,9 +4382,9 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_8)
 
     // 1. config
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     // 2. user keys
@@ -4709,9 +4709,9 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_8)
         };
 
     //import key images: enotes 1, 2, 3
-    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image_1, enote_1.m_onetime_address, changes));
-    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image_2, enote_2.m_onetime_address, changes));
-    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image_3, enote_3.m_onetime_address, changes));
+    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image_1, enote_1.onetime_address, changes));
+    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image_2, enote_2.onetime_address, changes));
+    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image_3, enote_3.onetime_address, changes));
 
     ASSERT_TRUE(enote_store_int.top_legacy_partialscanned_block_index() == 4);
     ASSERT_TRUE(enote_store_int.top_legacy_fullscanned_block_index() == -1);
@@ -4778,9 +4778,9 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_9)
 
     // 1. config
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     // 2. user keys
@@ -5047,7 +5047,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_9)
         };
 
     //import key image: enote 1
-    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image, enote_1a.m_onetime_address, changes));
+    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image, enote_1a.onetime_address, changes));
 
     ASSERT_TRUE(enote_store_int.top_legacy_partialscanned_block_index() == 3);
     ASSERT_TRUE(enote_store_int.top_legacy_fullscanned_block_index() == -1);
@@ -5463,9 +5463,9 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
 
     // 1. config
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 2,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 2,
+            .max_partialscan_attempts = 0
         };
 
     const std::size_t max_inputs{1000};
@@ -5477,8 +5477,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
     const FeeCalculatorMockTrivial fee_calculator;  //just do a trivial calculator here (fee = fee/weight * 1 weight)
 
     const SpBinnedReferenceSetConfigV1 bin_config{
-            .m_bin_radius = 1,
-            .m_num_bin_members = 2
+            .bin_radius = 1,
+            .num_bin_members = 2
         };
 
     const std::uint64_t first_sp_allowed_block{0};
@@ -5581,8 +5581,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         ledger_context,
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -5590,8 +5590,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         }, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -5661,16 +5661,16 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         ledger_context,
 
         {
-            legacy_enote_3.m_onetime_address
+            legacy_enote_3.onetime_address
         }, //view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_3
         }, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address,
-            legacy_enote_3.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address,
+            legacy_enote_3.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -5708,9 +5708,9 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address,
-            legacy_enote_3.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address,
+            legacy_enote_3.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -5748,9 +5748,9 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address,
-            legacy_enote_3.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address,
+            legacy_enote_3.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -5800,9 +5800,9 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address,
-            legacy_enote_3.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address,
+            legacy_enote_3.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -5953,8 +5953,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         ledger_context,
 
         {
-            legacy_enote_4.m_onetime_address,
-            legacy_enote_5.m_onetime_address
+            legacy_enote_4.onetime_address,
+            legacy_enote_5.onetime_address
         }, //view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_4,
@@ -5962,8 +5962,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         }, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_4.m_onetime_address,
-            legacy_enote_5.m_onetime_address
+            legacy_enote_4.onetime_address,
+            legacy_enote_5.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_4,
@@ -6000,8 +6000,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_4.m_onetime_address,
-            legacy_enote_5.m_onetime_address
+            legacy_enote_4.onetime_address,
+            legacy_enote_5.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_4,
@@ -6038,8 +6038,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_4.m_onetime_address,
-            legacy_enote_5.m_onetime_address
+            legacy_enote_4.onetime_address,
+            legacy_enote_5.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_4,
@@ -6088,8 +6088,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_4.m_onetime_address,
-            legacy_enote_5.m_onetime_address
+            legacy_enote_4.onetime_address,
+            legacy_enote_5.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_4,
@@ -6223,8 +6223,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         ledger_context,
 
         {
-            legacy_enote_4.m_onetime_address,
-            legacy_enote_5.m_onetime_address
+            legacy_enote_4.onetime_address,
+            legacy_enote_5.onetime_address
         }, //view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_4,
@@ -6232,8 +6232,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         }, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_4.m_onetime_address,
-            legacy_enote_5.m_onetime_address
+            legacy_enote_4.onetime_address,
+            legacy_enote_5.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_4,
@@ -6270,8 +6270,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_4.m_onetime_address,
-            legacy_enote_5.m_onetime_address
+            legacy_enote_4.onetime_address,
+            legacy_enote_5.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_4,
@@ -6308,8 +6308,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_4.m_onetime_address,
-            legacy_enote_5.m_onetime_address
+            legacy_enote_4.onetime_address,
+            legacy_enote_5.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_4,
@@ -6358,8 +6358,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_4.m_onetime_address,
-            legacy_enote_5.m_onetime_address
+            legacy_enote_4.onetime_address,
+            legacy_enote_5.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_4,
@@ -6402,8 +6402,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_4.m_onetime_address,
-            legacy_enote_5.m_onetime_address
+            legacy_enote_4.onetime_address,
+            legacy_enote_5.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_4,
@@ -6440,8 +6440,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_4.m_onetime_address,
-            legacy_enote_5.m_onetime_address
+            legacy_enote_4.onetime_address,
+            legacy_enote_5.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_4,
@@ -6490,8 +6490,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_4.m_onetime_address,
-            legacy_enote_5.m_onetime_address
+            legacy_enote_4.onetime_address,
+            legacy_enote_5.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_4,
@@ -6551,9 +6551,9 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
 
     // 1. config
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 2,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 2,
+            .max_partialscan_attempts = 0
         };
 
     const std::size_t max_inputs{1000};
@@ -6565,8 +6565,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
     const FeeCalculatorMockTrivial fee_calculator;  //just do a trivial calculator here (fee = fee/weight * 1 weight)
 
     const SpBinnedReferenceSetConfigV1 bin_config{
-            .m_bin_radius = 1,
-            .m_num_bin_members = 2
+            .bin_radius = 1,
+            .num_bin_members = 2
         };
 
     const std::uint64_t first_sp_allowed_block{1};
@@ -6669,8 +6669,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         ledger_context,
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -6678,8 +6678,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         }, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -6749,16 +6749,16 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         ledger_context,
 
         {
-            legacy_enote_3.m_onetime_address
+            legacy_enote_3.onetime_address
         }, //view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_3
         }, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address,
-            legacy_enote_3.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address,
+            legacy_enote_3.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -6798,9 +6798,9 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address,
-            legacy_enote_3.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address,
+            legacy_enote_3.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -6838,9 +6838,9 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address,
-            legacy_enote_3.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address,
+            legacy_enote_3.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -6878,9 +6878,9 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address,
-            legacy_enote_3.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address,
+            legacy_enote_3.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -6930,9 +6930,9 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address,
-            legacy_enote_3.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address,
+            legacy_enote_3.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -6976,8 +6976,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -7023,16 +7023,16 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         ledger_context,
 
         {
-            legacy_enote_3.m_onetime_address
+            legacy_enote_3.onetime_address
         }, //view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_3
         }, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address,
-            legacy_enote_3.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address,
+            legacy_enote_3.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -7070,9 +7070,9 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address,
-            legacy_enote_3.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address,
+            legacy_enote_3.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -7110,9 +7110,9 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address,
-            legacy_enote_3.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address,
+            legacy_enote_3.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -7162,9 +7162,9 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address,
-            legacy_enote_3.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address,
+            legacy_enote_3.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -7203,8 +7203,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -7241,8 +7241,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -7279,8 +7279,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -7317,8 +7317,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -7355,8 +7355,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -7405,8 +7405,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -7444,8 +7444,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -7482,8 +7482,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -7520,8 +7520,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -7575,9 +7575,9 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_3)
 
     // 1. config
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 1,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
         };
 
     const FeeCalculatorMockTrivial fee_calculator;  //just do a trivial calculator here (fee = fee/weight * 1 weight)
@@ -7665,14 +7665,14 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_3)
         ledger_context,
 
         {
-            legacy_enote_1.m_onetime_address
+            legacy_enote_1.onetime_address
         }, //view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1
         }, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address
+            legacy_enote_1.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1
@@ -7708,7 +7708,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_3)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address
+            legacy_enote_1.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1
@@ -7744,7 +7744,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_3)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address
+            legacy_enote_1.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1
@@ -7791,14 +7791,14 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_3)
         ledger_context,
 
         {
-            legacy_enote_1.m_onetime_address
+            legacy_enote_1.onetime_address
         }, //view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1
         }, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address
+            legacy_enote_1.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1
@@ -7834,7 +7834,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_3)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address
+            legacy_enote_1.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1
@@ -7870,7 +7870,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_3)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address
+            legacy_enote_1.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1
@@ -7912,7 +7912,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_3)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address
+            legacy_enote_1.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1
@@ -7948,7 +7948,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_3)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address
+            legacy_enote_1.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1
@@ -7985,7 +7985,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_3)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address
+            legacy_enote_1.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1
@@ -8021,7 +8021,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_3)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address
+            legacy_enote_1.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1
@@ -8057,7 +8057,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_3)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address
+            legacy_enote_1.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1
@@ -8108,9 +8108,9 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_4)
 
     // 1. config
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 2,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 2,
+            .max_partialscan_attempts = 0
         };
 
     const std::size_t max_inputs{1000};
@@ -8122,8 +8122,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_4)
     const FeeCalculatorMockTrivial fee_calculator;  //just do a trivial calculator here (fee = fee/weight * 1 weight)
 
     const SpBinnedReferenceSetConfigV1 bin_config{
-            .m_bin_radius = 1,
-            .m_num_bin_members = 2
+            .bin_radius = 1,
+            .num_bin_members = 2
         };
 
     const std::uint64_t first_sp_allowed_block{0};
@@ -8229,8 +8229,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_4)
         ledger_context,
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -8238,8 +8238,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_4)
         }, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -8309,16 +8309,16 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_4)
         ledger_context,
 
         {
-            legacy_enote_3.m_onetime_address
+            legacy_enote_3.onetime_address
         }, //view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_3
         }, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address,
-            legacy_enote_3.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address,
+            legacy_enote_3.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -8382,8 +8382,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_4)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -8417,8 +8417,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_4)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -8456,8 +8456,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_4)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -8491,8 +8491,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_4)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -8541,8 +8541,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_4)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -8576,8 +8576,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_4)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -8628,8 +8628,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_4)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -8663,8 +8663,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_4)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -8727,9 +8727,9 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_5)
 
     // 1. config
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .m_reorg_avoidance_depth = 1,
-            .m_max_chunk_size = 2,
-            .m_max_partialscan_attempts = 0
+            .reorg_avoidance_depth = 1,
+            .max_chunk_size = 2,
+            .max_partialscan_attempts = 0
         };
 
     const std::size_t max_inputs{1000};
@@ -8741,8 +8741,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_5)
     const FeeCalculatorMockTrivial fee_calculator;  //just do a trivial calculator here (fee = fee/weight * 1 weight)
 
     const SpBinnedReferenceSetConfigV1 bin_config{
-            .m_bin_radius = 1,
-            .m_num_bin_members = 2
+            .bin_radius = 1,
+            .num_bin_members = 2
         };
 
     const std::uint64_t first_sp_allowed_block{0};
@@ -8848,8 +8848,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_5)
         ledger_context,
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -8857,8 +8857,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_5)
         }, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -8903,8 +8903,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_5)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -8972,8 +8972,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_5)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -9007,8 +9007,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_5)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -9072,8 +9072,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_5)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -9135,8 +9135,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_5)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -9170,8 +9170,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_5)
         {}, //view_scan_legacy_key_images_expected
 
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //re_view_scan_legacy_onetime_addresses_expected
         {
             legacy_key_image_1,
@@ -9207,8 +9207,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_5)
         refresh_config,
         ledger_context,
         {
-            legacy_enote_1.m_onetime_address,
-            legacy_enote_2.m_onetime_address
+            legacy_enote_1.onetime_address,
+            legacy_enote_2.onetime_address
         }, //legacy_onetime_addresses_expected
         {
             legacy_key_image_1,

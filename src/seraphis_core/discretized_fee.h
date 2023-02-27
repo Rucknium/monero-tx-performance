@@ -56,7 +56,7 @@ using discretized_fee_encoding_t = unsigned char;
 ///
 struct DiscretizedFee final
 {
-    discretized_fee_encoding_t m_fee_encoding;
+    discretized_fee_encoding_t fee_encoding;
 };
 inline const boost::string_ref container_name(const DiscretizedFee) { return "DiscretizedFee"; }
 void append_to_transcript(const DiscretizedFee container, SpTranscriptBuilder &transcript_inout);

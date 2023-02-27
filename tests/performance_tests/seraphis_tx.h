@@ -309,10 +309,10 @@ public:
                 tx_params.ref_set_decomp_m = params.m;
                 tx_params.bin_config =
                     sp::SpBinnedReferenceSetConfigV1{
-                        .m_bin_radius = static_cast<sp::ref_set_bin_dimension_v1_t>(
+                        .bin_radius = static_cast<sp::ref_set_bin_dimension_v1_t>(
                                 sp::uint_pow(params.n, params.m) / 2
                             ),
-                        .m_num_bin_members = static_cast<sp::ref_set_bin_dimension_v1_t>(
+                        .num_bin_members = static_cast<sp::ref_set_bin_dimension_v1_t>(
                                 sp::uint_pow(params.n, params.m / 2)
                             )
                     };  //bin config must be compatible with n^m

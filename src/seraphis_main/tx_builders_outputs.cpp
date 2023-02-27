@@ -68,7 +68,7 @@ static bool ephemeral_pubkeys_are_unique(const std::vector<SpCoinbaseOutputPropo
     std::unordered_set<crypto::x25519_pubkey> enote_ephemeral_pubkeys;
 
     for (const SpCoinbaseOutputProposalV1 &output_proposal : output_proposals)
-        enote_ephemeral_pubkeys.insert(output_proposal.m_enote_ephemeral_pubkey);
+        enote_ephemeral_pubkeys.insert(output_proposal.enote_ephemeral_pubkey);
 
     return enote_ephemeral_pubkeys.size() == output_proposals.size();
 }
@@ -79,7 +79,7 @@ static bool ephemeral_pubkeys_are_unique(const std::vector<SpOutputProposalV1> &
     std::unordered_set<crypto::x25519_pubkey> enote_ephemeral_pubkeys;
 
     for (const SpOutputProposalV1 &output_proposal : output_proposals)
-        enote_ephemeral_pubkeys.insert(output_proposal.m_enote_ephemeral_pubkey);
+        enote_ephemeral_pubkeys.insert(output_proposal.enote_ephemeral_pubkey);
 
     return enote_ephemeral_pubkeys.size() == output_proposals.size();
 }
@@ -110,10 +110,10 @@ static bool ephemeral_pubkeys_are_unique(const std::vector<jamtis::JamtisPayment
 static void make_additional_output_normal_dummy_v1(jamtis::JamtisPaymentProposalV1 &dummy_proposal_out)
 {
     // make random payment proposal for a 'normal' dummy output
-    dummy_proposal_out.m_destination             = jamtis::gen_jamtis_destination_v1();
-    dummy_proposal_out.m_amount                  = 0;
-    dummy_proposal_out.m_enote_ephemeral_privkey = crypto::x25519_secret_key_gen();
-    dummy_proposal_out.m_partial_memo            = TxExtra{};
+    dummy_proposal_out.destination             = jamtis::gen_jamtis_destination_v1();
+    dummy_proposal_out.amount                  = 0;
+    dummy_proposal_out.enote_ephemeral_privkey = crypto::x25519_secret_key_gen();
+    dummy_proposal_out.partial_memo            = TxExtra{};
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -121,13 +121,13 @@ static void make_additional_output_special_dummy_v1(const crypto::x25519_pubkey 
     jamtis::JamtisPaymentProposalV1 &dummy_proposal_out)
 {
     // make random payment proposal for a 'special' dummy output that uses a shared enote ephemeral pubkey
-    dummy_proposal_out.m_destination             = jamtis::gen_jamtis_destination_v1();
+    dummy_proposal_out.destination             = jamtis::gen_jamtis_destination_v1();
     crypto::x25519_invmul_key({crypto::x25519_eight()},
         enote_ephemeral_pubkey,
-        dummy_proposal_out.m_destination.m_addr_K3);  //(1/8) * xK_e_other
-    dummy_proposal_out.m_amount                  = 0;
-    dummy_proposal_out.m_enote_ephemeral_privkey = crypto::x25519_eight();  //r = 8 (can't do r = 1 for x25519)
-    dummy_proposal_out.m_partial_memo            = TxExtra{};
+        dummy_proposal_out.destination.addr_K3);  //(1/8) * xK_e_other
+    dummy_proposal_out.amount                  = 0;
+    dummy_proposal_out.enote_ephemeral_privkey = crypto::x25519_eight();  //r = 8 (can't do r = 1 for x25519)
+    dummy_proposal_out.partial_memo            = TxExtra{};
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -137,11 +137,11 @@ static void make_additional_output_normal_self_send_v1(const jamtis::JamtisSelfS
     jamtis::JamtisPaymentProposalSelfSendV1 &selfsend_proposal_out)
 {
     // build payment proposal for a 'normal' self-send
-    selfsend_proposal_out.m_destination             = destination;
-    selfsend_proposal_out.m_amount                  = amount;
-    selfsend_proposal_out.m_type                    = self_send_type;
-    selfsend_proposal_out.m_enote_ephemeral_privkey = crypto::x25519_secret_key_gen();
-    selfsend_proposal_out.m_partial_memo            = TxExtra{};
+    selfsend_proposal_out.destination             = destination;
+    selfsend_proposal_out.amount                  = amount;
+    selfsend_proposal_out.type                    = self_send_type;
+    selfsend_proposal_out.enote_ephemeral_privkey = crypto::x25519_secret_key_gen();
+    selfsend_proposal_out.partial_memo            = TxExtra{};
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -162,19 +162,19 @@ static void make_additional_output_special_self_send_v1(const jamtis::JamtisSelf
     crypto::x25519_pubkey special_addr_K2;
     crypto::x25519_scmul_key(xk_find_received, enote_ephemeral_pubkey, special_addr_K2);  //xk_fr * xK_e_other
 
-    selfsend_proposal_out.m_destination = destination;
+    selfsend_proposal_out.destination = destination;
     crypto::x25519_invmul_key({crypto::x25519_eight()},
         special_addr_K2,
-        selfsend_proposal_out.m_destination.m_addr_K2);  //(1/8) * xk_fr * xK_e_other
+        selfsend_proposal_out.destination.addr_K2);  //(1/8) * xk_fr * xK_e_other
     crypto::x25519_invmul_key({crypto::x25519_eight()},
         enote_ephemeral_pubkey,
-        selfsend_proposal_out.m_destination.m_addr_K3);  //(1/8) * xK_e_other
+        selfsend_proposal_out.destination.addr_K3);  //(1/8) * xK_e_other
 
     // 2. complete the proposal
-    selfsend_proposal_out.m_amount                  = amount;
-    selfsend_proposal_out.m_type                    = self_send_type;
-    selfsend_proposal_out.m_enote_ephemeral_privkey = crypto::x25519_eight();  //r = 8 (can't do r = 1 for x25519)
-    selfsend_proposal_out.m_partial_memo            = TxExtra{};
+    selfsend_proposal_out.amount                  = amount;
+    selfsend_proposal_out.type                    = self_send_type;
+    selfsend_proposal_out.enote_ephemeral_privkey = crypto::x25519_eight();  //r = 8 (can't do r = 1 for x25519)
+    selfsend_proposal_out.partial_memo            = TxExtra{};
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -195,7 +195,7 @@ void check_jamtis_payment_proposal_selfsend_semantics_v1(
     // 3. try to get an enote record from the enote (via selfsend path)
     SpEnoteRecordV1 temp_enote_record;
     CHECK_AND_ASSERT_THROW_MES(try_get_enote_record_v1_selfsend(temp_enote,
-            output_proposal.m_enote_ephemeral_pubkey,
+            output_proposal.enote_ephemeral_pubkey,
             input_context,
             spend_pubkey,
             k_view_balance,
@@ -204,14 +204,14 @@ void check_jamtis_payment_proposal_selfsend_semantics_v1(
 
     // 4. extract the self-send type
     jamtis::JamtisSelfSendType dummy_type;
-    CHECK_AND_ASSERT_THROW_MES(jamtis::try_get_jamtis_self_send_type(temp_enote_record.m_type, dummy_type),
+    CHECK_AND_ASSERT_THROW_MES(jamtis::try_get_jamtis_self_send_type(temp_enote_record.type, dummy_type),
         "semantics check jamtis self-send payment proposal v1: failed to convert enote type to self-send type (bug).");
 }
 //-------------------------------------------------------------------------------------------------------------------
 void check_v1_coinbase_output_proposal_semantics_v1(const SpCoinbaseOutputProposalV1 &output_proposal)
 {
     std::vector<ExtraFieldElement> additional_memo_elements;
-    CHECK_AND_ASSERT_THROW_MES(try_get_extra_field_elements(output_proposal.m_partial_memo, additional_memo_elements),
+    CHECK_AND_ASSERT_THROW_MES(try_get_extra_field_elements(output_proposal.partial_memo, additional_memo_elements),
         "coinbase output proposal semantics (v1): invalid partial memo.");
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -236,7 +236,7 @@ void check_v1_coinbase_output_proposal_set_semantics_v1(const std::vector<SpCoin
     //    key images)
     for (const SpCoinbaseOutputProposalV1 &output_proposal : output_proposals)
     {
-        CHECK_AND_ASSERT_THROW_MES(onetime_address_is_canonical(output_proposal.m_enote.m_core),
+        CHECK_AND_ASSERT_THROW_MES(onetime_address_is_canonical(output_proposal.enote.core),
             "Semantics check coinbase output proposals v1: an output onetime address is not in the prime subgroup.");
     }
 }
@@ -244,7 +244,7 @@ void check_v1_coinbase_output_proposal_set_semantics_v1(const std::vector<SpCoin
 void check_v1_output_proposal_semantics_v1(const SpOutputProposalV1 &output_proposal)
 {
     std::vector<ExtraFieldElement> additional_memo_elements;
-    CHECK_AND_ASSERT_THROW_MES(try_get_extra_field_elements(output_proposal.m_partial_memo, additional_memo_elements),
+    CHECK_AND_ASSERT_THROW_MES(try_get_extra_field_elements(output_proposal.partial_memo, additional_memo_elements),
         "output proposal semantics (v1): invalid partial memo.");
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -259,8 +259,8 @@ void check_v1_output_proposal_set_semantics_v1(const std::vector<SpOutputProposa
     // 2. if 2 proposals, must be a shared enote ephemeral pubkey
     if (output_proposals.size() == 2)
     {
-        CHECK_AND_ASSERT_THROW_MES(output_proposals[0].m_enote_ephemeral_pubkey == 
-                output_proposals[1].m_enote_ephemeral_pubkey,
+        CHECK_AND_ASSERT_THROW_MES(output_proposals[0].enote_ephemeral_pubkey == 
+                output_proposals[1].enote_ephemeral_pubkey,
             "Semantics check output proposals v1: there are 2 outputs but they don't share an enote ephemeral pubkey.");
     }
 
@@ -280,7 +280,7 @@ void check_v1_output_proposal_set_semantics_v1(const std::vector<SpOutputProposa
     //    key images)
     for (const SpOutputProposalV1 &output_proposal : output_proposals)
     {
-        CHECK_AND_ASSERT_THROW_MES(onetime_address_is_canonical(output_proposal.m_core),
+        CHECK_AND_ASSERT_THROW_MES(onetime_address_is_canonical(output_proposal.core),
             "Semantics check output proposals v1: an output onetime address is not in the prime subgroup.");
     }
 }
@@ -291,11 +291,11 @@ void make_v1_coinbase_output_proposal_v1(const jamtis::JamtisPaymentProposalV1 &
 {
     jamtis::get_coinbase_output_proposal_v1(proposal,
         block_height,
-        output_proposal_out.m_enote.m_core,
-        output_proposal_out.m_enote_ephemeral_pubkey,
-        output_proposal_out.m_enote.m_addr_tag_enc,
-        output_proposal_out.m_enote.m_view_tag,
-        output_proposal_out.m_partial_memo);
+        output_proposal_out.enote.core,
+        output_proposal_out.enote_ephemeral_pubkey,
+        output_proposal_out.enote.addr_tag_enc,
+        output_proposal_out.enote.view_tag,
+        output_proposal_out.partial_memo);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_v1_output_proposal_v1(const jamtis::JamtisPaymentProposalV1 &proposal,
@@ -304,12 +304,12 @@ void make_v1_output_proposal_v1(const jamtis::JamtisPaymentProposalV1 &proposal,
 {
     jamtis::get_output_proposal_v1(proposal,
         input_context,
-        output_proposal_out.m_core,
-        output_proposal_out.m_enote_ephemeral_pubkey,
-        output_proposal_out.m_encoded_amount,
-        output_proposal_out.m_addr_tag_enc,
-        output_proposal_out.m_view_tag,
-        output_proposal_out.m_partial_memo);
+        output_proposal_out.core,
+        output_proposal_out.enote_ephemeral_pubkey,
+        output_proposal_out.encoded_amount,
+        output_proposal_out.addr_tag_enc,
+        output_proposal_out.view_tag,
+        output_proposal_out.partial_memo);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_v1_output_proposal_v1(const jamtis::JamtisPaymentProposalSelfSendV1 &proposal,
@@ -320,12 +320,12 @@ void make_v1_output_proposal_v1(const jamtis::JamtisPaymentProposalSelfSendV1 &p
     jamtis::get_output_proposal_v1(proposal,
         k_view_balance,
         input_context,
-        output_proposal_out.m_core,
-        output_proposal_out.m_enote_ephemeral_pubkey,
-        output_proposal_out.m_encoded_amount,
-        output_proposal_out.m_addr_tag_enc,
-        output_proposal_out.m_view_tag,
-        output_proposal_out.m_partial_memo);
+        output_proposal_out.core,
+        output_proposal_out.enote_ephemeral_pubkey,
+        output_proposal_out.encoded_amount,
+        output_proposal_out.addr_tag_enc,
+        output_proposal_out.view_tag,
+        output_proposal_out.partial_memo);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_v1_coinbase_outputs_v1(const std::vector<SpCoinbaseOutputProposalV1> &output_proposals,
@@ -344,13 +344,13 @@ void make_v1_coinbase_outputs_v1(const std::vector<SpCoinbaseOutputProposalV1> &
     for (const SpCoinbaseOutputProposalV1 &output_proposal : output_proposals)
     {
         // a. convert to enote
-        outputs_out.emplace_back(output_proposal.m_enote);
+        outputs_out.emplace_back(output_proposal.enote);
 
         // b. copy unique enote pubkeys to tx supplement (note: the semantics checker should prevent duplicates)
         if (std::find(output_enote_ephemeral_pubkeys_out.begin(),
                 output_enote_ephemeral_pubkeys_out.end(),
-                output_proposal.m_enote_ephemeral_pubkey) == output_enote_ephemeral_pubkeys_out.end())
-            output_enote_ephemeral_pubkeys_out.emplace_back(output_proposal.m_enote_ephemeral_pubkey);
+                output_proposal.enote_ephemeral_pubkey) == output_enote_ephemeral_pubkeys_out.end())
+            output_enote_ephemeral_pubkeys_out.emplace_back(output_proposal.enote_ephemeral_pubkey);
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -377,7 +377,7 @@ void make_v1_outputs_v1(const std::vector<SpOutputProposalV1> &output_proposals,
     {
         // a. sanity check
         // note: a blinding factor of 0 is allowed (but not recommended)
-        CHECK_AND_ASSERT_THROW_MES(sc_check(to_bytes(output_proposal.m_core.m_amount_blinding_factor)) == 0,
+        CHECK_AND_ASSERT_THROW_MES(sc_check(to_bytes(output_proposal.core.amount_blinding_factor)) == 0,
             "making v1 outputs: invalid amount blinding factor (non-canonical).");
 
         // b. convert to enote
@@ -385,13 +385,13 @@ void make_v1_outputs_v1(const std::vector<SpOutputProposalV1> &output_proposals,
 
         // c. cache amount commitment information for range proofs
         output_amounts_out.emplace_back(amount_ref(output_proposal));
-        output_amount_commitment_blinding_factors_out.emplace_back(output_proposal.m_core.m_amount_blinding_factor);
+        output_amount_commitment_blinding_factors_out.emplace_back(output_proposal.core.amount_blinding_factor);
 
         // d. copy unique enote pubkeys to tx supplement
         if (std::find(output_enote_ephemeral_pubkeys_out.begin(),
                 output_enote_ephemeral_pubkeys_out.end(),
-                output_proposal.m_enote_ephemeral_pubkey) == output_enote_ephemeral_pubkeys_out.end())
-            output_enote_ephemeral_pubkeys_out.emplace_back(output_proposal.m_enote_ephemeral_pubkey);
+                output_proposal.enote_ephemeral_pubkey) == output_enote_ephemeral_pubkeys_out.end())
+            output_enote_ephemeral_pubkeys_out.emplace_back(output_proposal.enote_ephemeral_pubkey);
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -679,10 +679,10 @@ void finalize_v1_output_proposal_set_v1(const boost::multiprecision::uint128_t &
     boost::multiprecision::uint128_t output_sum{transaction_fee};
 
     for (const jamtis::JamtisPaymentProposalV1 &normal_proposal : normal_payment_proposals_inout)
-        output_sum += normal_proposal.m_amount;
+        output_sum += normal_proposal.amount;
 
     for (const jamtis::JamtisPaymentProposalSelfSendV1 &selfsend_proposal : selfsend_payment_proposals_inout)
-        output_sum += selfsend_proposal.m_amount;
+        output_sum += selfsend_proposal.amount;
 
     CHECK_AND_ASSERT_THROW_MES(total_input_amount >= output_sum,
         "Finalize output proposals v1: input amount is too small.");
@@ -696,7 +696,7 @@ void finalize_v1_output_proposal_set_v1(const boost::multiprecision::uint128_t &
     self_send_output_types.reserve(selfsend_payment_proposals_inout.size());
 
     for (const jamtis::JamtisPaymentProposalSelfSendV1 &selfsend_proposal : selfsend_payment_proposals_inout)
-        self_send_output_types.emplace_back(selfsend_proposal.m_type);
+        self_send_output_types.emplace_back(selfsend_proposal.type);
 
     // 3. set the shared enote ephemeral pubkey here: it will always be the first one when it is needed
     crypto::x25519_pubkey first_enote_ephemeral_pubkey{};
@@ -735,7 +735,7 @@ void finalize_tx_extra_v1(const TxExtra &partial_memo,
     accumulate_extra_field_elements(partial_memo, collected_memo_elements);
 
     for (const SpCoinbaseOutputProposalV1 &output_proposal : output_proposals)
-        accumulate_extra_field_elements(output_proposal.m_partial_memo, collected_memo_elements);
+        accumulate_extra_field_elements(output_proposal.partial_memo, collected_memo_elements);
 
     // 2. finalize the extra field
     make_tx_extra(std::move(collected_memo_elements), tx_extra_out);
@@ -750,7 +750,7 @@ void finalize_tx_extra_v1(const TxExtra &partial_memo,
     accumulate_extra_field_elements(partial_memo, collected_memo_elements);
 
     for (const SpOutputProposalV1 &output_proposal : output_proposals)
-        accumulate_extra_field_elements(output_proposal.m_partial_memo, collected_memo_elements);
+        accumulate_extra_field_elements(output_proposal.partial_memo, collected_memo_elements);
 
     // 2. finalize the extra field
     make_tx_extra(std::move(collected_memo_elements), tx_extra_out);
@@ -759,16 +759,16 @@ void finalize_tx_extra_v1(const TxExtra &partial_memo,
 void check_v1_tx_supplement_semantics_v1(const SpTxSupplementV1 &tx_supplement, const std::size_t num_outputs)
 {
     // 1. num enote ephemeral pubkeys == num outputs
-    CHECK_AND_ASSERT_THROW_MES(tx_supplement.m_output_enote_ephemeral_pubkeys.size() == num_outputs,
+    CHECK_AND_ASSERT_THROW_MES(tx_supplement.output_enote_ephemeral_pubkeys.size() == num_outputs,
         "Semantics check tx supplement v1: there must be one enote pubkey for each output.");
 
     // 2. all enote pubkeys should be unique
-    CHECK_AND_ASSERT_THROW_MES(keys_are_unique(tx_supplement.m_output_enote_ephemeral_pubkeys),
+    CHECK_AND_ASSERT_THROW_MES(keys_are_unique(tx_supplement.output_enote_ephemeral_pubkeys),
         "Semantics check tx supplement v1: enote pubkeys must be unique.");
 
     // 3. enote ephemeral pubkeys should not be zero
     // note: this is an easy check to do, but in no way guarantees the enote ephemeral pubkeys are valid/usable
-    for (const crypto::x25519_pubkey &enote_ephemeral_pubkey : tx_supplement.m_output_enote_ephemeral_pubkeys)
+    for (const crypto::x25519_pubkey &enote_ephemeral_pubkey : tx_supplement.output_enote_ephemeral_pubkeys)
     {
         CHECK_AND_ASSERT_THROW_MES(!(enote_ephemeral_pubkey == crypto::x25519_pubkey{}),
             "Semantics check tx supplement v1: an enote ephemeral pubkey is zero.");
@@ -776,7 +776,7 @@ void check_v1_tx_supplement_semantics_v1(const SpTxSupplementV1 &tx_supplement, 
 
     // 4. the tx extra must be well-formed
     std::vector<ExtraFieldElement> extra_field_elements;
-    CHECK_AND_ASSERT_THROW_MES(try_get_extra_field_elements(tx_supplement.m_tx_extra, extra_field_elements),
+    CHECK_AND_ASSERT_THROW_MES(try_get_extra_field_elements(tx_supplement.tx_extra, extra_field_elements),
         "Semantics check tx supplement v1: could not extract extra field elements.");
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -785,22 +785,22 @@ void check_v1_tx_supplement_semantics_v2(const SpTxSupplementV1 &tx_supplement, 
     // 1. there may be either 1 or 3+ enote pubkeys
     if (num_outputs <= 2)
     {
-        CHECK_AND_ASSERT_THROW_MES(tx_supplement.m_output_enote_ephemeral_pubkeys.size() == 1,
+        CHECK_AND_ASSERT_THROW_MES(tx_supplement.output_enote_ephemeral_pubkeys.size() == 1,
             "Semantics check tx supplement v2: there must be 1 enote pubkey if there are <= 2 outputs.");
     }
     else
     {
-        CHECK_AND_ASSERT_THROW_MES(tx_supplement.m_output_enote_ephemeral_pubkeys.size() == num_outputs,
+        CHECK_AND_ASSERT_THROW_MES(tx_supplement.output_enote_ephemeral_pubkeys.size() == num_outputs,
             "Semantics check tx supplement v2: there must be one enote pubkey for each output when there are > 2 outputs.");
     }
 
     // 2. all enote pubkeys should be unique
-    CHECK_AND_ASSERT_THROW_MES(keys_are_unique(tx_supplement.m_output_enote_ephemeral_pubkeys),
+    CHECK_AND_ASSERT_THROW_MES(keys_are_unique(tx_supplement.output_enote_ephemeral_pubkeys),
         "Semantics check tx supplement v2: enote pubkeys must be unique.");
 
     // 3. enote ephemeral pubkeys should not be zero
     // note: this is an easy check to do, but in no way guarantees the enote ephemeral pubkeys are valid/usable
-    for (const crypto::x25519_pubkey &enote_ephemeral_pubkey : tx_supplement.m_output_enote_ephemeral_pubkeys)
+    for (const crypto::x25519_pubkey &enote_ephemeral_pubkey : tx_supplement.output_enote_ephemeral_pubkeys)
     {
         CHECK_AND_ASSERT_THROW_MES(!(enote_ephemeral_pubkey == crypto::x25519_pubkey{}),
             "Semantics check tx supplement v2: an enote ephemeral pubkey is zero.");
@@ -808,7 +808,7 @@ void check_v1_tx_supplement_semantics_v2(const SpTxSupplementV1 &tx_supplement, 
 
     // 4. the tx extra must be well-formed
     std::vector<ExtraFieldElement> extra_field_elements;
-    CHECK_AND_ASSERT_THROW_MES(try_get_extra_field_elements(tx_supplement.m_tx_extra, extra_field_elements),
+    CHECK_AND_ASSERT_THROW_MES(try_get_extra_field_elements(tx_supplement.tx_extra, extra_field_elements),
         "Semantics check tx supplement v2: could not extract extra field elements.");
 }
 //-------------------------------------------------------------------------------------------------------------------

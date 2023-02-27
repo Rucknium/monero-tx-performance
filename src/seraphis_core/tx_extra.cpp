@@ -100,16 +100,16 @@ static bool try_parse_bytes_varint(const epee::span<const unsigned char> &bytes,
 static void grow_extra_field_bytes(const ExtraFieldElement &element, std::vector<unsigned char> &bytes_inout)
 {
     // varint(type) || varint(length) || bytes
-    bytes_inout.reserve(bytes_inout.size() + 18 + element.m_value.size());
+    bytes_inout.reserve(bytes_inout.size() + 18 + element.value.size());
 
     // 1. append type
-    append_varint(element.m_type, bytes_inout);
+    append_varint(element.type, bytes_inout);
 
     // 2. append length
-    append_varint(element.m_value.size(), bytes_inout);
+    append_varint(element.value.size(), bytes_inout);
 
     // 3. append value
-    append_bytes(element.m_value.data(), element.m_value.size(), bytes_inout);
+    append_bytes(element.value.data(), element.value.size(), bytes_inout);
 }
 //-------------------------------------------------------------------------------------------------------------------
 // get an extra field element from the specified position in the tx extra field
@@ -120,7 +120,7 @@ static bool try_get_extra_field_element(const epee::span<const unsigned char> &t
     ExtraFieldElement &element_out)
 {
     // 1. parse the type
-    if (!try_parse_bytes_varint(tx_extra, element_position_inout, element_out.m_type))
+    if (!try_parse_bytes_varint(tx_extra, element_position_inout, element_out.type))
         return false;
 
     // 2. parse the length
@@ -133,7 +133,7 @@ static bool try_get_extra_field_element(const epee::span<const unsigned char> &t
         return false;
 
     // 4. parse the value
-    append_bytes(tx_extra.data() + element_position_inout, length, element_out.m_value);
+    append_bytes(tx_extra.data() + element_position_inout, length, element_out.value);
     element_position_inout += length;
 
     return true;
@@ -143,24 +143,24 @@ static bool try_get_extra_field_element(const epee::span<const unsigned char> &t
 bool operator<(const ExtraFieldElement &a, const ExtraFieldElement &b)
 {
     // 1. check type
-    if (a.m_type < b.m_type)
+    if (a.type < b.type)
         return true;
-    if (a.m_type > b.m_type)
+    if (a.type > b.type)
         return false;
 
     // 2. check length (type is equal)
-    if (a.m_value.size() < b.m_value.size())
+    if (a.value.size() < b.value.size())
         return true;
-    if (a.m_value.size() > b.m_value.size())
+    if (a.value.size() > b.value.size())
         return false;
 
     // 3. check value (type, length are equal)
-    return a.m_value < b.m_value;
+    return a.value < b.value;
 }
 //-------------------------------------------------------------------------------------------------------------------
 std::size_t length(const ExtraFieldElement &element)
 {
-    return element.m_value.size();
+    return element.value.size();
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_tx_extra(std::vector<ExtraFieldElement> elements, TxExtra &tx_extra_out)
@@ -224,9 +224,9 @@ void accumulate_extra_field_elements(const TxExtra &partial_memo,
 ExtraFieldElement gen_extra_field_element()
 {
     ExtraFieldElement temp;
-    temp.m_type = crypto::rand_idx<std::uint64_t>(0);
-    temp.m_value.resize(crypto::rand_idx(static_cast<std::size_t>(101)));  //limit length to 100 bytes for performance
-    crypto::rand(temp.m_value.size(), temp.m_value.data());
+    temp.type = crypto::rand_idx<std::uint64_t>(0);
+    temp.value.resize(crypto::rand_idx(static_cast<std::size_t>(101)));  //limit length to 100 bytes for performance
+    crypto::rand(temp.value.size(), temp.value.data());
     return temp;
 }
 //-------------------------------------------------------------------------------------------------------------------
