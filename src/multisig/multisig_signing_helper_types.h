@@ -102,7 +102,7 @@ const rct::key& message_ref(const MultisigPartialSigVariant &variant);
 struct MultisigPartialSigSetV1 final
 {
     /// multisig signer subgroup these partial signatures were created for
-    signer_set_filter signer_set_filter;
+    multisig::signer_set_filter signer_set_filter;
     /// id of signer who made these partial signatures
     crypto::public_key signer_id;
 
