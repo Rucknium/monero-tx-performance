@@ -147,19 +147,19 @@ struct ChainContiguityMarker final
 };
 
 //-------------------------------------------------------------------------------------------------------------------
-// - this is the number of extra blocks to scan below our desired start index in case there was a reorg lower
+// - this is the number of extra elements to scan below our desired start index in case there was a reorg lower
 //   than that start index
 // - we use an exponential back-off as a function of fullscan attempts because if a fullscan fails then
 //   the true location of alignment divergence is unknown; moreover, the distance between the desired
-//   start index and the enote store's refresh index may be very large; if a fixed back-off were
+//   start index and the lowest scannable index may be very large; if a fixed back-off were
 //   used, then it could take many fullscan attempts to find the point of divergence
 //-------------------------------------------------------------------------------------------------------------------
 static std::uint64_t get_reorg_avoidance_depth(const std::uint64_t default_reorg_avoidance_depth,
     const std::uint64_t completed_fullscan_attempts)
 {
     // 1. start at a depth of zero
-    // - this avoids accidentally reorging your enote store if the basic-chunk backend only has a portion
-    //   of the blocks in your initial reorg avoidance depth range available when 'get chunk' is called (in the case
+    // - this avoids accidentally reorging your data store if the scanning backend only has a portion
+    //   of the elements in your initial reorg avoidance depth range available when 'get chunk' is called (in the case
     //   where there wasn't actually a reorg and the backend is just catching up)
     if (completed_fullscan_attempts == 0)
         return 0;
@@ -171,6 +171,32 @@ static std::uint64_t get_reorg_avoidance_depth(const std::uint64_t default_reorg
 
     // 3. 10 ^ (fullscan attempts) * default depth
     return math::uint_pow(10, completed_fullscan_attempts - 1) * default_reorg_avoidance_depth;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+static std::uint64_t get_start_scan_index(const std::uint64_t reorg_avoidance_increment,
+    const std::uint64_t completed_fullscan_attempts,
+    const std::uint64_t lowest_scannable_index,
+    const std::uint64_t desired_start_index)
+{
+    // 1. set reorg avoidance depth
+    // - this is the number of extra elements to scan below our desired start index in case there was a reorg lower
+    //   than our initial contiguity marker before this scan attempt
+    // note: we use an exponential back-off as a function of fullscan attempts because if a fullscan fails then
+    //       the true location of alignment divergence is unknown; moreover, the distance between the first
+    //       desired start index and the enote store's refresh index may be very large; if a fixed back-off were
+    //       used, then it could take many fullscan attempts to find the point of divergence
+    // note: we start at '0', which means if a NEED_PARTIALSCAN is detected before any NEED_FULLSCANs then we will
+    //       have to loop through and get a NEED_FULLSCAN before the reorg can be resolved (it should be fairly cheap)
+    const std::uint64_t reorg_avoidance_depth{
+            get_reorg_avoidance_depth(reorg_avoidance_increment, completed_fullscan_attempts)
+        };
+
+    // 2. initial block to scan = max(desired first block - reorg depth, enote store's min scan index)
+    if (desired_start_index >= reorg_avoidance_depth + lowest_scannable_index)
+        return desired_start_index - reorg_avoidance_depth;
+    else
+        return lowest_scannable_index;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -584,38 +610,21 @@ bool refresh_enote_store_ledger(const RefreshLedgerEnoteStoreConfig &config,
     while (scan_status == ScanStatus::NEED_PARTIALSCAN ||
         scan_status == ScanStatus::NEED_FULLSCAN)
     {
-        // 1. get the block index of the first block the enote store updater wants to have scanned (e.g. the first block
-        //    after the last block that was scanned)
-        const std::uint64_t desired_first_block{enote_store_updater_inout.desired_first_block()};
-
-        // 2. set reorg avoidance depth
-        // - this is the number of extra blocks to scan below our desired start index in case there was a reorg lower
-        //   than our initial contiguity marker before this scan attempt
-        // note: we use an exponential back-off as a function of fullscan attempts because if a fullscan fails then
-        //       the true location of alignment divergence is unknown; moreover, the distance between the first
-        //       desired start index and the enote store's refresh index may be very large; if a fixed back-off were
-        //       used, then it could take many fullscan attempts to find the point of divergence
-        // note: we start at '0', which means if a NEED_PARTIALSCAN is detected before any NEED_FULLSCANs then we will
-        //       have to loop through and get a NEED_FULLSCAN before the reorg can be resolved (it should be fairly cheap)
-        const std::uint64_t reorg_avoidance_depth{
-                get_reorg_avoidance_depth(config.reorg_avoidance_depth, fullscan_attempts)
+        // 1. get index of the first block to scan
+        const std::uint64_t start_scan_index{
+                get_start_scan_index(config.reorg_avoidance_depth,
+                    fullscan_attempts,
+                    enote_store_updater_inout.refresh_index(),
+                    enote_store_updater_inout.desired_first_block())
             };
 
-        // 3. initial block to scan = max(desired first block - reorg depth, enote store's min scan index)
-        std::uint64_t initial_refresh_index;
-
-        if (desired_first_block >= reorg_avoidance_depth + enote_store_updater_inout.refresh_index())
-            initial_refresh_index = desired_first_block - reorg_avoidance_depth;
-        else
-            initial_refresh_index = enote_store_updater_inout.refresh_index();
-
-        // 4. set initial contiguity marker
+        // 2. set initial contiguity marker
         // - this starts as the prefix of the first block to scan, and should either be known to the enote store
         //   updater or have an unspecified block id
         ChainContiguityMarker contiguity_marker;
-        set_initial_contiguity_marker(enote_store_updater_inout, initial_refresh_index, contiguity_marker);
+        set_initial_contiguity_marker(enote_store_updater_inout, start_scan_index, contiguity_marker);
 
-        // 5. record the scan attempt
+        // 3. record the scan attempt
         if (scan_status == ScanStatus::NEED_PARTIALSCAN)
             ++partialscan_attempts;
         else if (scan_status == ScanStatus::NEED_FULLSCAN)
@@ -624,7 +633,7 @@ bool refresh_enote_store_ledger(const RefreshLedgerEnoteStoreConfig &config,
         CHECK_AND_ASSERT_THROW_MES(fullscan_attempts < 50,
             "refresh ledger for enote store: fullscan attempts exceeded 50 (sanity check fail).");
 
-        // 6. fail if we have exceeded the max number of partial scanning attempts (i.e. too many reorgs were detected,
+        // 4. fail if we have exceeded the max number of partial scanning attempts (i.e. too many reorgs were detected,
         //    so now we abort)
         if (partialscan_attempts > config.max_partialscan_attempts)
         {
@@ -632,7 +641,7 @@ bool refresh_enote_store_ledger(const RefreshLedgerEnoteStoreConfig &config,
             break;
         }
 
-        // 7. process the ledger
+        // 5. process the ledger
         try
         {
             scan_status = process_ledger_for_full_refresh(config.max_chunk_size,
