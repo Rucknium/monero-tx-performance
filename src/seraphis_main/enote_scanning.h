@@ -53,13 +53,26 @@
 //forward declarations
 namespace sp
 {
-    class EnoteFindingContextOffchain;
+    class EnoteScanningContextNonLedger;
     class EnoteScanningContextLedger;
     class EnoteStoreUpdater;
 }
 
 namespace sp
 {
+
+////
+// EnoteScanningChunkNonLedgerV1
+// - contextual basic enote records for owned enote candidates in a non-ledger context (at a single point in time)
+// - key images from all txs with owned enote candidates
+///
+struct EnoteScanningChunkNonLedgerV1 final
+{
+    /// owned enote candidates in a non-ledger context (mapped to tx id)
+    std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> basic_records_per_tx;
+    /// key images from txs with owned enote candidates in the non-ledger context
+    std::list<SpContextualKeyImageSetV1> contextual_key_images;
+};
 
 ////
 // EnoteScanningChunkLedgerV1
@@ -85,19 +98,6 @@ struct EnoteScanningChunkLedgerV1 final
     /// owned enote candidates in range [start index, end index)  (mapped to tx id)
     std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> basic_records_per_tx;
     /// key images from txs with owned enote candidates in range [start index, end index)
-    std::list<SpContextualKeyImageSetV1> contextual_key_images;
-};
-
-////
-// EnoteScanningChunkNonLedgerV1
-// - contextual basic enote records for owned enote candidates in a non-ledger context (at a single point in time)
-// - key images from all txs with owned enote candidates
-///
-struct EnoteScanningChunkNonLedgerV1 final
-{
-    /// owned enote candidates in a non-ledger context (mapped to tx id)
-    std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> basic_records_per_tx;
-    /// key images from txs with owned enote candidates in the non-ledger context
     std::list<SpContextualKeyImageSetV1> contextual_key_images;
 };
 
@@ -134,24 +134,37 @@ void check_v1_enote_scan_chunk_nonledger_semantics_v1(const EnoteScanningChunkNo
     const SpEnoteOriginStatus expected_origin_status,
     const SpEnoteSpentStatus expected_spent_status);
 /**
+* brief: chunk_is_empty - check if a chunk is empty (has no records)
+* param: chunk -
+* return: true if the chunk is empty
+*/
+bool chunk_is_empty(const EnoteScanningChunkNonLedgerV1 &chunk);
+bool chunk_is_empty(const EnoteScanningChunkLedgerV1 &chunk);
+/**
+* brief: refresh_enote_store_offchain - perform an off-chain balance recovery process
+* param: expected_origin_status -
+* param: expected_spent_status -
+* inoutparam: scanning_context_inout -
+* inoutparam: enote_store_updater_inout -
+* return: false if the refresh was not completely successful (an exception was encountered when getting or processing a
+*         chunk)
+*/
+bool refresh_enote_store_nonledger(const SpEnoteOriginStatus expected_origin_status,
+    const SpEnoteSpentStatus expected_spent_status,
+    EnoteScanningContextNonLedger &scanning_context_inout,
+    EnoteStoreUpdater &enote_store_updater_inout);
+/**
 * brief: refresh_enote_store_ledger - perform a complete on-chain + unconfirmed cache balance recovery process
 * param: config -
-* inoutparam: scanning_context_inout -
+* inoutparam: ledger_scanning_context_inout -
+* inoutparam: nonledger_scanning_context_inout -
 * inoutparam: enote_store_updater_inout -
 * return: false if the refresh was not completely successful (a non-exceptional error was encountered, such as too many
 *         partial-scan attempts or an exception being thrown deep in the scanning code that was caught and ignored)
 */
 bool refresh_enote_store_ledger(const RefreshLedgerEnoteStoreConfig &config,
-    EnoteScanningContextLedger &scanning_context_inout,
-    EnoteStoreUpdater &enote_store_updater_inout);
-/**
-* brief: refresh_enote_store_offchain - perform an off-chain balance recovery process
-* param: enote_finding_context -
-* inoutparam: enote_store_updater_inout -
-* return: false if the refresh was not completely successful (an exception was encountered when getting or processing a
-*         chunk)
-*/
-bool refresh_enote_store_offchain(const EnoteFindingContextOffchain &enote_finding_context,
+    EnoteScanningContextNonLedger &nonledger_scanning_context_inout,
+    EnoteScanningContextLedger &ledger_scanning_context_inout,
     EnoteStoreUpdater &enote_store_updater_inout);
 
 } //namespace sp

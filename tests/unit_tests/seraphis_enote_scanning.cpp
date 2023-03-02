@@ -94,8 +94,45 @@ namespace sp
 {
 
 ////
+// EnoteScanningContextNonLedgerTEST
+// - enote scanning context for injecting behavior into the nonledger component of a scanning process
+///
+class EnoteScanningContextNonLedgerTEST final : public EnoteScanningContextNonLedger
+{
+public:
+//constructors
+    /// normal constructor
+    EnoteScanningContextNonLedgerTEST(EnoteScanningContextNonLedgerSimple &core_scanning_context,
+        Invocable &invocable_get_nonledger_chunk) :
+            m_core_scanning_context{core_scanning_context},
+            m_invocable_get_nonledger_chunk{invocable_get_nonledger_chunk}
+    {}
+
+//overloaded operators
+    /// disable copy/move (this is a scoped manager [reference werapper])
+    EnoteScanningContextNonLedgerTEST& operator=(EnoteScanningContextNonLedgerTEST&&) = delete;
+
+//member functions
+    /// try to get a scanning chunk for the unconfirmed txs in a ledger
+    void get_nonledger_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) override
+    {
+        m_invocable_get_nonledger_chunk.invoke();
+        m_core_scanning_context.get_nonledger_chunk(chunk_out);
+    }
+    /// check if aborted
+    bool is_aborted() const override { return false; }
+
+private:
+    /// enote scanning context that this test context wraps
+    EnoteScanningContextNonLedgerSimple &m_core_scanning_context;
+
+    /// injected invocable objects
+    Invocable &m_invocable_get_nonledger_chunk;
+};
+
+////
 // EnoteScanningContextLedgerTEST
-// - enote scanning context for injecting behavior into a scanning process
+// - enote scanning context for injecting behavior into the ledger component of a scanning process
 ///
 class EnoteScanningContextLedgerTEST final : public EnoteScanningContextLedger
 {
@@ -105,12 +142,10 @@ public:
     EnoteScanningContextLedgerTEST(EnoteScanningContextLedgerSimple &core_scanning_context,
         Invocable &invocable_begin_scanning,
         Invocable &invocable_get_onchain_chunk,
-        Invocable &invocable_get_unconfirmed_chunk,
         Invocable &invocable_terminate) :
             m_core_scanning_context{core_scanning_context},
             m_invocable_begin_scanning{invocable_begin_scanning},
             m_invocable_get_onchain_chunk{invocable_get_onchain_chunk},
-            m_invocable_get_unconfirmed_chunk{invocable_get_unconfirmed_chunk},
             m_invocable_terminate{invocable_terminate}
     {}
 
@@ -133,12 +168,6 @@ public:
         m_invocable_get_onchain_chunk.invoke();
         m_core_scanning_context.get_onchain_chunk(chunk_out);
     }
-    /// try to get a scanning chunk for the unconfirmed txs in a ledger
-    void get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) override
-    {
-        m_invocable_get_unconfirmed_chunk.invoke();
-        m_core_scanning_context.get_unconfirmed_chunk(chunk_out);
-    }
     /// tell the enote finder to stop its scanning process (should be no-throw no-fail)
     void terminate_scanning() override
     {
@@ -155,7 +184,6 @@ private:
     /// injected invocable objects
     Invocable &m_invocable_begin_scanning;
     Invocable &m_invocable_get_onchain_chunk;
-    Invocable &m_invocable_get_unconfirmed_chunk;
     Invocable &m_invocable_terminate;
 };
 
@@ -261,11 +289,16 @@ TEST(seraphis_enote_scanning, trivial_ledger)
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
-    const EnoteFindingContextLedgerMockSp enote_finding_context{ledger_context, user_keys.xk_fr};
-    EnoteScanningContextLedgerSimple enote_scanning_context{enote_finding_context};
+    const EnoteFindingContextUnconfirmedMockSp enote_finding_context_unconfirmed{ledger_context, user_keys.xk_fr};
+    const EnoteFindingContextLedgerMockSp enote_finding_context_ledger{ledger_context, user_keys.xk_fr};
+    EnoteScanningContextNonLedgerSimple enote_scanning_context_unconfirmed{enote_finding_context_unconfirmed};
+    EnoteScanningContextLedgerSimple enote_scanning_context_ledger{enote_finding_context_ledger};
     EnoteStoreUpdaterMockSp enote_store_updater{user_keys.K_1_base, user_keys.k_vb, user_enote_store};
 
-    ASSERT_NO_THROW(refresh_enote_store_ledger(refresh_config, enote_scanning_context, enote_store_updater));
+    ASSERT_NO_THROW(refresh_enote_store_ledger(refresh_config,
+        enote_scanning_context_unconfirmed,
+        enote_scanning_context_ledger,
+        enote_store_updater));
 
     // make a copy of the expected enote record
     SpEnoteRecordV1 single_enote_record;
@@ -1644,16 +1677,18 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_1)
     //   b. unconfirmed chunk: empty
     //   c. follow-up onchain loop: success on block 0 (range [0, 0) -> DONE)
     // 5. DONE: refresh enote store of A
-    const EnoteFindingContextLedgerMockSp enote_finding_context_A{ledger_context, user_keys_A.xk_fr};
-    EnoteScanningContextLedgerSimple enote_scanning_context_A{enote_finding_context_A};
+    const EnoteFindingContextUnconfirmedMockSp enote_finding_context_unconfirmed_A{ledger_context, user_keys_A.xk_fr};
+    const EnoteFindingContextLedgerMockSp enote_finding_context_ledger_A{ledger_context, user_keys_A.xk_fr};
+    EnoteScanningContextNonLedgerSimple enote_scanning_context_unconfirmed_A{enote_finding_context_unconfirmed_A};
+    EnoteScanningContextLedgerSimple enote_scanning_context_ledger_A{enote_finding_context_ledger_A};
     InvocableTest1 invocable_get_onchain{ledger_context};
-    EnoteScanningContextLedgerTEST test_scanning_context_A(enote_scanning_context_A,
+    EnoteScanningContextLedgerTEST test_scanning_context_A(enote_scanning_context_ledger_A,
         dummy_invocable,
         invocable_get_onchain,
-        dummy_invocable,
         dummy_invocable);
     EnoteStoreUpdaterMockSp enote_store_updater{user_keys_A.K_1_base, user_keys_A.k_vb, enote_store_A};
     ASSERT_NO_THROW(refresh_enote_store_ledger(refresh_config,
+        enote_scanning_context_unconfirmed_A,
         test_scanning_context_A,
         enote_store_updater));
 
@@ -1770,16 +1805,18 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_2)
     //   b. unconfirmed chunk: empty
     //   c. follow-up onchain loop: success on block 3 (range [3, 3) -> DONE)
     // 5. DONE: refresh enote store of A
-    const EnoteFindingContextLedgerMockSp enote_finding_context_A{ledger_context, user_keys_A.xk_fr};
-    EnoteScanningContextLedgerSimple enote_scanning_context_A{enote_finding_context_A};
+    const EnoteFindingContextUnconfirmedMockSp enote_finding_context_unconfirmed_A{ledger_context, user_keys_A.xk_fr};
+    const EnoteFindingContextLedgerMockSp enote_finding_context_ledger_A{ledger_context, user_keys_A.xk_fr};
+    EnoteScanningContextNonLedgerSimple enote_scanning_context_unconfirmed_A{enote_finding_context_unconfirmed_A};
+    EnoteScanningContextLedgerSimple enote_scanning_context_ledger_A{enote_finding_context_ledger_A};
     InvocableTest2 invocable_get_onchain{destination_A, {3, 5}, ledger_context};
-    EnoteScanningContextLedgerTEST test_scanning_context_A(enote_scanning_context_A,
+    EnoteScanningContextLedgerTEST test_scanning_context_A(enote_scanning_context_ledger_A,
         dummy_invocable,
         invocable_get_onchain,
-        dummy_invocable,
         dummy_invocable);
     EnoteStoreUpdaterMockSp enote_store_updater{user_keys_A.K_1_base, user_keys_A.k_vb, enote_store_A};
     ASSERT_NO_THROW(refresh_enote_store_ledger(refresh_config,
+        enote_scanning_context_unconfirmed_A,
         test_scanning_context_A,
         enote_store_updater));
 
@@ -1895,16 +1932,18 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_3)
     //   b. unconfirmed chunk: empty
     //   c. follow-up onchain loop: success on block 3 (range [3, 3) -> DONE)
     // 5. DONE: refresh enote store of B
-    const EnoteFindingContextLedgerMockSp enote_finding_context_B{ledger_context, user_keys_B.xk_fr};
-    EnoteScanningContextLedgerSimple enote_scanning_context_B{enote_finding_context_B};
+    const EnoteFindingContextUnconfirmedMockSp enote_finding_context_unconfirmed_B{ledger_context, user_keys_B.xk_fr};
+    const EnoteFindingContextLedgerMockSp enote_finding_context_ledger_B{ledger_context, user_keys_B.xk_fr};
+    EnoteScanningContextNonLedgerSimple enote_scanning_context_unconfirmed_B{enote_finding_context_unconfirmed_B};
+    EnoteScanningContextLedgerSimple enote_scanning_context_ledger_B{enote_finding_context_ledger_B};
     InvocableTest3 invocable_get_onchain{destination_B, {3, 5}, ledger_context};
-    EnoteScanningContextLedgerTEST test_scanning_context_B(enote_scanning_context_B,
+    EnoteScanningContextLedgerTEST test_scanning_context_B(enote_scanning_context_ledger_B,
         dummy_invocable,
         invocable_get_onchain,
-        dummy_invocable,
         dummy_invocable);
     EnoteStoreUpdaterMockSp enote_store_updater{user_keys_B.K_1_base, user_keys_B.k_vb, enote_store_B};
     ASSERT_NO_THROW(refresh_enote_store_ledger(refresh_config,
+        enote_scanning_context_unconfirmed_B,
         test_scanning_context_B,
         enote_store_updater));
 
@@ -1963,7 +2002,7 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_4)
 
     // 4. partial internal reorgs to failure
     const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+            .reorg_avoidance_depth = 2,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 4
         };
@@ -2009,16 +2048,20 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_4)
     //     iii. get onchain chunk: block 2  (inject: pop 1, +1 blocks) (fail: chunk range [2, 2) -> NEED_PARTIALSCAN)
     //   b. skip unconfirmed chunk: (NEED_PARTIALSCAN)
     // 5. ... etc. until partialscan attempts runs out (then throw)
-    const EnoteFindingContextLedgerMockSp enote_finding_context_B{ledger_context, user_keys_B.xk_fr};
-    EnoteScanningContextLedgerSimple enote_scanning_context_B{enote_finding_context_B};
+    const EnoteFindingContextUnconfirmedMockSp enote_finding_context_unconfirmed_B{ledger_context, user_keys_B.xk_fr};
+    const EnoteFindingContextLedgerMockSp enote_finding_context_ledger_B{ledger_context, user_keys_B.xk_fr};
+    EnoteScanningContextNonLedgerSimple enote_scanning_context_unconfirmed_B{enote_finding_context_unconfirmed_B};
+    EnoteScanningContextLedgerSimple enote_scanning_context_ledger_B{enote_finding_context_ledger_B};
     InvocableTest4 invocable_get_onchain{destination_B, 1, ledger_context};
-    EnoteScanningContextLedgerTEST test_scanning_context_B(enote_scanning_context_B,
+    EnoteScanningContextLedgerTEST test_scanning_context_B(enote_scanning_context_ledger_B,
         dummy_invocable,
         invocable_get_onchain,
-        dummy_invocable,
         dummy_invocable);
     EnoteStoreUpdaterMockSp enote_store_updater{user_keys_B.K_1_base, user_keys_B.k_vb, enote_store_B};
-    ASSERT_FALSE(refresh_enote_store_ledger(refresh_config, test_scanning_context_B, enote_store_updater));
+    ASSERT_FALSE(refresh_enote_store_ledger(refresh_config,
+        enote_scanning_context_unconfirmed_B,
+        test_scanning_context_B,
+        enote_store_updater));
 }
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, reorgs_while_scanning_5)
@@ -2116,18 +2159,22 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_5)
     //     i.   get onchain chunk: block 2  (inject: commit unconfirmed)  (success: chunk range [2, 3])
     //     ii.  get onchain chunk: block 3  (success: chunk range [3, 3) -> DONE)
     // 4. DONE: refresh enote store of B
-    const EnoteFindingContextLedgerMockSp enote_finding_context_B{ledger_context, user_keys_B.xk_fr};
-    EnoteScanningContextLedgerSimple enote_scanning_context_B{enote_finding_context_B};
-    InvocableTest5Submit invocable_get_onchain{std::move(sneaky_tx), ledger_context};
+    const EnoteFindingContextUnconfirmedMockSp enote_finding_context_unconfirmed_B{ledger_context, user_keys_B.xk_fr};
+    const EnoteFindingContextLedgerMockSp enote_finding_context_ledger_B{ledger_context, user_keys_B.xk_fr};
+    EnoteScanningContextNonLedgerSimple enote_scanning_context_unconfirmed_B{enote_finding_context_unconfirmed_B};
+    EnoteScanningContextLedgerSimple enote_scanning_context_ledger_B{enote_finding_context_ledger_B};
     InvocableTest5Commit invocable_get_unconfirmed{ledger_context};
-    EnoteScanningContextLedgerTEST test_scanning_context_B(enote_scanning_context_B,
+    InvocableTest5Submit invocable_get_onchain{std::move(sneaky_tx), ledger_context};
+    EnoteScanningContextNonLedgerTEST test_scanning_context_unconfirmed_B(enote_scanning_context_unconfirmed_B,
+        invocable_get_unconfirmed);
+    EnoteScanningContextLedgerTEST test_scanning_context_ledger_B(enote_scanning_context_ledger_B,
         dummy_invocable,
         invocable_get_onchain,
-        invocable_get_unconfirmed,
         dummy_invocable);
     EnoteStoreUpdaterMockSp enote_store_updater{user_keys_B.K_1_base, user_keys_B.k_vb, enote_store_B};
     ASSERT_NO_THROW(refresh_enote_store_ledger(refresh_config,
-        test_scanning_context_B,
+        test_scanning_context_unconfirmed_B,
+        test_scanning_context_ledger_B,
         enote_store_updater));
 
     // d. check users' balances

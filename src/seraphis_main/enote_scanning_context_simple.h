@@ -26,7 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// Simple implementation of a ledger-based enote scanning context.
+// Simple implementations enote scanning contexts.
 
 #pragma once
 
@@ -46,8 +46,52 @@ namespace sp
 {
 
 ////
+// EnoteScanningContextNonLedgerDummy
+// - dummy nonledger scanning context
+///
+class EnoteScanningContextNonLedgerDummy final : public EnoteScanningContextNonLedger
+{
+public:
+    void get_nonledger_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) override
+    {
+        chunk_out = EnoteScanningChunkNonLedgerV1{};
+    }
+    bool is_aborted() const override { return false; }
+};
+
+////
+// EnoteScanningContextNonLedgerSimple
+// - simple implementation: synchronously obtain chunks from an enote finding context
+///
+class EnoteScanningContextNonLedgerSimple final : public EnoteScanningContextNonLedger
+{
+public:
+//constructor
+    EnoteScanningContextNonLedgerSimple(const EnoteFindingContextNonLedger &enote_finding_context) :
+        m_enote_finding_context{enote_finding_context}
+    {}
+
+//overloaded operators
+    /// disable copy/move (this is a scoped manager [reference wrapper])
+    EnoteScanningContextNonLedgerSimple& operator=(EnoteScanningContextNonLedgerSimple&&) = delete;
+
+//member functions
+    /// get a scanning chunk for the nonledger txs in the injected context
+    void get_nonledger_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) override
+    {
+        m_enote_finding_context.get_nonledger_chunk(chunk_out);
+    }
+    /// test if scanning has been aborted
+    bool is_aborted() const override { return false; }
+
+//member variables
+private:
+    /// finds chunks of enotes that are potentially owned
+    const EnoteFindingContextNonLedger &m_enote_finding_context;
+};
+
+////
 // EnoteScanningContextLedgerSimple
-// - manages an enote finding context for acquiring enote scanning chunks from a ledger context
 // - simple implementation: synchronously obtain chunks from an enote finding context
 ///
 class EnoteScanningContextLedgerSimple final : public EnoteScanningContextLedger
@@ -75,11 +119,6 @@ public:
     {
         m_enote_finding_context.get_onchain_chunk(m_next_start_index, m_max_chunk_size, chunk_out);
         m_next_start_index = chunk_out.start_index + chunk_out.block_ids.size();
-    }
-    /// get a scanning chunk for the unconfirmed txs in a ledger
-    void get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) override
-    {
-        m_enote_finding_context.get_unconfirmed_chunk(chunk_out);
     }
     /// stop the current scanning process (should be no-throw no-fail)
     void terminate_scanning() override { /* no-op */ }

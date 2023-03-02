@@ -44,6 +44,25 @@ namespace sp
 {
 
 ////
+// EnoteFindingContextNonLedger
+// - wraps a nonledger context of some kind, produces chunks of potentially owned enotes (from find-received scanning)
+///
+class EnoteFindingContextNonLedger
+{
+public:
+//destructor
+    virtual ~EnoteFindingContextNonLedger() = default;
+
+//overloaded operators
+    /// disable copy/move (this is a virtual base class)
+    EnoteFindingContextNonLedger& operator=(EnoteFindingContextNonLedger&&) = delete;
+
+//member functions
+    /// get a fresh nonledger chunk (this is expected to contain all enotes in the nonledger context)
+    virtual void get_nonledger_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const = 0;
+};
+
+////
 // EnoteFindingContextLedger
 // - wraps a ledger context of some kind, produces chunks of potentially owned enotes (from find-received scanning)
 ///
@@ -58,31 +77,10 @@ public:
     EnoteFindingContextLedger& operator=(EnoteFindingContextLedger&&) = delete;
 
 //member functions
-    /// get an unconfirmed chunk (this is expected to contain all enotes in the 'pending txs' pool)
-    virtual void get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const = 0;
     /// get an onchain chunk (or empty chunk representing top of current chain)
     virtual void get_onchain_chunk(const std::uint64_t chunk_start_index,
         const std::uint64_t chunk_max_size,
         EnoteScanningChunkLedgerV1 &chunk_out) const = 0;
-};
-
-////
-// EnoteFindingContextOffchain
-// - wraps an offchain context of some kind, produces chunks of potentially owned enotes (from find-received scanning)
-///
-class EnoteFindingContextOffchain
-{
-public:
-//destructor
-    virtual ~EnoteFindingContextOffchain() = default;
-
-//overloaded operators
-    /// disable copy/move (this is a virtual base class)
-    EnoteFindingContextOffchain& operator=(EnoteFindingContextOffchain&&) = delete;
-
-//member functions
-    /// get a fresh offchain chunk (this is expected to contain all enotes in the offchain context)
-    virtual void get_offchain_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const = 0;
 };
 
 } //namespace sp

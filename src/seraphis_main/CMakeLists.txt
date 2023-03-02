@@ -35,6 +35,7 @@ set(seraphis_main_sources
   enote_scanning_utils.cpp
   sp_knowledge_proof_utils.cpp
   serialization_demo_utils.cpp
+  scan_state_machine.cpp
   tx_builder_types.cpp
   tx_builder_types_legacy.cpp
   tx_builder_types_multisig.cpp

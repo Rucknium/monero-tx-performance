@@ -26,8 +26,8 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// Dependency injector for managing the find-received step of enote scanning. Intended to be stateful, managing
-//   a connection to a ledger context and linking together successive 'get chunk' calls.
+// Dependency injectors for managing the find-received step of enote scanning. Intended to be stateful, managing
+//   a connection to a context and linking together successive 'get chunk' calls.
 
 #pragma once
 
@@ -43,6 +43,28 @@
 
 namespace sp
 {
+
+////
+// EnoteScanningContextNonLedger
+// - manages a source of non-ledger-based enote scanning chunks
+///
+class EnoteScanningContextNonLedger
+{
+public:
+//destructor
+    virtual ~EnoteScanningContextNonLedger() = default;
+
+//overloaded operators
+    /// disable copy/move (this is a virtual base class)
+    EnoteScanningContextNonLedger& operator=(EnoteScanningContextNonLedger&&) = delete;
+
+//member functions
+    /// get a scanning chunk for the nonledger txs associated with this context
+    virtual void get_nonledger_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) = 0;
+    /// test if scanning has been aborted
+    /// EXPECTATION: if this returns true then all subsequent calls to 'get chunk' should return an empty chunk
+    virtual bool is_aborted() const = 0;
+};
 
 ////
 // EnoteScanningContextLedger
@@ -65,8 +87,6 @@ public:
     /// get the next available onchain chunk (must be contiguous with the last chunk acquired since starting to scan)
     /// note: if there is no chunk to return, return an empty chunk representing the top of the current chain
     virtual void get_onchain_chunk(EnoteScanningChunkLedgerV1 &chunk_out) = 0;
-    /// get a scanning chunk for the unconfirmed txs in a ledger
-    virtual void get_unconfirmed_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) = 0;
     /// tell the scanning context to stop its scanning process (should be no-throw no-fail)
     virtual void terminate_scanning() = 0;
     /// test if scanning has been aborted
