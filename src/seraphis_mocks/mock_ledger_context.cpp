@@ -637,7 +637,7 @@ void MockLedgerContext::get_onchain_chunk_legacy(const std::uint64_t chunk_start
 {
     chunk_out.basic_records_per_tx.clear();
     chunk_out.contextual_key_images.clear();
-    chunk_out.block_ids.clear();
+    chunk_out.context.element_ids.clear();
 
     /// 1. failure cases
     if (this->top_block_index() + 1 == 0 ||
@@ -646,17 +646,19 @@ void MockLedgerContext::get_onchain_chunk_legacy(const std::uint64_t chunk_start
         chunk_max_size == 0)
     {
         // set empty chunk info: top of the legacy-enabled chain
-        chunk_out.start_index = std::min(m_first_seraphis_only_block, this->top_block_index() + 1);
+        chunk_out.context.start_index = std::min(m_first_seraphis_only_block, this->top_block_index() + 1);
 
-        if (chunk_out.start_index > 0)
+        if (chunk_out.context.start_index > 0)
         {
-            CHECK_AND_ASSERT_THROW_MES(m_block_infos.find(chunk_out.start_index - 1) != m_block_infos.end(),
+            CHECK_AND_ASSERT_THROW_MES(m_block_infos.find(chunk_out.context.start_index - 1) !=
+                    m_block_infos.end(),
                 "onchain chunk legacy-view scanning (mock ledger context): block ids map incorrect indexing (bug).");
 
-            chunk_out.prefix_block_id = std::get<rct::key>(m_block_infos.at(chunk_out.start_index - 1));
+            chunk_out.context.prefix_element_id =
+                std::get<rct::key>(m_block_infos.at(chunk_out.context.start_index - 1));
         }
         else
-            chunk_out.prefix_block_id = rct::zero();
+            chunk_out.context.prefix_element_id = rct::zero();
 
         return;
     }
@@ -664,7 +666,7 @@ void MockLedgerContext::get_onchain_chunk_legacy(const std::uint64_t chunk_start
 
     /// 2. set block information
     // a. block range (cap on the lowest of: chain index, seraphis-only range begins, chunk size)
-    chunk_out.start_index = chunk_start_index;
+    chunk_out.context.start_index = chunk_start_index;
     const std::uint64_t chunk_end_index{
             std::min({
                     this->top_block_index() + 1,
@@ -673,31 +675,32 @@ void MockLedgerContext::get_onchain_chunk_legacy(const std::uint64_t chunk_start
                 })
         };
 
-    CHECK_AND_ASSERT_THROW_MES(chunk_end_index > chunk_out.start_index,
+    CHECK_AND_ASSERT_THROW_MES(chunk_end_index > chunk_out.context.start_index,
         "onchain chunk legacy-view scanning (mock ledger context): chunk has no blocks below failure tests (bug).");
-    CHECK_AND_ASSERT_THROW_MES(m_block_infos.find(chunk_out.start_index) != m_block_infos.end() &&
+    CHECK_AND_ASSERT_THROW_MES(m_block_infos.find(chunk_out.context.start_index) != m_block_infos.end() &&
             m_block_infos.find(chunk_end_index - 1) != m_block_infos.end(),
         "onchain chunk legacy-view scanning (mock ledger context): block range outside of block ids map (bug).");
 
     // b. prefix block id
-    chunk_out.prefix_block_id =
+    chunk_out.context.prefix_element_id =
         chunk_start_index > 0
         ? std::get<rct::key>(m_block_infos.at(chunk_start_index - 1))
         : rct::zero();
 
     // c. block ids in the range
-    chunk_out.block_ids.reserve(chunk_end_index - chunk_out.start_index);
+    chunk_out.context.element_ids.reserve(chunk_end_index - chunk_out.context.start_index);
 
     std::for_each(
-            m_block_infos.find(chunk_out.start_index),
+            m_block_infos.find(chunk_out.context.start_index),
             m_block_infos.find(chunk_end_index),
             [&](const auto &mapped_block_info)
             {
-                chunk_out.block_ids.emplace_back(std::get<rct::key>(mapped_block_info.second));
+                chunk_out.context.element_ids.emplace_back(std::get<rct::key>(mapped_block_info.second));
             }
         );
 
-    CHECK_AND_ASSERT_THROW_MES(chunk_out.block_ids.size() == chunk_end_index - chunk_out.start_index,
+    CHECK_AND_ASSERT_THROW_MES(chunk_out.context.element_ids.size() ==
+            chunk_end_index - chunk_out.context.start_index,
         "onchain chunk legacy-view scanning (mock ledger context): invalid number of block ids acquired (bug).");
 
 
@@ -708,13 +711,13 @@ void MockLedgerContext::get_onchain_chunk_legacy(const std::uint64_t chunk_start
     // b. get adjusted chunk end
     // - we did this when defining the chunk end
 
-    CHECK_AND_ASSERT_THROW_MES(m_blocks_of_legacy_tx_output_contents.find(chunk_out.start_index) !=
+    CHECK_AND_ASSERT_THROW_MES(m_blocks_of_legacy_tx_output_contents.find(chunk_out.context.start_index) !=
             m_blocks_of_legacy_tx_output_contents.end(),
         "onchain chunk legacy-view scanning (mock ledger context): start of chunk not known in tx outputs map (bug).");
     CHECK_AND_ASSERT_THROW_MES(m_blocks_of_legacy_tx_output_contents.find(chunk_end_index - 1) !=
             m_blocks_of_legacy_tx_output_contents.end(),
         "onchain chunk legacy-view scanning (mock ledger context): end of chunk not known in tx outputs map (bug).");
-    CHECK_AND_ASSERT_THROW_MES(m_blocks_of_tx_key_images.find(chunk_out.start_index) !=
+    CHECK_AND_ASSERT_THROW_MES(m_blocks_of_tx_key_images.find(chunk_out.context.start_index) !=
             m_blocks_of_tx_key_images.end(),
         "onchain chunk legacy-view scanning (mock ledger context): start of chunk not known in key images map (bug).");
     CHECK_AND_ASSERT_THROW_MES(m_blocks_of_tx_key_images.find(chunk_end_index - 1) !=
@@ -724,13 +727,13 @@ void MockLedgerContext::get_onchain_chunk_legacy(const std::uint64_t chunk_start
     // a. initialize output count to the total number of legacy enotes in the ledger before the first block to scan
     std::uint64_t total_output_count_before_tx{0};
 
-    if (chunk_out.start_index > 0)
+    if (chunk_out.context.start_index > 0)
     {
-        CHECK_AND_ASSERT_THROW_MES(m_accumulated_legacy_output_counts.find(chunk_out.start_index - 1) !=
+        CHECK_AND_ASSERT_THROW_MES(m_accumulated_legacy_output_counts.find(chunk_out.context.start_index - 1) !=
                 m_accumulated_legacy_output_counts.end(),
             "onchain chunk legacy-view scanning (mock ledger context): output counts missing a block (bug).");
 
-        total_output_count_before_tx = m_accumulated_legacy_output_counts.at(chunk_out.start_index - 1);
+        total_output_count_before_tx = m_accumulated_legacy_output_counts.at(chunk_out.context.start_index - 1);
     }
 
     // b. legacy-view scan each block in the range
@@ -738,7 +741,7 @@ void MockLedgerContext::get_onchain_chunk_legacy(const std::uint64_t chunk_start
     SpContextualKeyImageSetV1 collected_key_images;
 
     std::for_each(
-            m_blocks_of_legacy_tx_output_contents.find(chunk_out.start_index),
+            m_blocks_of_legacy_tx_output_contents.find(chunk_out.context.start_index),
             m_blocks_of_legacy_tx_output_contents.find(chunk_end_index),
             [&](const auto &block_of_tx_output_contents)
             {
@@ -820,7 +823,7 @@ void MockLedgerContext::get_onchain_chunk_sp(const std::uint64_t chunk_start_ind
 {
     chunk_out.basic_records_per_tx.clear();
     chunk_out.contextual_key_images.clear();
-    chunk_out.block_ids.clear();
+    chunk_out.context.element_ids.clear();
 
     /// 1. failure cases
     if (this->top_block_index() + 1 == 0 ||
@@ -828,17 +831,19 @@ void MockLedgerContext::get_onchain_chunk_sp(const std::uint64_t chunk_start_ind
         chunk_max_size == 0)
     {
         // set empty chunk info: top of the chain
-        chunk_out.start_index = this->top_block_index() + 1;
+        chunk_out.context.start_index = this->top_block_index() + 1;
 
-        if (chunk_out.start_index > 0)
+        if (chunk_out.context.start_index > 0)
         {
-            CHECK_AND_ASSERT_THROW_MES(m_block_infos.find(chunk_out.start_index - 1) != m_block_infos.end(),
+            CHECK_AND_ASSERT_THROW_MES(m_block_infos.find(chunk_out.context.start_index - 1) !=
+                    m_block_infos.end(),
                 "onchain chunk find-received scanning (mock ledger context): block ids map incorrect indexing (bug).");
 
-            chunk_out.prefix_block_id = std::get<rct::key>(m_block_infos.at(chunk_out.start_index - 1));
+            chunk_out.context.prefix_element_id =
+                std::get<rct::key>(m_block_infos.at(chunk_out.context.start_index - 1));
         }
         else
-            chunk_out.prefix_block_id = rct::zero();
+            chunk_out.context.prefix_element_id = rct::zero();
 
         return;
     }
@@ -846,7 +851,7 @@ void MockLedgerContext::get_onchain_chunk_sp(const std::uint64_t chunk_start_ind
 
     /// 2. set block information
     // a. block range
-    chunk_out.start_index = chunk_start_index;
+    chunk_out.context.start_index = chunk_start_index;
     const std::uint64_t chunk_end_index{
             std::min(
                     this->top_block_index() + 1,
@@ -854,31 +859,32 @@ void MockLedgerContext::get_onchain_chunk_sp(const std::uint64_t chunk_start_ind
                 )
         };
 
-    CHECK_AND_ASSERT_THROW_MES(chunk_end_index > chunk_out.start_index,
+    CHECK_AND_ASSERT_THROW_MES(chunk_end_index > chunk_out.context.start_index,
         "onchain chunk find-received scanning (mock ledger context): chunk has no blocks below failure tests (bug).");
-    CHECK_AND_ASSERT_THROW_MES(m_block_infos.find(chunk_out.start_index) != m_block_infos.end() &&
+    CHECK_AND_ASSERT_THROW_MES(m_block_infos.find(chunk_out.context.start_index) != m_block_infos.end() &&
             m_block_infos.find(chunk_end_index - 1) != m_block_infos.end(),
         "onchain chunk find-received scanning (mock ledger context): block range outside of block ids map (bug).");
 
     // b. prefix block id
-    chunk_out.prefix_block_id =
+    chunk_out.context.prefix_element_id =
         chunk_start_index > 0
         ? std::get<rct::key>(m_block_infos.at(chunk_start_index - 1))
         : rct::zero();
 
     // c. block ids in the range
-    chunk_out.block_ids.reserve(chunk_end_index - chunk_out.start_index);
+    chunk_out.context.element_ids.reserve(chunk_end_index - chunk_out.context.start_index);
 
     std::for_each(
-            m_block_infos.find(chunk_out.start_index),
+            m_block_infos.find(chunk_out.context.start_index),
             m_block_infos.find(chunk_end_index),
             [&](const auto &mapped_block_info)
             {
-                chunk_out.block_ids.emplace_back(std::get<rct::key>(mapped_block_info.second));
+                chunk_out.context.element_ids.emplace_back(std::get<rct::key>(mapped_block_info.second));
             }
         );
 
-    CHECK_AND_ASSERT_THROW_MES(chunk_out.block_ids.size() == chunk_end_index - chunk_out.start_index,
+    CHECK_AND_ASSERT_THROW_MES(chunk_out.context.element_ids.size() ==
+            chunk_end_index - chunk_out.context.start_index,
         "onchain chunk find-received scanning (mock ledger context): invalid number of block ids acquired (bug).");
 
 
@@ -889,7 +895,7 @@ void MockLedgerContext::get_onchain_chunk_sp(const std::uint64_t chunk_start_ind
 
     // b. get adjusted chunk start
     const std::uint64_t chunk_start_adjusted{
-            std::max(chunk_out.start_index + 1, m_first_seraphis_allowed_block + 1) - 1
+            std::max(chunk_out.context.start_index + 1, m_first_seraphis_allowed_block + 1) - 1
         };
 
     CHECK_AND_ASSERT_THROW_MES(m_blocks_of_sp_tx_output_contents.find(chunk_start_adjusted) !=

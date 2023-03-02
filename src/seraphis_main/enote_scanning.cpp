@@ -109,10 +109,10 @@ void check_v1_enote_scan_chunk_ledger_semantics_v1(const EnoteScanningChunkLedge
     const std::uint64_t expected_prefix_index)
 {
     // 1. misc. checks
-    CHECK_AND_ASSERT_THROW_MES(onchain_chunk.start_index - 1 == expected_prefix_index,
+    CHECK_AND_ASSERT_THROW_MES(onchain_chunk.context.start_index - 1 == expected_prefix_index,
         "enote scan chunk semantics check (ledger): chunk range doesn't start at expected prefix index.");
 
-    const std::uint64_t num_blocks_in_chunk{onchain_chunk.block_ids.size()};
+    const std::uint64_t num_blocks_in_chunk{onchain_chunk.context.element_ids.size()};
     CHECK_AND_ASSERT_THROW_MES(num_blocks_in_chunk >= 1,
         "enote scan chunk semantics check (ledger): chunk has no blocks.");    
 
@@ -123,9 +123,9 @@ void check_v1_enote_scan_chunk_ledger_semantics_v1(const EnoteScanningChunkLedge
 
     // 2. get start and end block indices
     // - start block = prefix block + 1
-    const std::uint64_t allowed_lowest_index{onchain_chunk.start_index};
+    const std::uint64_t allowed_lowest_index{onchain_chunk.context.start_index};
     // - end block
-    const std::uint64_t allowed_heighest_index{onchain_chunk.start_index + num_blocks_in_chunk - 1};
+    const std::uint64_t allowed_heighest_index{onchain_chunk.context.start_index + num_blocks_in_chunk - 1};
 
     // 3. contextual basic records: index checks
     for (const auto &tx_basic_records : onchain_chunk.basic_records_per_tx)
@@ -161,7 +161,7 @@ bool chunk_is_empty(const EnoteScanningChunkNonLedgerV1 &chunk)
 //-------------------------------------------------------------------------------------------------------------------
 bool chunk_is_empty(const EnoteScanningChunkLedgerV1 &chunk)
 {
-    return chunk.block_ids.size() == 0;
+    return chunk.context.element_ids.size() == 0;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool refresh_enote_store_nonledger(const SpEnoteOriginStatus expected_origin_status,

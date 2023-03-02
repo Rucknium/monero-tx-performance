@@ -42,6 +42,7 @@
 //local headers
 #include "contextual_enote_record_types.h"
 #include "ringct/rctTypes.h"
+#include "scan_state_machine.h"
 
 //third party headers
 
@@ -76,10 +77,7 @@ struct EnoteScanningChunkNonLedgerV1 final
 
 ////
 // EnoteScanningChunkLedgerV1
-// - chunk range (in block indices): [start index, end index)
-//   - end index = start index + num blocks
-// - prefix block id: id of block that comes before the chunk range, used for contiguity checks between chunks and with
-//   the enote store updater
+// - chunk context: tracks where this chunk exists on-chain
 // - contextual basic enote records for owned enote candidates in the chunk of blocks
 // - key images from each of the txs recorded in the basic records map
 //   - add empty entries to that map if you want to include the key images of txs without owned enote candidates, e.g.
@@ -89,12 +87,8 @@ struct EnoteScanningChunkNonLedgerV1 final
 ///
 struct EnoteScanningChunkLedgerV1 final
 {
-    /// start index
-    std::uint64_t start_index;
-    /// block id at 'start index - 1'  (implicitly ignored if start_index == 0)
-    rct::key prefix_block_id;
-    /// block ids in range [start index, end index)
-    std::vector<rct::key> block_ids;
+    /// chunk context (includes chunk block range, prefix block id, and chunk block ids)
+    scan_machine::ChunkContext context;
     /// owned enote candidates in range [start index, end index)  (mapped to tx id)
     std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> basic_records_per_tx;
     /// key images from txs with owned enote candidates in range [start index, end index)
