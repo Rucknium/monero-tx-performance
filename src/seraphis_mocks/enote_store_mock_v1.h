@@ -34,7 +34,7 @@
 
 //local headers
 #include "crypto/crypto.h"
-#include "enote_store_change_types.h"
+#include "enote_store_event_types.h"
 #include "seraphis_main/contextual_enote_record_types.h"
 
 //third party headers
@@ -136,7 +136,7 @@ public:
     /// returns false if the onetime address is unknown (e.g. due to a reorg)
     bool try_import_legacy_key_image(const crypto::key_image &legacy_key_image,
         const rct::key &onetime_address,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
     /// update the legacy fullscan index as part of a legacy key image import cycle
     void update_legacy_fullscan_index_for_import_cycle(const std::uint64_t saved_index);
 
@@ -154,40 +154,40 @@ public:
     void update_with_intermediate_legacy_records_from_nonledger(const SpEnoteOriginStatus nonledger_origin_status,
         const std::unordered_map<rct::key, LegacyContextualIntermediateEnoteRecordV1> &found_enote_records,
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
     void update_with_intermediate_legacy_records_from_ledger(const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
         const std::vector<rct::key> &new_block_ids,
         const std::unordered_map<rct::key, LegacyContextualIntermediateEnoteRecordV1> &found_enote_records,
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
     void update_with_intermediate_legacy_found_spent_key_images(
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
     void update_with_legacy_records_from_nonledger(const SpEnoteOriginStatus nonledger_origin_status,
         const std::unordered_map<rct::key, LegacyContextualEnoteRecordV1> &found_enote_records,
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
     void update_with_legacy_records_from_ledger(const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
         const std::vector<rct::key> &new_block_ids,
         const std::unordered_map<rct::key, LegacyContextualEnoteRecordV1> &found_enote_records,
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
 
     /// update the store with seraphis enote records and associated context
     void update_with_sp_records_from_nonledger(const SpEnoteOriginStatus nonledger_origin_status,
         const std::unordered_map<crypto::key_image, SpContextualEnoteRecordV1> &found_enote_records,
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &legacy_key_images_in_sp_selfsends,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
     void update_with_sp_records_from_ledger(const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
         const std::vector<rct::key> &new_block_ids,
         const std::unordered_map<crypto::key_image, SpContextualEnoteRecordV1> &found_enote_records,
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &legacy_key_images_in_sp_selfsends,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
 
 private:
     /// balance helpers
@@ -208,67 +208,67 @@ private:
     void update_with_new_blocks_from_ledger_legacy_intermediate(const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
         const std::vector<rct::key> &new_block_ids,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
     void update_with_new_blocks_from_ledger_legacy_full(const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
         const std::vector<rct::key> &new_block_ids,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
     void update_with_new_blocks_from_ledger_sp(const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
         const std::vector<rct::key> &new_block_ids,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
 
     /// clean maps based on new legacy found spent key images
     void clean_maps_for_found_spent_legacy_key_images(
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
     /// clean maps based on details of removed legacy enotes
     void clean_maps_for_removed_legacy_enotes(
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
         const std::unordered_map<rct::key, std::unordered_set<rct::key>> &mapped_identifiers_of_removed_enotes,
         const std::unordered_map<rct::key, crypto::key_image> &mapped_key_images_of_removed_enotes,
         const std::function<bool(const SpEnoteSpentContextV1&)> &spent_context_clearable_func,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
     /// clean up legacy state to prepare for adding fresh legacy enotes and key images
     void clean_maps_for_legacy_nonledger_update(const SpEnoteOriginStatus nonledger_origin_status,
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
     /// clean up legacy state to prepare for adding fresh legacy enotes and key images
     void clean_maps_for_legacy_ledger_update(const std::uint64_t first_new_block,
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
 
     /// clean maps based on tx ids of removed seraphis enotes
     void clean_maps_for_removed_sp_enotes(const std::unordered_set<rct::key> &tx_ids_of_removed_enotes,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
     /// clean up seraphis state to prepare for adding fresh non-ledger seraphis enotes and key images and legacy key images
     void clean_maps_for_sp_nonledger_update(const SpEnoteOriginStatus nonledger_origin_status,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
     /// clean up seraphis state to prepare for adding fresh seraphis enotes and key images and legacy key images
     void clean_maps_for_sp_ledger_update(const std::uint64_t first_new_block,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
 
     /// add a record
     void add_record(const LegacyContextualIntermediateEnoteRecordV1 &new_record,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
     void add_record(const LegacyContextualEnoteRecordV1 &new_record,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
     void add_record(const SpContextualEnoteRecordV1 &new_record,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
 
     /// update legacy state with fresh legacy key images that were found to be spent
     void update_legacy_with_fresh_found_spent_key_images(
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
     /// update seraphis state with fresh seraphis key images that were found to be spent
     void update_sp_with_fresh_found_spent_key_images(
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
 
     /// cache legacy key images obtained from seraphis selfsends (i.e. ALL legacy key images spent by user in seraphis txs)
     void handle_legacy_key_images_from_sp_selfsends(
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &legacy_key_images_in_sp_selfsends,
-        std::list<EnoteStoreChange> &changes_inout);
+        std::list<EnoteStoreEvent> &events_inout);
 
 //member variables
 protected:

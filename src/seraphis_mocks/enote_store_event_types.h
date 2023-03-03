@@ -28,7 +28,7 @@
 
 // NOT FOR PRODUCTION
 
-// Update report for an enote store.
+// Events that can happen when updating an enote store.
 
 #pragma once
 
@@ -189,8 +189,8 @@ struct NewSpRecord final
     crypto::key_image key_image;
 };
 
-/// a change in a seraphis payment validator enote store
-using SpPaymentValidatorStoreChange =
+/// an event in a seraphis payment validator enote store
+using SpPaymentValidatorStoreEvent =
     tools::variant<
         SpIntermediateBlocksDiff,
         UpdatedSpIntermediateOriginContext,
@@ -198,8 +198,8 @@ using SpPaymentValidatorStoreChange =
         NewSpIntermediateRecord
     >;
 
-/// a change in a generic enote store
-using EnoteStoreChange = 
+/// an event in a generic enote store
+using EnoteStoreEvent = 
     tools::variant<
         LegacyIntermediateBlocksDiff,
         LegacyBlocksDiff,

@@ -114,15 +114,15 @@ void EnoteStoreUpdaterMockLegacyIntermediate::consume_nonledger_chunk(const SpEn
         found_spent_key_images);
 
     // 2. save the results
-    std::list<EnoteStoreChange> changes;
+    std::list<EnoteStoreEvent> events;
     if (m_legacy_scan_mode == LegacyScanMode::KEY_IMAGES_ONLY)
-        m_enote_store.update_with_intermediate_legacy_found_spent_key_images(found_spent_key_images, changes);
+        m_enote_store.update_with_intermediate_legacy_found_spent_key_images(found_spent_key_images, events);
     else
     {
         m_enote_store.update_with_intermediate_legacy_records_from_nonledger(nonledger_origin_status,
             found_enote_records,
             found_spent_key_images,
-            changes);
+            events);
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -150,9 +150,9 @@ void EnoteStoreUpdaterMockLegacyIntermediate::consume_onchain_chunk(
         found_spent_key_images);
 
     // 2. save the results
-    std::list<EnoteStoreChange> changes;
+    std::list<EnoteStoreEvent> events;
     if (m_legacy_scan_mode == LegacyScanMode::KEY_IMAGES_ONLY)
-        m_enote_store.update_with_intermediate_legacy_found_spent_key_images(found_spent_key_images, changes);
+        m_enote_store.update_with_intermediate_legacy_found_spent_key_images(found_spent_key_images, events);
     else
     {
         m_enote_store.update_with_intermediate_legacy_records_from_ledger(first_new_block,
@@ -160,7 +160,7 @@ void EnoteStoreUpdaterMockLegacyIntermediate::consume_onchain_chunk(
             new_block_ids,
             found_enote_records,
             found_spent_key_images,
-            changes);
+            events);
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -213,11 +213,11 @@ void EnoteStoreUpdaterMockLegacy::consume_nonledger_chunk(const SpEnoteOriginSta
         found_spent_key_images);
 
     // 2. save the results
-    std::list<EnoteStoreChange> changes;
+    std::list<EnoteStoreEvent> events;
     m_enote_store.update_with_legacy_records_from_nonledger(nonledger_origin_status,
         found_enote_records,
         found_spent_key_images,
-        changes);
+        events);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void EnoteStoreUpdaterMockLegacy::consume_onchain_chunk(
@@ -245,13 +245,13 @@ void EnoteStoreUpdaterMockLegacy::consume_onchain_chunk(
         found_spent_key_images);
 
     // 2. save the results
-    std::list<EnoteStoreChange> changes;
+    std::list<EnoteStoreEvent> events;
     m_enote_store.update_with_legacy_records_from_ledger(first_new_block,
         alignment_block_id,
         new_block_ids,
         found_enote_records,
         found_spent_key_images,
-        changes);
+        events);
 }
 //-------------------------------------------------------------------------------------------------------------------
 // Seraphis Intermediate
@@ -304,8 +304,8 @@ void EnoteStoreUpdaterMockSpIntermediate::consume_nonledger_chunk(const SpEnoteO
         found_enote_records);
 
     // 2. save the results
-    std::list<SpPaymentValidatorStoreChange> changes;
-    m_enote_store.update_with_sp_records_from_nonledger(nonledger_origin_status, found_enote_records, changes);
+    std::list<SpPaymentValidatorStoreEvent> events;
+    m_enote_store.update_with_sp_records_from_nonledger(nonledger_origin_status, found_enote_records, events);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void EnoteStoreUpdaterMockSpIntermediate::consume_onchain_chunk(
@@ -327,12 +327,12 @@ void EnoteStoreUpdaterMockSpIntermediate::consume_onchain_chunk(
         found_enote_records);
 
     // 2. save the results
-    std::list<SpPaymentValidatorStoreChange> changes;
+    std::list<SpPaymentValidatorStoreEvent> events;
     m_enote_store.update_with_sp_records_from_ledger(first_new_block,
         alignment_block_id,
         found_enote_records,
         new_block_ids,
-        changes);
+        events);
 }
 //-------------------------------------------------------------------------------------------------------------------
 // Seraphis
@@ -393,12 +393,12 @@ void EnoteStoreUpdaterMockSp::consume_nonledger_chunk(const SpEnoteOriginStatus 
         legacy_key_images_in_sp_selfsends);
 
     // 2. save the results
-    std::list<EnoteStoreChange> changes;
+    std::list<EnoteStoreEvent> events;
     m_enote_store.update_with_sp_records_from_nonledger(nonledger_origin_status,
         found_enote_records,
         found_spent_key_images,
         legacy_key_images_in_sp_selfsends,
-        changes);
+        events);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void EnoteStoreUpdaterMockSp::consume_onchain_chunk(
@@ -430,14 +430,14 @@ void EnoteStoreUpdaterMockSp::consume_onchain_chunk(
         legacy_key_images_in_sp_selfsends);
 
     // 2. save the results
-    std::list<EnoteStoreChange> changes;
+    std::list<EnoteStoreEvent> events;
     m_enote_store.update_with_sp_records_from_ledger(first_new_block,
         alignment_block_id,
         new_block_ids,
         found_enote_records,
         found_spent_key_images,
         legacy_key_images_in_sp_selfsends,
-        changes);
+        events);
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace mocks

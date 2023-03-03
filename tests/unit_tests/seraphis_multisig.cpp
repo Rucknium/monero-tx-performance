@@ -146,12 +146,12 @@ static void refresh_user_enote_store_legacy_multisig(const std::vector<multisig:
         recovered_key_images));
 
     // 5. import acquired key images (will fail if the onetime addresses and key images don't line up)
-    std::list<EnoteStoreChange> changes;
+    std::list<EnoteStoreEvent> events;
     for (const auto &recovered_key_image : recovered_key_images)
     {
         ASSERT_TRUE(enote_store_inout.try_import_legacy_key_image(recovered_key_image.second,
             rct::pk2rct(recovered_key_image.first),
-            changes));
+            events));
     }
 
     // 6. legacy key-image-refresh scan

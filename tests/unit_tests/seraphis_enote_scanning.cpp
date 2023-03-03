@@ -2428,8 +2428,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_2)
     std::unordered_map<rct::key, cryptonote::subaddress_index> legacy_subaddress_map;
     legacy_subaddress_map[subaddr_spendkey] = subaddr_index;
 
-    // 5. changes cache
-    std::list<EnoteStoreChange> changes;
+    // 5. events cache
+    std::list<EnoteStoreEvent> events;
 
 
     /// test
@@ -2535,7 +2535,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_2)
         };
 
     //import key images for onetime addresses of intermediate records in the enote store
-    ASSERT_TRUE(enote_store.try_import_legacy_key_image(key_image, enote_1.onetime_address, changes));
+    ASSERT_TRUE(enote_store.try_import_legacy_key_image(key_image, enote_1.onetime_address, events));
 
     ASSERT_TRUE(enote_store.top_legacy_fullscanned_block_index() == -1);
     ASSERT_TRUE(enote_store.legacy_intermediate_records().size() == 0);
@@ -2664,8 +2664,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_3)
     const rct::key subaddr_spendkey_rand{rct::pkGen()};
     const rct::key subaddr_viewkey_rand{rct::pkGen()};
 
-    // 6. changes cache
-    std::list<EnoteStoreChange> changes;
+    // 6. events cache
+    std::list<EnoteStoreEvent> events;
 
 
     /// test
@@ -2782,7 +2782,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_3)
         };
 
     //import key images: enote 1 in block 0
-    ASSERT_TRUE(enote_store.try_import_legacy_key_image(key_image_1, enote_1.onetime_address, changes));
+    ASSERT_TRUE(enote_store.try_import_legacy_key_image(key_image_1, enote_1.onetime_address, events));
 
     ASSERT_TRUE(enote_store.top_legacy_partialscanned_block_index() == 0);
     ASSERT_TRUE(enote_store.top_legacy_fullscanned_block_index() == -1);
@@ -2841,7 +2841,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_3)
         };
 
     //import key image: enote 2 in block 1
-    ASSERT_TRUE(enote_store.try_import_legacy_key_image(key_image_2, enote_2.onetime_address, changes));
+    ASSERT_TRUE(enote_store.try_import_legacy_key_image(key_image_2, enote_2.onetime_address, events));
 
     ASSERT_TRUE(enote_store.top_legacy_partialscanned_block_index() == 1);
     ASSERT_TRUE(enote_store.top_legacy_fullscanned_block_index() == 0);
@@ -3153,8 +3153,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_4)
     std::unordered_map<rct::key, cryptonote::subaddress_index> legacy_subaddress_map;
     legacy_subaddress_map[subaddr_spendkey] = subaddr_index;
 
-    // 5. changes cache
-    std::list<EnoteStoreChange> changes;
+    // 5. events cache
+    std::list<EnoteStoreEvent> events;
 
 
     /// test
@@ -3282,8 +3282,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_4)
             {EnoteStoreBalanceUpdateExclusions::LEGACY_INTERMEDIATE}) == 0);
 
     //import key images: enote 1 in block 0, enote 2 in block 1
-    ASSERT_TRUE(enote_store.try_import_legacy_key_image(key_image_1, enote_1.onetime_address, changes));
-    ASSERT_FALSE(enote_store.try_import_legacy_key_image(key_image_2, enote_2.onetime_address, changes));  //ignore failed import
+    ASSERT_TRUE(enote_store.try_import_legacy_key_image(key_image_1, enote_1.onetime_address, events));
+    ASSERT_FALSE(enote_store.try_import_legacy_key_image(key_image_2, enote_2.onetime_address, events));  //ignore failed import
 
     ASSERT_TRUE(enote_store.top_legacy_partialscanned_block_index() == 0);
     ASSERT_TRUE(enote_store.top_legacy_fullscanned_block_index() == -1);
@@ -3348,8 +3348,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_5)
     std::unordered_map<rct::key, cryptonote::subaddress_index> legacy_subaddress_map;
     legacy_subaddress_map[subaddr_spendkey] = subaddr_index;
 
-    // 5. changes cache
-    std::list<EnoteStoreChange> changes;
+    // 5. events cache
+    std::list<EnoteStoreEvent> events;
 
 
     /// test
@@ -3486,8 +3486,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_5)
             {EnoteStoreBalanceUpdateExclusions::LEGACY_INTERMEDIATE}) == 0);
 
     //import key images: enote 1 in block 0, enote 2 in block 1
-    ASSERT_TRUE(enote_store.try_import_legacy_key_image(key_image_1, enote_1.onetime_address, changes));
-    ASSERT_FALSE(enote_store.try_import_legacy_key_image(key_image_2, enote_2.onetime_address, changes));  //ignore failed import
+    ASSERT_TRUE(enote_store.try_import_legacy_key_image(key_image_1, enote_1.onetime_address, events));
+    ASSERT_FALSE(enote_store.try_import_legacy_key_image(key_image_2, enote_2.onetime_address, events));  //ignore failed import
 
     ASSERT_TRUE(enote_store.top_legacy_partialscanned_block_index() == 1);
     ASSERT_TRUE(enote_store.top_legacy_fullscanned_block_index() == -1);
@@ -3552,8 +3552,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_6)
     std::unordered_map<rct::key, cryptonote::subaddress_index> legacy_subaddress_map;
     legacy_subaddress_map[subaddr_spendkey] = subaddr_index;
 
-    // 5. changes cache
-    std::list<EnoteStoreChange> changes;
+    // 5. events cache
+    std::list<EnoteStoreEvent> events;
 
 
     /// test
@@ -3700,7 +3700,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_6)
         };
 
     //import key image: enote 1
-    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image_1, enote_1.onetime_address, changes));
+    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image_1, enote_1.onetime_address, events));
 
     ASSERT_TRUE(enote_store_int.top_legacy_partialscanned_block_index() == 0);
     ASSERT_TRUE(enote_store_int.top_legacy_fullscanned_block_index() == -1);
@@ -3993,8 +3993,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_7)
     std::unordered_map<rct::key, cryptonote::subaddress_index> legacy_subaddress_map;
     legacy_subaddress_map[subaddr_spendkey] = subaddr_index;
 
-    // 5. changes cache
-    std::list<EnoteStoreChange> changes;
+    // 5. events cache
+    std::list<EnoteStoreEvent> events;
 
 
     /// test
@@ -4154,7 +4154,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_7)
         };
 
     //import key image: enote 1
-    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image, enote_1a.onetime_address, changes));
+    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image, enote_1a.onetime_address, events));
 
     ASSERT_TRUE(enote_store_int.top_legacy_partialscanned_block_index() == 1);
     ASSERT_TRUE(enote_store_int.top_legacy_fullscanned_block_index() == -1);
@@ -4452,8 +4452,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_8)
     std::unordered_map<rct::key, cryptonote::subaddress_index> legacy_subaddress_map;
     legacy_subaddress_map[subaddr_spendkey] = subaddr_index;
 
-    // 5. changes cache
-    std::list<EnoteStoreChange> changes;
+    // 5. events cache
+    std::list<EnoteStoreEvent> events;
 
 
     /// test
@@ -4756,9 +4756,9 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_8)
         };
 
     //import key images: enotes 1, 2, 3
-    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image_1, enote_1.onetime_address, changes));
-    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image_2, enote_2.onetime_address, changes));
-    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image_3, enote_3.onetime_address, changes));
+    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image_1, enote_1.onetime_address, events));
+    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image_2, enote_2.onetime_address, events));
+    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image_3, enote_3.onetime_address, events));
 
     ASSERT_TRUE(enote_store_int.top_legacy_partialscanned_block_index() == 4);
     ASSERT_TRUE(enote_store_int.top_legacy_fullscanned_block_index() == -1);
@@ -4848,8 +4848,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_9)
     std::unordered_map<rct::key, cryptonote::subaddress_index> legacy_subaddress_map;
     legacy_subaddress_map[subaddr_spendkey] = subaddr_index;
 
-    // 5. changes cache
-    std::list<EnoteStoreChange> changes;
+    // 5. events cache
+    std::list<EnoteStoreEvent> events;
 
 
     /// test
@@ -5094,7 +5094,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_9)
         };
 
     //import key image: enote 1
-    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image, enote_1a.onetime_address, changes));
+    ASSERT_TRUE(enote_store_int.try_import_legacy_key_image(key_image, enote_1a.onetime_address, events));
 
     ASSERT_TRUE(enote_store_int.top_legacy_partialscanned_block_index() == 3);
     ASSERT_TRUE(enote_store_int.top_legacy_fullscanned_block_index() == -1);
@@ -5318,12 +5318,12 @@ static void legacy_view_scan_recovery_cycle(const legacy_mock_keys &legacy_keys,
 
 
     // 4. import expected key images (will fail if the onetime addresses and key images don't line up)
-    std::list<EnoteStoreChange> changes;
+    std::list<EnoteStoreEvent> events;
     for (std::size_t i{0}; i < legacy_onetime_addresses_expected.size(); ++i)
     {
         ASSERT_TRUE(enote_store_inout.try_import_legacy_key_image(legacy_key_images_expected[i],
             legacy_onetime_addresses_expected[i],
-            changes));
+            events));
     }
 
     // 5. check results of importing key images

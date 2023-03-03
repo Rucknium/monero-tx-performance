@@ -33,7 +33,7 @@
 
 //local headers
 #include "common/container_helpers.h"
-#include "enote_store_change_types.h"
+#include "enote_store_event_types.h"
 #include "enote_store_mock_v1.h"
 #include "misc_log_ex.h"
 #include "seraphis_main/contextual_enote_record_types.h"
@@ -140,7 +140,7 @@ bool SpEnoteStoreMockPaymentValidatorV1::try_get_block_id(const std::uint64_t bl
 void SpEnoteStoreMockPaymentValidatorV1::update_with_sp_records_from_nonledger(
     const SpEnoteOriginStatus nonledger_origin_status,
     const std::unordered_map<rct::key, SpContextualIntermediateEnoteRecordV1> &found_enote_records,
-    std::list<SpPaymentValidatorStoreChange> &changes_inout)
+    std::list<SpPaymentValidatorStoreEvent> &events_inout)
 {
     CHECK_AND_ASSERT_THROW_MES(nonledger_origin_status == SpEnoteOriginStatus::OFFCHAIN ||
             nonledger_origin_status == SpEnoteOriginStatus::UNCONFIRMED,
@@ -154,7 +154,7 @@ void SpEnoteStoreMockPaymentValidatorV1::update_with_sp_records_from_nonledger(
                 if (mapped_contextual_enote_record.second.origin_context.origin_status != nonledger_origin_status)
                     return false;
 
-                changes_inout.emplace_back(RemovedSpIntermediateRecord{mapped_contextual_enote_record.first});
+                events_inout.emplace_back(RemovedSpIntermediateRecord{mapped_contextual_enote_record.first});
 
                 return true;
             }
@@ -162,14 +162,14 @@ void SpEnoteStoreMockPaymentValidatorV1::update_with_sp_records_from_nonledger(
 
     // 2. add found enotes
     for (const auto &found_enote_record : found_enote_records)
-        this->add_record(found_enote_record.second, changes_inout);
+        this->add_record(found_enote_record.second, events_inout);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockPaymentValidatorV1::update_with_sp_records_from_ledger(const std::uint64_t first_new_block,
     const rct::key &alignment_block_id,
     const std::unordered_map<rct::key, SpContextualIntermediateEnoteRecordV1> &found_enote_records,
     const std::vector<rct::key> &new_block_ids,
-    std::list<SpPaymentValidatorStoreChange> &changes_inout)
+    std::list<SpPaymentValidatorStoreEvent> &events_inout)
 {
     // 1. set new block ids in range [first_new_block, end of chain]
     SpIntermediateBlocksDiff diff{};
@@ -181,7 +181,7 @@ void SpEnoteStoreMockPaymentValidatorV1::update_with_sp_records_from_ledger(cons
         diff.old_top_index,
         diff.range_start_index,
         diff.num_blocks_added);
-    changes_inout.emplace_back(diff);
+    events_inout.emplace_back(diff);
 
     // 2. remove records that will be replaced
     tools::for_all_in_map_erase_if(m_sp_contextual_enote_records,
@@ -192,7 +192,7 @@ void SpEnoteStoreMockPaymentValidatorV1::update_with_sp_records_from_ledger(cons
                         SpEnoteOriginStatus::ONCHAIN &&
                     mapped_contextual_enote_record.second.origin_context.block_index >= first_new_block)
                 {
-                    changes_inout.emplace_back(RemovedSpIntermediateRecord{mapped_contextual_enote_record.first});
+                    events_inout.emplace_back(RemovedSpIntermediateRecord{mapped_contextual_enote_record.first});
                     return true;
                 }
 
@@ -200,7 +200,7 @@ void SpEnoteStoreMockPaymentValidatorV1::update_with_sp_records_from_ledger(cons
                 if (mapped_contextual_enote_record.second.origin_context.origin_status ==
                         SpEnoteOriginStatus::UNCONFIRMED)
                 {
-                    changes_inout.emplace_back(RemovedSpIntermediateRecord{mapped_contextual_enote_record.first});
+                    events_inout.emplace_back(RemovedSpIntermediateRecord{mapped_contextual_enote_record.first});
                     return true;
                 }
 
@@ -210,13 +210,13 @@ void SpEnoteStoreMockPaymentValidatorV1::update_with_sp_records_from_ledger(cons
 
     // 3. add found enotes
     for (const auto &found_enote_record : found_enote_records)
-        this->add_record(found_enote_record.second, changes_inout);
+        this->add_record(found_enote_record.second, events_inout);
 }
 //-------------------------------------------------------------------------------------------------------------------
 // MOCK PV ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStoreMockPaymentValidatorV1::add_record(const SpContextualIntermediateEnoteRecordV1 &new_record,
-    std::list<SpPaymentValidatorStoreChange> &changes_inout)
+    std::list<SpPaymentValidatorStoreEvent> &events_inout)
 {
     const rct::key record_onetime_address{onetime_address_ref(new_record)};
 
@@ -224,13 +224,13 @@ void SpEnoteStoreMockPaymentValidatorV1::add_record(const SpContextualIntermedia
     if (m_sp_contextual_enote_records.find(record_onetime_address) == m_sp_contextual_enote_records.end())
     {
         m_sp_contextual_enote_records[record_onetime_address] = new_record;
-        changes_inout.emplace_back(NewSpIntermediateRecord{record_onetime_address});
+        events_inout.emplace_back(NewSpIntermediateRecord{record_onetime_address});
     }
     else
     {
         if (try_update_enote_origin_context_v1(new_record.origin_context,
                 m_sp_contextual_enote_records[record_onetime_address].origin_context))
-            changes_inout.emplace_back(UpdatedSpIntermediateOriginContext{record_onetime_address});
+            events_inout.emplace_back(UpdatedSpIntermediateOriginContext{record_onetime_address});
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
