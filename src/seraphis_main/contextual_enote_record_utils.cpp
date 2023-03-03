@@ -194,6 +194,7 @@ bool try_get_membership_proof_real_reference_mappings(const std::vector<LegacyCo
     std::unordered_map<crypto::key_image, std::uint64_t> &enote_ledger_mappings_out)
 {
     enote_ledger_mappings_out.clear();
+    enote_ledger_mappings_out.reserve(contextual_records.size());
 
     for (const LegacyContextualEnoteRecordV1 &contextual_record : contextual_records)
     {
@@ -213,6 +214,7 @@ bool try_get_membership_proof_real_reference_mappings(const std::vector<SpContex
     std::unordered_map<crypto::key_image, std::uint64_t> &enote_ledger_mappings_out)
 {
     enote_ledger_mappings_out.clear();
+    enote_ledger_mappings_out.reserve(contextual_records.size());
 
     for (const SpContextualEnoteRecordV1 &contextual_record : contextual_records)
     {

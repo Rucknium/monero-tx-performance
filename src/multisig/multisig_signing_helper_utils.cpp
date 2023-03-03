@@ -143,6 +143,7 @@ static void prepare_filters_for_multisig_partial_signing(const std::uint32_t thr
     // 4. available signers as individual filters (note: available_signers contains no duplicates because it's built
     //    from a map)
     available_signers_as_filters_out.clear();
+    available_signers_as_filters_out.reserve(available_signers.size());
 
     for (const crypto::public_key &available_signer : available_signers)
     {
@@ -317,6 +318,7 @@ static void make_v1_multisig_partial_sig_sets_v1(const multisig_account &signer_
     // - a signer's nonce vectors line up 1:1 with the filters in 'filter_permutations' of which the signer is a member
     // - we want to track through each signers' vectors as we go through the full set of 'filter_permutations'
     std::unordered_map<crypto::public_key, std::size_t> signer_nonce_trackers;
+    signer_nonce_trackers.reserve(available_signers_as_filters.size());
 
     for (const auto &available_signer_filter : available_signers_as_filters)
         signer_nonce_trackers[available_signer_filter.first] = 0;
@@ -723,6 +725,7 @@ void make_v1_multisig_init_set_collection_v1(const std::uint32_t threshold,
 {
     // make an init set for every proof context provided
     init_set_collection_out.clear();
+    init_set_collection_out.reserve(proof_contexts.size());
 
     for (const auto &proof_context : proof_contexts)
     {
@@ -895,6 +898,15 @@ void filter_multisig_partial_signatures_for_combining_v1(const std::vector<crypt
     // filter the partial signatures passed in into the 'collected sigs' output map
     std::unordered_map<signer_set_filter, std::unordered_set<crypto::public_key>> collected_signers_per_filter;
 
+    if (partial_sigs_per_signer.size() > 0)
+    {
+        // estimate total number of filters: num filters for the first signer * num signers available
+        // note: we optimize performance for non-adversarial multisig interactions, which should be the norm
+        collected_signers_per_filter.reserve(
+                partial_sigs_per_signer.begin()->second.size() * partial_sigs_per_signer.size()
+            );
+    }
+
     for (const auto &partial_sigs_for_signer : partial_sigs_per_signer)
     {
         for (const MultisigPartialSigSetV1 &partial_sig_set : partial_sigs_for_signer.second)
@@ -950,6 +962,9 @@ void filter_multisig_partial_signatures_for_combining_v1(const std::vector<crypt
                 continue;
 
             // d. record the partial sigs
+            collected_sigs_per_key_per_filter_out[partial_sig_set.signer_set_filter]
+                .reserve(partial_sig_set.partial_signatures.size());
+
             for (const auto &partial_sig : partial_sig_set.partial_signatures)
             {
                 // i. skip partial sigs with unknown proof keys

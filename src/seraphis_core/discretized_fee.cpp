@@ -105,7 +105,9 @@ static DiscretizedFeeContext generate_discretized_fee_context(const long double 
     // 2. collect powers of the fee level factor (e.g. powers of 1.5, powers of 2, etc.)
     static_assert(sizeof(discretized_fee_encoding_t) <= sizeof(std::size_t), "");
     const std::size_t recorded_levels_offset(fee_context.fee_encodings.size());
-    const std::size_t max_level_allowed{std::numeric_limits<discretized_fee_encoding_t>::max() - recorded_levels_offset - 2};
+    const std::size_t max_level_allowed{
+            std::numeric_limits<discretized_fee_encoding_t>::max() - recorded_levels_offset - 2
+        };
     std::size_t current_level{0};
     std::uint64_t prev_fee_value{static_cast<std::uint64_t>(-1)};
     std::uint64_t fee_value;

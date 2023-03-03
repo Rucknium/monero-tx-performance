@@ -89,6 +89,7 @@ static void get_legacy_proof_contexts_v1(const rct::key &tx_proposal_prefix,
     std::unordered_map<rct::key, rct::key> &proof_contexts_out)  //[ proof key : proof message ]
 {
     proof_contexts_out.clear();
+    proof_contexts_out.reserve(legacy_multisig_input_proposals.size());
 
     for (const LegacyMultisigInputProposalV1 &input_proposal : legacy_multisig_input_proposals)
     {
@@ -105,6 +106,7 @@ static void get_seraphis_proof_contexts_v1(const rct::key &tx_proposal_prefix,
     std::unordered_map<rct::key, rct::key> &proof_contexts_out)  //[ proof key : proof message ]
 {
     proof_contexts_out.clear();
+    proof_contexts_out.reserve(sp_input_proposals.size());
     SpEnoteImageV1 enote_image_temp;
 
     for (const SpInputProposalV1 &input_proposal : sp_input_proposals)
@@ -120,6 +122,7 @@ static void get_legacy_proof_base_keys_v1(const std::vector<LegacyInputProposalV
     std::unordered_map<rct::key, rct::keyV> &legacy_proof_key_base_points_out)
 {
     legacy_proof_key_base_points_out.clear();
+    legacy_proof_key_base_points_out.reserve(legacy_input_proposals.size());
     crypto::key_image KI_base_temp;
 
     for (const LegacyInputProposalV1 &input_proposal : legacy_input_proposals)
@@ -142,6 +145,7 @@ static void get_sp_proof_base_keys_v1(const std::vector<SpInputProposalV1> &sp_i
     std::unordered_map<rct::key, rct::keyV> &sp_proof_key_base_points_out)
 {
     sp_proof_key_base_points_out.clear();
+    sp_proof_key_base_points_out.reserve(sp_input_proposals.size());
     SpEnoteImageV1 enote_image_temp;
 
     for (const SpInputProposalV1 &input_proposal : sp_input_proposals)
@@ -415,22 +419,22 @@ static void prepare_legacy_clsag_privkeys_for_multisig(const crypto::secret_key 
 //-------------------------------------------------------------------------------------------------------------------
 static void collect_legacy_clsag_privkeys_for_multisig(const std::vector<LegacyInputProposalV1> &legacy_input_proposals,
     std::vector<crypto::secret_key> &proof_privkeys_k_offset_out,
-    std::vector<crypto::secret_key> &proof_privkeys_z)
+    std::vector<crypto::secret_key> &proof_privkeys_z_out)
 {
     CHECK_AND_ASSERT_THROW_MES(tools::is_sorted_and_unique(legacy_input_proposals, compare_KI),
         "collect legacy clsag privkeys for multisig: legacy input proposals aren't sorted and unique.");
 
     proof_privkeys_k_offset_out.clear();
     proof_privkeys_k_offset_out.reserve(legacy_input_proposals.size());
-    proof_privkeys_z.clear();
-    proof_privkeys_z.reserve(legacy_input_proposals.size());
+    proof_privkeys_z_out.clear();
+    proof_privkeys_z_out.reserve(legacy_input_proposals.size());
 
     for (const LegacyInputProposalV1 &legacy_input_proposal : legacy_input_proposals)
     {
         prepare_legacy_clsag_privkeys_for_multisig(legacy_input_proposal.enote_view_extension,
             legacy_input_proposal.commitment_mask,
             tools::add_element(proof_privkeys_k_offset_out),
-            tools::add_element(proof_privkeys_z));
+            tools::add_element(proof_privkeys_z_out));
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
