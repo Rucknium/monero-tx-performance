@@ -587,6 +587,13 @@ void MockLedgerContext::get_unconfirmed_chunk_sp(const crypto::x25519_secret_key
     if (m_unconfirmed_tx_output_contents.size() == 0)
         return;
 
+    // optimization: reserve capacity in the chunk records map
+    // - on average, one tx per sizeof(jamtis view tag) enotes will have a record in the chunk; we add 40% to account
+    //   for typical variance plus uncertainty in the number of enotes
+    chunk_out.basic_records_per_tx.reserve(
+            m_unconfirmed_tx_output_contents.size() * 2 * 140 / 100 / sizeof(sp::jamtis::view_tag_t)
+        );
+
     // find-received scan each tx in the unconfirmed chache
     std::list<ContextualBasicRecordVariant> collected_records;
     SpContextualKeyImageSetV1 collected_key_images;
@@ -736,7 +743,20 @@ void MockLedgerContext::get_onchain_chunk_legacy(const std::uint64_t chunk_start
         total_output_count_before_tx = m_accumulated_legacy_output_counts.at(chunk_out.context.start_index - 1);
     }
 
-    // b. legacy-view scan each block in the range
+    // b. optimization: reserve size in the chunk map
+    // - use output counts as a proxy for the number of txs in the chunk range
+    if (chunk_out.context.element_ids.size() > 0)
+    {
+        CHECK_AND_ASSERT_THROW_MES(m_accumulated_legacy_output_counts.find(chunk_end_index - 1) !=
+                m_accumulated_legacy_output_counts.end(),
+            "onchain chunk legacy-view scanning (mock ledger context): output counts missing a block (bug).");
+
+        chunk_out.basic_records_per_tx.reserve(
+                (m_accumulated_legacy_output_counts.at(chunk_end_index - 1) - total_output_count_before_tx) / 2
+            );
+    }
+
+    // c. legacy-view scan each block in the range
     std::list<ContextualBasicRecordVariant> collected_records;
     SpContextualKeyImageSetV1 collected_key_images;
 
@@ -923,7 +943,22 @@ void MockLedgerContext::get_onchain_chunk_sp(const std::uint64_t chunk_start_ind
         total_output_count_before_tx = m_accumulated_sp_output_counts.at(chunk_start_adjusted - 1);
     }
 
-    // d. find-received scan each block in the range
+    // d. optimization: reserve size in the chunk map
+    // - on average, one tx per sizeof(jamtis view tag) enotes will have a record in the chunk; we add 20% to account
+    //   for typical variance
+    if (chunk_out.context.element_ids.size() > 0)
+    {
+        CHECK_AND_ASSERT_THROW_MES(m_accumulated_sp_output_counts.find(chunk_end_index - 1) !=
+                m_accumulated_sp_output_counts.end(),
+            "onchain chunk find-received scanning (mock ledger context): output counts missing a block (bug).");
+
+        chunk_out.basic_records_per_tx.reserve(
+                ((m_accumulated_sp_output_counts.at(chunk_end_index - 1) - total_output_count_before_tx) * 120 / 100 / 
+                    sizeof(sp::jamtis::view_tag_t))
+            );
+    }
+
+    // e. find-received scan each block in the range
     std::list<ContextualBasicRecordVariant> collected_records;
     SpContextualKeyImageSetV1 collected_key_images;
 
