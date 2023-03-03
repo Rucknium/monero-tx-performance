@@ -106,13 +106,19 @@ public:
     bool try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const;
     /// check if any stored enote has a given key image
     bool has_enote_with_key_image(const crypto::key_image &key_image) const;
-    /// get the legacy intermediate records
+    /// get the legacy intermediate records map
     /// - note: useful for collecting their onetime addresses and viewkey extensions for key image recovery
     const std::unordered_map<rct::key, LegacyContextualIntermediateEnoteRecordV1>& legacy_intermediate_records() const
     { return m_legacy_intermediate_contextual_enote_records; }
-    /// get the legacy full records
+    /// get the legacy full records map
     const std::unordered_map<rct::key, LegacyContextualEnoteRecordV1>& legacy_records() const
     { return m_legacy_contextual_enote_records; }
+    /// get the legacy [ Ko : [ legacy identifiers ] ] map
+    const std::unordered_map<rct::key, std::unordered_set<rct::key>>& legacy_identifers() const
+    { return m_tracked_legacy_onetime_address_duplicates; }
+    /// get the legacy [ KI : Ko ] map
+    const std::unordered_map<crypto::key_image, rct::key>& legacy_key_images() const
+    { return m_legacy_key_images; }
     /// get the seraphis records
     const std::unordered_map<crypto::key_image, SpContextualEnoteRecordV1>& sp_records() const
     { return m_sp_contextual_enote_records; }
