@@ -218,8 +218,9 @@ bool refresh_enote_store_ledger(const RefreshLedgerEnoteStoreConfig &config,
             .status = scan_machine::ScanStatus::NEED_FULLSCAN
         };
     while (scan_machine::try_advance_state_machine(initial_fullscan_metadata,
-        ledger_scanning_context_inout,
-        enote_store_updater_inout))
+            ledger_scanning_context_inout,
+            enote_store_updater_inout) &&
+        !scan_machine::is_terminal_state(initial_fullscan_metadata.status))
     {}
 
     if (initial_fullscan_metadata.status != scan_machine::ScanStatus::SUCCESS)
@@ -243,8 +244,9 @@ bool refresh_enote_store_ledger(const RefreshLedgerEnoteStoreConfig &config,
             .status = scan_machine::ScanStatus::NEED_FULLSCAN
         };
     while (scan_machine::try_advance_state_machine(followup_fullscan_metadata,
-        ledger_scanning_context_inout,
-        enote_store_updater_inout))
+            ledger_scanning_context_inout,
+            enote_store_updater_inout) &&
+        !scan_machine::is_terminal_state(followup_fullscan_metadata.status))
     {}
 
     if (followup_fullscan_metadata.status != scan_machine::ScanStatus::SUCCESS)

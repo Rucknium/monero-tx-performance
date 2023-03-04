@@ -139,11 +139,17 @@ struct ChunkContext final
 */
 bool chunk_is_empty(const ChunkContext &chunk_context);
 /**
+* brief: is_terminal_state - test if a scan status is in a terminal state
+* param: status -
+* return: true if status is terminal
+*/
+bool is_terminal_state(const ScanStatus status);
+/**
 * brief: try_advance_state_machine - advance the scan state machine to the next state
 * inoutparam: metadata_inout -
 * inoutparam: scanning_context_inout -
 * inoutparam: enote_store_updater_inout -
-* return: true if the machine was advanced to a new state, false if the machine is in a terminal state
+* return: true if the machine was advanced to a new non-terminal state, false if the machine is in a terminal state
 */
 bool try_advance_state_machine(ScanMetadata &metadata_inout,
     EnoteScanningContextLedger &scanning_context_inout,

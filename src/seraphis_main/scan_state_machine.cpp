@@ -499,15 +499,54 @@ static bool try_handle_do_scan(ScanMetadata &metadata_inout,
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
+static bool is_terminal_state_with_log(const ScanStatus status)
+{
+    // 1. check if in a terminal state
+    if (!is_terminal_state(status))
+        return false;
+
+    // 2. log error as needed
+    if (status == ScanStatus::FAIL)
+        LOG_ERROR("seraphis scan state machine (terminal state): scan failed!");
+    else if (status == ScanStatus::ABORTED)
+        LOG_ERROR("seraphis scan state machine (terminal state): scan aborted!");
+    else if (status != ScanStatus::SUCCESS)
+        LOG_ERROR("seraphis scan state machine (terminal state): unknown failure!");
+
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
 bool chunk_is_empty(const ChunkContext &chunk_context)
 {
     return chunk_context.element_ids.size() == 0;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool is_terminal_state(const ScanStatus status)
+{
+    // 1. non-terminal states
+    switch (status)
+    {
+        case ScanStatus::NEED_FULLSCAN    :
+        case ScanStatus::NEED_PARTIALSCAN :
+        case ScanStatus::START_SCAN       :
+        case ScanStatus::DO_SCAN          :
+            return false;
+        default:;
+    }
+
+    // 2. terminal states: everything else
+    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool try_advance_state_machine(ScanMetadata &metadata_inout,
     EnoteScanningContextLedger &scanning_context_inout,
     EnoteStoreUpdater &enote_store_updater_inout)
 {
+    // check terminal states
+    if (is_terminal_state_with_log(metadata_inout.status))
+        return false;
+
     // NEED_FULLSCAN
     if (try_handle_need_fullscan(metadata_inout, scanning_context_inout, enote_store_updater_inout))
         return true;
@@ -523,14 +562,6 @@ bool try_advance_state_machine(ScanMetadata &metadata_inout,
     // DO_SCAN
     if (try_handle_do_scan(metadata_inout, scanning_context_inout, enote_store_updater_inout))
         return true;
-
-    // cannot advance the state
-    if (metadata_inout.status == ScanStatus::FAIL)
-        LOG_ERROR("seraphis scan state machine (try advance state): scan failed!");
-    else if (metadata_inout.status == ScanStatus::ABORTED)
-        LOG_ERROR("seraphis scan state machine (try advance state): scan aborted!");
-    else if (metadata_inout.status != ScanStatus::SUCCESS)
-        LOG_ERROR("seraphis scan state machine (try advance state): unknown failure!");
 
     return false;
 }
