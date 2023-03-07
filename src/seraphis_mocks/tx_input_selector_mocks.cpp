@@ -151,7 +151,10 @@ bool InputSelectorMockV1::try_select_input_candidate_v1(const boost::multiprecis
 {
     // 1. try to select from legacy enotes
     const std::unordered_map<rct::key, LegacyContextualEnoteRecordV1> &mapped_legacy_contextual_enote_records{
-            m_enote_store.m_legacy_contextual_enote_records
+            m_enote_store.legacy_records()
+        };
+    const std::unordered_map<rct::key, std::unordered_set<rct::key>> &legacy_onetime_address_identifier_map{
+            m_enote_store.legacy_onetime_address_identifier_map()
         };
     for (const auto &mapped_enote_record : mapped_legacy_contextual_enote_records)
     {
@@ -185,7 +188,7 @@ bool InputSelectorMockV1::try_select_input_candidate_v1(const boost::multiprecis
         if (!legacy_enote_has_highest_amount_in_set(mapped_enote_record.first,
                 mapped_enote_record.second.record.amount,
                 {SpEnoteOriginStatus::OFFCHAIN, SpEnoteOriginStatus::UNCONFIRMED, SpEnoteOriginStatus::ONCHAIN},
-                m_enote_store.m_tracked_legacy_onetime_address_duplicates.at(
+                legacy_onetime_address_identifier_map.at(
                     onetime_address_ref(mapped_enote_record.second.record.enote)
                 ),
                 [&mapped_legacy_contextual_enote_records](const rct::key &identifier) -> const SpEnoteOriginStatus&
@@ -213,7 +216,10 @@ bool InputSelectorMockV1::try_select_input_candidate_v1(const boost::multiprecis
     }
 
     // 2. try to select from seraphis enotes
-    for (const auto &mapped_enote_record : m_enote_store.m_sp_contextual_enote_records)
+    const std::unordered_map<crypto::key_image, SpContextualEnoteRecordV1> &mapped_sp_contextual_enote_records{
+            m_enote_store.sp_records()
+        };
+    for (const auto &mapped_enote_record : mapped_sp_contextual_enote_records)
     {
         // a. only consider unspent enotes
         if (!has_spent_status(mapped_enote_record.second, SpEnoteSpentStatus::UNSPENT))

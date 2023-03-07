@@ -66,11 +66,6 @@ enum class EnoteStoreBalanceUpdateExclusions
 ///
 class SpEnoteStoreMockV1 final
 {
-    // note: in practice it may be better to embed the main input selection logic within the enote store to avoid the
-    //       messiness of a friend class; alternatively, just implement enote store endpoints that are useful for input
-    //       selection
-    friend class InputSelectorMockV1;
-
 public:
 //constructors
     /// normal constructor
@@ -114,7 +109,7 @@ public:
     const std::unordered_map<rct::key, LegacyContextualEnoteRecordV1>& legacy_records() const
     { return m_legacy_contextual_enote_records; }
     /// get the legacy [ Ko : [ legacy identifiers ] ] map
-    const std::unordered_map<rct::key, std::unordered_set<rct::key>>& legacy_identifers() const
+    const std::unordered_map<rct::key, std::unordered_set<rct::key>>& legacy_onetime_address_identifier_map() const
     { return m_tracked_legacy_onetime_address_duplicates; }
     /// get the legacy [ KI : Ko ] map
     const std::unordered_map<crypto::key_image, rct::key>& legacy_key_images() const
@@ -271,7 +266,6 @@ private:
         std::list<EnoteStoreEvent> &events_inout);
 
 //member variables
-protected:
     /// intermediate legacy enotes (unknown key images): mapped to H32(Ko, a)
     std::unordered_map<rct::key, LegacyContextualIntermediateEnoteRecordV1>
         m_legacy_intermediate_contextual_enote_records;

@@ -97,7 +97,6 @@ private:
         std::list<SpPaymentValidatorStoreEvent> &events_inout);
 
 //member variables
-protected:
     /// seraphis enotes
     std::unordered_map<rct::key, SpContextualIntermediateEnoteRecordV1> m_sp_contextual_enote_records;
 
