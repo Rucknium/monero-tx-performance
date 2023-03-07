@@ -471,13 +471,13 @@ static bool try_get_enote_record_v1_selfsend_for_type(const SpEnoteVariant &enot
     const rct::key &input_context,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
+    const crypto::x25519_secret_key &xk_find_received,
     const crypto::secret_key &s_generate_address,
     const jamtis::jamtis_address_tag_cipher_context &cipher_context,
     const jamtis::JamtisSelfSendType test_type,
     SpEnoteRecordV1 &record_out)
 {
     // get an enote record for a specified jamtis selfsend enote type
-    // note: do not test the view tag here (for efficiency, assume it was already checked)
 
     // 1. sender-receiver secret for specified self-send type
     rct::key q;
@@ -496,28 +496,36 @@ static bool try_get_enote_record_v1_selfsend_for_type(const SpEnoteVariant &enot
     if (!jamtis::try_decipher_address_index(cipher_context, decrypted_addr_tag, record_out.address_index))
         return false;
 
-    // 4. spend key of address that might own this enote
+    // 4. verify the view tag
+    // note: we verify the view tag to ensure our enote is 100% well-formed, even though we use the address index
+    //       decipher as the main test for identifying self-sends
+    jamtis::view_tag_t test_view_tag;
+    jamtis::make_jamtis_view_tag(xk_find_received, enote_ephemeral_pubkey, onetime_address_ref(enote), test_view_tag);
+    if (test_view_tag != view_tag_ref(enote))
+        return false;
+
+    // 5. spend key of address that might own this enote
     rct::key recipient_address_spendkey;
     jamtis::make_jamtis_address_spend_key(jamtis_spend_pubkey,
         s_generate_address,
         record_out.address_index,
         recipient_address_spendkey);
 
-    // 5. save a copy of the amount commitment
+    // 6. save a copy of the amount commitment
     const rct::key amount_commitment{amount_commitment_ref(enote)};
 
-    // 6. check if the spend key owns this enote
+    // 7. check if the spend key owns this enote
     if (!jamtis::test_jamtis_onetime_address(recipient_address_spendkey,
             q,
             amount_commitment,
             onetime_address_ref(enote)))
         return false;
 
-    // 7. compute the amount baked key (selfsend version)
+    // 8. compute the amount baked key (selfsend version)
     rct::key amount_baked_key;
     jamtis::make_jamtis_amount_baked_key_selfsend(k_view_balance, q, amount_baked_key);
 
-    // 8. try to recover the amount and blinding factor
+    // 9. try to recover the amount and blinding factor
     if (!try_get_amount_commitment_information(enote,
             q,
             amount_baked_key,
@@ -525,7 +533,7 @@ static bool try_get_enote_record_v1_selfsend_for_type(const SpEnoteVariant &enot
             record_out.amount_blinding_factor))
         return false;
 
-    // 9. construct enote view extensions
+    // 10. construct enote view extensions
     make_enote_view_extensions_helper(jamtis_spend_pubkey,
         s_generate_address,
         record_out.address_index,
@@ -536,14 +544,14 @@ static bool try_get_enote_record_v1_selfsend_for_type(const SpEnoteVariant &enot
         record_out.enote_view_extension_x,
         record_out.enote_view_extension_u);
 
-    // 10. make key image: (k_u + k_m)/(k_x + k_vb) U
+    // 11. make key image: (k_u + k_m)/(k_x + k_vb) U
     make_seraphis_key_image_helper(jamtis_spend_pubkey,
         k_view_balance,
         record_out.enote_view_extension_x,
         record_out.enote_view_extension_u,
         record_out.key_image);
 
-    // 11. record the remaining information
+    // 12. record the remaining information
     record_out.enote                  = enote;
     record_out.enote_ephemeral_pubkey = enote_ephemeral_pubkey;
     record_out.input_context          = input_context;
@@ -864,6 +872,7 @@ bool try_get_enote_record_v1_selfsend(const SpEnoteVariant &enote,
     const rct::key &input_context,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
+    const crypto::x25519_secret_key &xk_find_received,
     const crypto::secret_key &s_generate_address,
     const jamtis::jamtis_address_tag_cipher_context &cipher_context,
     SpEnoteRecordV1 &record_out)
@@ -878,6 +887,7 @@ bool try_get_enote_record_v1_selfsend(const SpEnoteVariant &enote,
                 input_context,
                 jamtis_spend_pubkey,
                 k_view_balance,
+                xk_find_received,
                 s_generate_address,
                 cipher_context,
                 static_cast<jamtis::JamtisSelfSendType>(self_send_type),
@@ -896,8 +906,10 @@ bool try_get_enote_record_v1_selfsend(const SpEnoteVariant &enote,
     SpEnoteRecordV1 &record_out)
 {
     // make generate-address secret and cipher context then get enote record
+    crypto::x25519_secret_key xk_find_received;
     crypto::secret_key s_generate_address;
     crypto::secret_key s_cipher_tag;
+    jamtis::make_jamtis_findreceived_key(k_view_balance, xk_find_received);
     jamtis::make_jamtis_generateaddress_secret(k_view_balance, s_generate_address);
     jamtis::make_jamtis_ciphertag_secret(s_generate_address, s_cipher_tag);
 
@@ -908,6 +920,7 @@ bool try_get_enote_record_v1_selfsend(const SpEnoteVariant &enote,
         input_context,
         jamtis_spend_pubkey,
         k_view_balance,
+        xk_find_received,
         s_generate_address,
         cipher_context,
         record_out);

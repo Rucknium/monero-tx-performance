@@ -152,6 +152,7 @@ bool try_get_enote_record_v1_plain(const SpIntermediateEnoteRecordV1 &intermedia
 * param: input_context -
 * param: jamtis_spend_pubkey -
 * param: k_view_balance -
+* param: xk_find_received -
 * param: s_generate_address -
 * param: cipher_context -
 * outparam: record_out -
@@ -162,6 +163,7 @@ bool try_get_enote_record_v1_selfsend(const SpEnoteVariant &enote,
     const rct::key &input_context,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
+    const crypto::x25519_secret_key &xk_find_received,
     const crypto::secret_key &s_generate_address,
     const jamtis::jamtis_address_tag_cipher_context &cipher_context,
     SpEnoteRecordV1 &record_out);

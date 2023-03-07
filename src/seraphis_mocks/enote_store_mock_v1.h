@@ -303,7 +303,7 @@ private:
     /// configuration value: the first ledger block that can contain seraphis txs
     std::uint64_t m_first_sp_enabled_block_in_chain{static_cast<std::uint64_t>(-1)};
     /// configuration value: default spendable age; an enote is considered 'spendable' in the next block if it's
-    //      on-chain and the hext index is >= 'origin index + max(1, default_spendable_age)'; legacy enotes also have
+    //      on-chain and the next index is >= 'origin index + max(1, default_spendable_age)'; legacy enotes also have
     //      an unlock_time attribute on top of the default spendable age
     std::uint64_t m_default_spendable_age{0};
 };
