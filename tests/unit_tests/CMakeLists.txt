@@ -85,6 +85,7 @@ set(unit_tests_sources
   scaling_2021.cpp
   serialization.cpp
   seraphis_basic.cpp
+  seraphis_cache.cpp
   seraphis_crypto.cpp
   seraphis_enote_scanning.cpp
   seraphis_knowledge_proofs.cpp
