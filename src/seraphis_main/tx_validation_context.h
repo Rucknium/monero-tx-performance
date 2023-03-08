@@ -70,6 +70,7 @@ public:
     virtual bool seraphis_key_image_exists(const crypto::key_image &key_image) const = 0;
     /**
     * brief: get_reference_set_proof_elements_v1 - gets legacy {KI, C} pairs stored in the validation context
+    *   - note: should only return elements that are valid to reference in a tx (e.g. locked elements are invalid)
     * param: indices -
     * outparam: proof_elements_out - {KI, C}
     */
@@ -77,6 +78,7 @@ public:
         rct::ctkeyV &proof_elements_out) const = 0;
     /**
     * brief: get_reference_set_proof_elements_v2 - gets seraphis squashed enotes stored in the validation context
+    *   - note: should only return elements that are valid to reference in a tx (e.g. locked elements are invalid)
     * param: indices -
     * outparam: proof_elements_out - {squashed enote}
     */
