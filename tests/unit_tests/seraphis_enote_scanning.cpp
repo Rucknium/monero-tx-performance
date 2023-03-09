@@ -123,6 +123,7 @@ public:
     bool is_aborted() const override { return false; }
 
 private:
+//member variables
     /// enote scanning context that this test context wraps
     EnoteScanningContextNonLedgerSimple &m_core_scanning_context;
 

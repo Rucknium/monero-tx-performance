@@ -41,6 +41,7 @@ set(unit_tests_sources
   bulletproofs_plus2.cpp
   canonical_amounts.cpp
   chacha.cpp
+  checkpoint_cache.cpp
   checkpoints.cpp
   command_line.cpp
   crypto.cpp
@@ -85,7 +86,6 @@ set(unit_tests_sources
   scaling_2021.cpp
   serialization.cpp
   seraphis_basic.cpp
-  seraphis_cache.cpp
   seraphis_crypto.cpp
   seraphis_enote_scanning.cpp
   seraphis_knowledge_proofs.cpp
