@@ -817,8 +817,8 @@ bool verify_reserved_enote_proof_v1(const ReservedEnoteProofV1 &proof,
         return false;
 
     // 3. verify the key image proof
-    // note: we don't inject an expected key image because reserved enote proofs are about the enote itself; the key
-    //       image proof just says that the key image in the reserved enote proof corresponds to the reserved enote
+    // note: we don't need an 'expected key image' here because our key image proof just needs to show that the proof's
+    //       key image is derived from the onetime address of the reserved enote
     if (!verify_enote_key_image_proof_v1(proof.KI_proof, expected_onetime_address, proof.KI_proof.KI))
         return false;
 
@@ -866,13 +866,21 @@ void make_reserve_proof_v1(const rct::key &message,
     const crypto::secret_key &k_view_balance,
     ReserveProofV1 &proof_out)
 {
-    // 1. make reserved enote proofs and collect addresses that need address ownership proofs
+    // 1. make randomized indices into the records
+    std::vector<std::size_t> record_indices(reserved_enote_records.size(), 0);
+    std::iota(record_indices.begin(), record_indices.end(), 0);
+    std::shuffle(record_indices.begin(), record_indices.end(), crypto::random_device{});
+
+    // 2. make reserved enote proofs and collect addresses that need address ownership proofs
     std::vector<ReservedEnoteProofV1> reserved_enote_proofs;
     reserved_enote_proofs.reserve(reserved_enote_records.size());
-    std::unordered_set<jamtis::address_index_t> address_indices;  //must use unordered set so proofs aren't sorted by index
+    std::unordered_set<jamtis::address_index_t> address_indices;
+    address_indices.reserve(reserved_enote_records.size());
 
-    for (const SpContextualEnoteRecordV1 &record : reserved_enote_records)
+    for (const std::size_t i : record_indices)
     {
+        const SpContextualEnoteRecordV1 &record{reserved_enote_records[i]};
+
         // a. skip records that aren't onchain
         if (record.origin_context.origin_status != SpEnoteOriginStatus::ONCHAIN)
             continue;
@@ -892,7 +900,7 @@ void make_reserve_proof_v1(const rct::key &message,
         address_indices.insert(record.record.address_index);
     }
 
-    // 2. make address ownership proofs for all the unique addresses that own records in the reserve proof
+    // 3. make address ownership proofs for all the unique addresses that own records in the reserve proof
     std::vector<AddressOwnershipProofV1> address_ownership_proofs;
     address_ownership_proofs.reserve(address_indices.size());
 
@@ -905,7 +913,7 @@ void make_reserve_proof_v1(const rct::key &message,
             tools::add_element(address_ownership_proofs));
     }
 
-    // 3. assemble the full proof
+    // 4. assemble the full proof
     proof_out = ReserveProofV1{
             .address_ownership_proofs = std::move(address_ownership_proofs),
             .reserved_enote_proofs    = std::move(reserved_enote_proofs)
@@ -918,6 +926,7 @@ bool verify_reserve_proof_v1(const ReserveProofV1 &proof,
 {
     // 1. validate the address ownership proofs against the expected message
     std::unordered_set<rct::key> found_addresses;
+    found_addresses.reserve(proof.address_ownership_proofs.size());
 
     for (const AddressOwnershipProofV1 &address_ownership_proof : proof.address_ownership_proofs)
     {

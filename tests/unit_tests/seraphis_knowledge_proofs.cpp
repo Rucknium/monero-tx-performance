@@ -155,7 +155,7 @@ static void enote_knowledge_proofs_helper(const jamtis_mock_keys &keys,
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static void reserve_proof_helper(const TxValidationContext &validation_context,
-    const jamtis_mock_keys &keys,
+    const jamtis_mock_keys &prover_keys,
     const SpEnoteStoreMockV1 &enote_store,
     const boost::multiprecision::uint128_t expected_reserve_amount)
 {
@@ -164,19 +164,22 @@ static void reserve_proof_helper(const TxValidationContext &validation_context,
     all_enote_records.reserve(enote_store.sp_records().size());
 
     for (const auto &enote_record : enote_store.sp_records())
-    {
         all_enote_records.emplace_back(enote_record.second);
-    }
 
     // 2. make a reserve proof for the user's full balance
     ReserveProofV1 reserve_proof;
-    make_reserve_proof_v1(rct::zero(), all_enote_records, keys.K_1_base, keys.k_m,keys.k_vb, reserve_proof);
+    make_reserve_proof_v1(rct::zero(),
+        all_enote_records,
+        prover_keys.K_1_base,
+        prover_keys.k_m,
+        prover_keys.k_vb,
+        reserve_proof);
 
     // 3. verify the reserve proof against the validation context
     ASSERT_TRUE(verify_reserve_proof_v1(reserve_proof, rct::zero(), validation_context));
 
     // 4. check the reserve amount
-    ASSERT_TRUE(expected_reserve_amount == total_reserve_amount(reserve_proof));
+    ASSERT_TRUE(total_reserve_amount(reserve_proof) == expected_reserve_amount);
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -192,7 +195,7 @@ TEST(seraphis_knowledge_proofs, address_ownership_proof_K_s)
     AddressOwnershipProofV1 proof;
     make_address_ownership_proof_v1(rct::zero(), keys.k_m, keys.k_vb, proof);  //with mock message
 
-    // 3. validate the proof
+    // 3. validate the address ownership proof
     ASSERT_TRUE(verify_address_ownership_proof_v1(proof, rct::zero(), keys.K_1_base));
 }
 //-------------------------------------------------------------------------------------------------------------------
