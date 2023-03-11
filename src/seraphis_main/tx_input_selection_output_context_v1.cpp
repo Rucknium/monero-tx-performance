@@ -57,6 +57,7 @@ static bool ephemeral_pubkeys_are_unique(const std::vector<jamtis::JamtisPayment
     const std::vector<jamtis::JamtisPaymentProposalSelfSendV1> &selfsend_payment_proposals)
 {
     std::unordered_set<crypto::x25519_pubkey> enote_ephemeral_pubkeys;
+    enote_ephemeral_pubkeys.reserve(normal_payment_proposals.size() + selfsend_payment_proposals.size());
     crypto::x25519_pubkey temp_enote_ephemeral_pubkey;
 
     for (const jamtis::JamtisPaymentProposalV1 &normal_proposal : normal_payment_proposals)

@@ -66,6 +66,7 @@ namespace sp
 static bool ephemeral_pubkeys_are_unique(const std::vector<SpCoinbaseOutputProposalV1> &output_proposals)
 {
     std::unordered_set<crypto::x25519_pubkey> enote_ephemeral_pubkeys;
+    enote_ephemeral_pubkeys.reserve(output_proposals.size());
 
     for (const SpCoinbaseOutputProposalV1 &output_proposal : output_proposals)
         enote_ephemeral_pubkeys.insert(output_proposal.enote_ephemeral_pubkey);
@@ -77,6 +78,7 @@ static bool ephemeral_pubkeys_are_unique(const std::vector<SpCoinbaseOutputPropo
 static bool ephemeral_pubkeys_are_unique(const std::vector<SpOutputProposalV1> &output_proposals)
 {
     std::unordered_set<crypto::x25519_pubkey> enote_ephemeral_pubkeys;
+    enote_ephemeral_pubkeys.reserve(output_proposals.size());
 
     for (const SpOutputProposalV1 &output_proposal : output_proposals)
         enote_ephemeral_pubkeys.insert(output_proposal.enote_ephemeral_pubkey);
@@ -89,6 +91,7 @@ static bool ephemeral_pubkeys_are_unique(const std::vector<jamtis::JamtisPayment
     const std::vector<jamtis::JamtisPaymentProposalSelfSendV1> &selfsend_payment_proposals)
 {
     std::unordered_set<crypto::x25519_pubkey> enote_ephemeral_pubkeys;
+    enote_ephemeral_pubkeys.reserve(normal_payment_proposals.size() + selfsend_payment_proposals.size());
     crypto::x25519_pubkey temp_enote_ephemeral_pubkey;
 
     for (const jamtis::JamtisPaymentProposalV1 &normal_proposal : normal_payment_proposals)
