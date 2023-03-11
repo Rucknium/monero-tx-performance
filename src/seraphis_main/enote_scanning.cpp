@@ -34,7 +34,7 @@
 #include "enote_finding_context.h"
 #include "enote_scanning_context.h"
 #include "enote_store_updater.h"
-#include "scan_state_machine.h"
+#include "scan_machine.h"
 #include "ringct/rctTypes.h"
 
 //third party headers

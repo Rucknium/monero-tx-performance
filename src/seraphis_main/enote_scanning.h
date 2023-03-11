@@ -42,7 +42,7 @@
 //local headers
 #include "contextual_enote_record_types.h"
 #include "ringct/rctTypes.h"
-#include "scan_state_machine.h"
+#include "scan_machine.h"
 
 //third party headers
 

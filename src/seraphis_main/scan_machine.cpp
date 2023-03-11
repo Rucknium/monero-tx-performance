@@ -27,7 +27,7 @@
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //paired header
-#include "scan_state_machine.h"
+#include "scan_machine.h"
 
 //local headers
 #include "enote_scanning.h"
