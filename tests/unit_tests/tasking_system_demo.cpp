@@ -27,6 +27,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include "async/misc_utils.h"
 #include "common/expect.h"
 #include "misc_log_ex.h"
 
@@ -116,44 +117,6 @@ static void mul_int(const int x, int &i_inout)
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 template <typename T>
-bool future_is_ready(const std::future<T> &future)
-{
-    try
-    {
-        if (!future.valid())
-            return false;
-        if (future.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
-            return false;
-    } catch (...) { return false; }
-    return true;
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-template <typename T>
-bool future_is_ready(const std::shared_future<T> &future)
-{
-    try
-    {
-        if (!future.valid())
-            return false;
-        if (future.wait_for(std::chrono::seconds(0)) != std::future_status::ready)
-            return false;
-    } catch (...) { return false; }
-    return true;
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-template <typename R>
-expect<R> unwrap_future(std::future<R> &future)
-{
-    if (!future_is_ready(future)) { return std::error_code{};       }
-    try                           { return std::move(future.get()); }
-    catch (std::error_code e)     { return e;                       }
-    catch (...)                   { return std::error_code{};       }
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-template <typename T>
 struct Task final
 {
     unsigned char id;
@@ -181,8 +144,8 @@ class TaskGraphMonitor final
     friend class TaskGraphMonitorBuilder<R>;
 
 public:
-    bool is_canceled() const { return future_is_ready(m_cancellation_flag); }
-    bool has_result()  const { return future_is_ready(m_final_result);      }
+    bool is_canceled() const { return async::future_is_ready(m_cancellation_flag); }
+    bool has_result()  const { return async::future_is_ready(m_final_result);      }
 
     void cancel()
     {
@@ -191,7 +154,7 @@ public:
             try { m_cancellation_handle->set_value(); } catch (...) { /* already canceled */ }
         }
     }
-    expect<R> expect_result() { return unwrap_future(m_final_result); }
+    expect<R> expect_result() { return async::unwrap_future(m_final_result); }
 
 protected:
     std::shared_ptr<std::promise<void>> m_cancellation_handle;
@@ -350,7 +313,7 @@ static auto build_task_graph(TaskGraphMonitorBuilder<R> &graph_monitor_builder_i
             try
             {
                 // check for cancellation
-                if (future_is_ready(l_cancellation_flag))
+                if (async::future_is_ready(l_cancellation_flag))
                     return;
 
                 // execute the final task
@@ -410,7 +373,7 @@ static auto build_task_graph(TaskGraphMonitorBuilder<R> &graph_monitor_builder_i
             try
             {
                 // check for cancellation
-                if (future_is_ready(l_cancellation_flag))
+                if (async::future_is_ready(l_cancellation_flag))
                     return;
 
                 // this task's job
@@ -435,7 +398,7 @@ static auto build_task_graph(TaskGraphMonitorBuilder<R> &graph_monitor_builder_i
                 }
 
                 // check for cancellation again (can discard the task result if cancelled)
-                if (future_is_ready(l_cancellation_flag))
+                if (async::future_is_ready(l_cancellation_flag))
                     return;
 
                 // pass the result of this task to the continuation
