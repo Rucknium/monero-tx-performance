@@ -175,4 +175,26 @@ private:
     WaiterManager m_waiter_manager;
 };
 
+
+/// default priorities
+enum class DefaultPriorityLevels : unsigned char
+{
+    MAX = 0,
+    MEDIUM,
+    LOW,
+    MIN = LOW
+};
+
+/// default threadpool
+inline ThreadPool& get_default_threadpool()
+{
+    static ThreadPool default_threadpool{
+            static_cast<unsigned char>(DefaultPriorityLevels::MIN),
+            static_cast<uint16_t>(std::max(2u, std::thread::hardware_concurrency()) - 1),
+            20,
+            std::chrono::milliseconds(500)
+        };
+    return default_threadpool;
+}
+
 } //namespace asyc
