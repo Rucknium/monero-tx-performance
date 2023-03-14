@@ -34,12 +34,14 @@
 #include "common/variant.h"
 
 //third-party headers
+#include <boost/none.hpp>
 
 //standard headers
 #include <atomic>
 #include <chrono>
 #include <functional>
 #include <future>
+#include <type_traits>
 
 //forward declarations
 
@@ -84,11 +86,8 @@ struct SimpleTask;
 struct SleepyTask;
 
 /// task
-//todo: std::function doesn't allow move-only functions and std::packaged_task is inefficient all we need is
-//      std::move_only_function (C++23)
 using TaskVariant = tools::variant<SimpleTask, SleepyTask>;
 using task_t      = std::function<TaskVariant()>;  //tasks auto-return their continuation (or an empty variant)
-//using task_t      = std::packaged_task<TaskVariant()>;
 
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -130,16 +129,86 @@ struct SleepingTask final
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 
+/// copyable tasks
+template <
+    typename F,
+    typename std::enable_if<
+            std::is_same<TaskVariant, decltype(std::declval<F>()())>::value
+            && std::is_constructible<std::function<TaskVariant()>, F>::value,
+            bool
+        >::type = true
+>
+std::function<TaskVariant()> as_task_function(F &&func)
+{
+    return std::move(func);
+}
+
+template <
+    typename F,
+    typename std::enable_if<
+            std::is_same<void, decltype(std::declval<F>()())>::value
+            && std::is_constructible<std::function<void()>, F>::value,
+            bool
+        >::type = true
+>
+std::function<TaskVariant()> as_task_function(F &&func)
+{
+    return [l_func = std::move(func)]() -> TaskVariant { l_func(); return boost::none; };
+}
+
+/// move-only tasks
+//todo: std::packaged_task is inefficient for this use-case but std::move_only_function is C++23
+template <
+    typename F,
+    typename std::enable_if<
+            std::is_same<TaskVariant, decltype(std::declval<F>()())>::value
+            && !std::is_constructible<std::function<TaskVariant()>, F>::value,
+            bool
+        >::type = true
+>
+std::function<TaskVariant()> as_task_function(F &&func)
+{
+    return
+        [l_func = std::make_shared<std::packaged_task<TaskVariant()>>(std::move(func))]
+        () -> TaskVariant
+        {
+            if (!l_func) return boost::none;
+            try { (*l_func)(); return l_func->get_future().get(); } catch (...) {}
+            return boost::none;
+        };
+}
+
+template <
+    typename F,
+    typename std::enable_if<
+            std::is_same<void, decltype(std::declval<F>()())>::value
+            && !std::is_constructible<std::function<void()>, F>::value,
+            bool
+        >::type = true
+>
+std::function<TaskVariant()> as_task_function(F &&func)
+{
+    return
+        [l_func = std::make_shared<std::packaged_task<void()>>(std::move(func))]
+        () -> TaskVariant
+        {
+            if (!l_func) return boost::none;
+            try { (*l_func)(); } catch (...) {}
+            return boost::none;
+        };
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+
 /// make simple task
 template <typename F>
 SimpleTask make_simple_task(const unsigned char priority, F &&func)
 {
-    //todo: add an indirection to wrap functions that don't return TaskVariants so they return an empty variant
     static_assert(std::is_same<decltype(func()), TaskVariant>::value, "tasks must return task variants");
     return SimpleTask{
             .priority = priority,
-            .task     = std::function<TaskVariant()>{std::forward<F>(func)}
-            //.task     = std::packaged_task<TaskVariant()>{std::forward<F>(func)}
+            .task     = as_task_function(std::forward<F>(func))
         };
 }
 
