@@ -389,9 +389,10 @@ boost::optional<task_t> ThreadPool::try_get_task_to_run(const unsigned char max_
 //-------------------------------------------------------------------------------------------------------------------
 void ThreadPool::run_as_worker_DONT_CALL_ME()
 {
+    // only call run_as_worker_DONT_CALL_ME() from worker subthreads of the threadpool or from the owner when shutting down
     assert(test_threadpool_member_invariants(m_threadpool_id, m_threadpool_owner_id));
     const std::uint16_t worker_id{threadpool_worker_id()};
-    // only call run_as_worker_DONT_CALL_ME() from subthreads of the threadpool or when shutting down
+    assert(worker_id < m_num_queues);
     assert(worker_id > 0 ||
         (thread_context_id() == m_threadpool_owner_id && m_waiter_manager.is_shutting_down()));
 
@@ -447,6 +448,34 @@ void ThreadPool::run_as_worker_DONT_CALL_ME()
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
+// ThreadPool INTERNAL
+//-------------------------------------------------------------------------------------------------------------------
+void ThreadPool::run_as_fanout_worker_DONT_CALL_ME()
+{
+    // only call run_as_fanout_worker_DONT_CALL_ME() from fanout subthreads of the threadpool
+    assert(test_threadpool_member_invariants(m_threadpool_id, m_threadpool_owner_id));
+    assert(threadpool_worker_id() >= m_num_queues);
+
+    while (true)
+    {
+        // try to get a fanout wait condition
+        // - failure means we are shutting down
+        FanoutCondition fanout_condition;
+        if (m_fanout_condition_queue.force_pop(fanout_condition) != TokenQueueResult::SUCCESS)
+            return;
+
+        // set the fanout worker index
+        // - we need to set this here since it can't be known in advance
+        // - don't do any work if we got here after the condition was set
+        if (!fanout_condition.worker_index ||
+            fanout_condition.worker_index->exchange(threadpool_worker_id(), std::memory_order_acq_rel) != 0)
+            continue;
+
+        // work while waiting for the fanout condition
+        this->work_while_waiting(fanout_condition.condition, 0);
+    }
+}
+//-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------------------------------------------------
@@ -457,10 +486,10 @@ ThreadPool::ThreadPool(const unsigned char max_priority_level,
         m_threadpool_id{s_context_id_counter.fetch_add(1, std::memory_order_relaxed)},
         m_threadpool_owner_id{initialize_threadpool_owner()},
         m_max_priority_level{max_priority_level},
-        m_num_queues{static_cast<uint16_t>(num_managed_workers + 1)},  //+1 to include the threadpool owner
+        m_num_queues{static_cast<std::uint16_t>(num_managed_workers + 1)},  //+1 to include the threadpool owner
         m_num_submit_cycle_attempts{num_submit_cycle_attempts},
         m_max_wait_duration{max_wait_duration},
-        m_waiter_manager{m_num_queues}
+        m_waiter_manager{static_cast<std::uint16_t>(2*m_num_queues)}
 {
     // create task queues
     m_task_queues = std::vector<std::vector<TokenQueue<task_t>>>{static_cast<std::size_t>(m_max_priority_level + 1)};
@@ -488,6 +517,24 @@ ThreadPool::ThreadPool(const unsigned char max_priority_level,
         }
         catch (...) { /* can't do anything */ }
     }
+
+    // launch fanout workers
+    // - note: we launch one fanout worker for each main worker (additional worker + threadpool owner)
+    m_fanout_workers.reserve(m_num_queues);
+    for (std::uint16_t fanout_worker_index{m_num_queues}; fanout_worker_index < 2*m_num_queues; ++fanout_worker_index)
+    {
+        try
+        {
+            m_fanout_workers.emplace_back(
+                    [this, fanout_worker_index]() mutable
+                    {
+                        initialize_threadpool_worker_thread(this->threadpool_id(), fanout_worker_index);
+                        try { this->run_as_fanout_worker_DONT_CALL_ME(); } catch (...) { /* can't do anything */ }
+                    }
+                );
+        }
+        catch (...) { /* can't do anything */ }
+    }
 }
 //-------------------------------------------------------------------------------------------------------------------
 ThreadPool::~ThreadPool()
@@ -502,6 +549,9 @@ ThreadPool::~ThreadPool()
     // join all workers
     for (std::thread &worker : m_workers)
         try { worker.join(); } catch (...) {}
+
+    for (std::thread &fanout_worker : m_fanout_workers)
+        try { fanout_worker.join(); } catch (...) {}
 
     // clear out any tasks lingering in the pool
     try { this->run_as_worker_DONT_CALL_ME(); } catch (...) {}
@@ -685,8 +735,59 @@ void ThreadPool::work_while_waiting(const std::function<bool()> &wait_condition_
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
+fanout_token_t ThreadPool::launch_temporary_worker()
+{
+    assert(test_threadpool_member_invariants(m_threadpool_id, m_threadpool_owner_id));
+
+    // 1. join signal
+    join_signal_t join_signal{this->make_join_signal()};
+
+    // 2. worker index channel for targeted notifications
+    std::shared_ptr<std::atomic<std::uint64_t>> worker_index_channel = std::make_shared<std::atomic<std::uint64_t>>(0);
+
+    // 3. fanout condition (when condition is satisfied, return one fanout worker to the fanout pool)
+    m_fanout_condition_queue.force_push(
+            FanoutCondition{
+                    .worker_index = worker_index_channel,
+                    .condition    =
+                        [l_join_signal = join_signal]() -> bool
+                        {
+                            return !l_join_signal || l_join_signal->load(std::memory_order_relaxed);
+                        }
+                }
+        );
+
+    // 4. fanout token (when token is destroyed, the fanout condition will be triggered)
+    return std::make_unique<ScopedNotification>(
+            [
+                this,
+                l_join_signal  = std::move(join_signal),
+                l_worker_index = std::move(worker_index_channel)
+            ]() mutable
+            {
+                // leave early if we got here before the worker id became available
+                if (!l_worker_index) return;
+                const std::uint64_t worker_id{
+                        l_worker_index->exchange(static_cast<std::uint64_t>(-1), std::memory_order_acq_rel)
+                    };
+                if (worker_id == 0) return;
+
+                // notify the waiting fanout worker
+                m_waiter_manager.notify_conditional_waiter(worker_id,
+                        [ll_join_signal = std::move(l_join_signal)]() mutable
+                        {
+                            if (ll_join_signal) ll_join_signal->store(true, std::memory_order_relaxed);
+                        }
+                    );
+            }
+        );
+}
+//-------------------------------------------------------------------------------------------------------------------
 void ThreadPool::shut_down() noexcept
 {
+    // shut down the fanout queue
+    m_fanout_condition_queue.shut_down();
+
     // shut down the waiter manager, which should notify any waiting workers
     m_waiter_manager.shut_down();
 }

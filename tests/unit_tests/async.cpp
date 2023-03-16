@@ -108,6 +108,28 @@ TEST(async, basic_join)
     std::cout << "joining done!\n";
 }
 //-------------------------------------------------------------------------------------------------------------------
+TEST(async, basic_fanout)
+{
+    async::ThreadPool pool{1, 0, 40, std::chrono::seconds{1}};
+
+    // launch task in the middle of a fanout
+    {
+        async::fanout_token_t fanout_token{pool.launch_temporary_worker()};
+
+        pool.submit(async::make_simple_task(0,
+                []() -> async::TaskVariant
+                {
+                    std::cout << "A\n";
+                    return boost::none;
+                }
+            ));
+
+        std::this_thread::sleep_for(std::chrono::milliseconds{500});
+    }
+
+    std::cout << "fanout closed!\n";
+}
+//-------------------------------------------------------------------------------------------------------------------
 TEST(async, basic_multithreaded)
 {
     async::ThreadPool pool{1, 2, 40, std::chrono::seconds{1}};

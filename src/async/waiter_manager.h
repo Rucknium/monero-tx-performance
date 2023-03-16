@@ -107,7 +107,6 @@ private:
         const ShutdownPolicy shutdown_policy) noexcept;
 
 public:
-
 //constructors
     WaiterManager(const std::uint16_t num_managed_waiters);
 

@@ -36,6 +36,7 @@
 
 //standard headers
 #include <atomic>
+#include <condition_variable>
 #include <list>
 #include <mutex>
 
@@ -49,37 +50,39 @@ enum class TokenQueueResult : unsigned char
 {
     SUCCESS,
     QUEUE_EMPTY,
-    TRY_LOCK_FAIL
+    TRY_LOCK_FAIL,
+    SHUTTING_DOWN
 };
 
 /// async token queue
-/// - does not include a force_pop() method for simplicity
 template <typename TokenT>
 class TokenQueue final
 {
 public:
-//constructors
-    /// resurrect default constructor
-    TokenQueue() = default;
-
 //member functions
     /// try to add an element to the top
     template <typename T>
     TokenQueueResult try_push(T &&new_element_in)
     {
-        std::unique_lock<std::mutex> lock{m_mutex, std::try_to_lock};
-        if (!lock.owns_lock())
-            return TokenQueueResult::TRY_LOCK_FAIL;
+        {
+            std::unique_lock<std::mutex> lock{m_mutex, std::try_to_lock};
+            if (!lock.owns_lock())
+                return TokenQueueResult::TRY_LOCK_FAIL;
 
-        m_queue.emplace_back(std::forward<T>(new_element_in));
+            m_queue.emplace_back(std::forward<T>(new_element_in));
+        }
+        m_condvar.notify_one();
         return TokenQueueResult::SUCCESS;
     }
     /// add an element to the top (always succeeds)
     template <typename T>
     void force_push(T &&new_element_in)
     {
-        std::lock_guard<std::mutex> lock{m_mutex};
-        m_queue.emplace_back(std::forward<T>(new_element_in));
+        {
+            std::lock_guard<std::mutex> lock{m_mutex};
+            m_queue.emplace_back(std::forward<T>(new_element_in));
+        }
+        m_condvar.notify_one();
     }
 
     /// try to remove an element from the bottom
@@ -97,12 +100,40 @@ public:
         m_queue.pop_front();
         return TokenQueueResult::SUCCESS;
     }
+    /// remove an element from the bottom (always succeeds)
+    TokenQueueResult force_pop(TokenT &token_out)
+    {
+        // lock and wait until the queue is not empty or the queue is shutting down
+        std::unique_lock<std::mutex> lock{m_mutex};
+        m_condvar.wait(lock, [this]() -> bool { return m_queue.size() > 0 || m_is_shutting_down; });
+        if (m_queue.size() == 0 && m_is_shutting_down)
+            return TokenQueueResult::SHUTTING_DOWN;
+        else if (m_queue.size() == 0)
+            return TokenQueueResult::QUEUE_EMPTY;
+
+        // pop the bottom element
+        token_out = std::move(m_queue.front());
+        m_queue.pop_front();
+        return TokenQueueResult::SUCCESS;
+    }
+
+    /// shut down the queue
+    void shut_down()
+    {
+        {
+            std::lock_guard<std::mutex> lock{m_mutex};
+            m_is_shutting_down = true;
+        }
+        m_condvar.notify_all();
+    }
 
 private:
 //member variables
     /// queue context
     std::list<TokenT> m_queue;
     std::mutex m_mutex;
+    std::condition_variable m_condvar;
+    bool m_is_shutting_down{false};
 };
 
 } //namespace asyc

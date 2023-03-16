@@ -253,6 +253,128 @@ private:
     std::unique_ptr<async::ThreadPool> m_threadpool;
 };
 
+
+//---------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------------------
+
+static void submit_task_async_threadpool_with_fanout(const std::chrono::nanoseconds task_duration,
+    async::join_token_t &join_token,
+    async::ThreadPool &threadpool)
+{
+    // prepare task
+    auto task =
+        [
+            l_join_token    = join_token,
+            l_task_duration = task_duration,
+            &threadpool
+        ]() -> async::TaskVariant
+        {
+            // use fanout for task
+            async::fanout_token_t fanout_token{threadpool.launch_temporary_worker()};
+
+            if (l_task_duration > std::chrono::nanoseconds{0})
+                std::this_thread::sleep_for(l_task_duration);
+
+            return boost::none;
+        };
+
+    // submit to the threadpool
+    threadpool.submit(async::make_simple_task(0, std::move(task)));
+}
+
+static void submit_sleepy_task_async_threadpool_with_fanout(const std::chrono::nanoseconds task_duration,
+    const std::chrono::nanoseconds sleep_duration,
+    async::join_token_t &join_token,
+    async::ThreadPool &threadpool)
+{
+    // prepare task whose continuation will sleep until 'sleep_duration' after the task is done
+    auto task =
+        [
+            l_join_token     = join_token,
+            l_task_duration  = task_duration,
+            l_sleep_duration = sleep_duration,
+            &threadpool
+        ]() mutable -> async::TaskVariant
+        {
+            if (l_task_duration > std::chrono::nanoseconds{0})
+                std::this_thread::sleep_for(l_task_duration);
+
+            // use fanout for sleepy task
+            if (l_sleep_duration > std::chrono::nanoseconds{0})
+            {
+                async::fanout_token_t fanout_token{threadpool.launch_temporary_worker()};
+                std::this_thread::sleep_for(l_sleep_duration);
+            }
+
+            return boost::none;
+        };
+
+    // submit to the threadpool
+    threadpool.submit(async::make_simple_task(0, std::move(task)));
+}
+
+/// threadpool from src/async/threadpool.h
+class test_async_threadpool_with_fanout
+{
+public:
+    static const size_t loop_count = 10;
+
+    bool init(const ParamsShuttleAsync &params)
+    {
+        if (params.description.size())
+            std::cout << params.description << '\n';
+
+        // save the test parameters
+        m_params = params;
+
+        // create the threadpool
+        // - note: use 3 priority levels {0, 1, 2} for realism
+        m_threadpool = std::make_unique<async::ThreadPool>(
+                2, params.num_extra_threads, 20, std::chrono::seconds{1}
+            );
+
+        return true;
+    }
+
+    bool test()
+    {
+        // 1. make join signal
+        async::join_signal_t join_signal{m_threadpool->make_join_signal()};
+
+        // 2. get join token
+        async::join_token_t join_token{m_threadpool->get_join_token(join_signal)};
+
+        // 3. submit tasks to join on
+        for (std::size_t task_id{0}; task_id < m_params.num_tasks; ++task_id)
+        {
+            if (is_sleepy_task(m_params.sleepy_task_cadence, task_id + 1))
+            {
+                submit_sleepy_task_async_threadpool_with_fanout(m_params.task_duration,
+                    m_params.sleepy_task_sleep_duration,
+                    join_token,
+                    *m_threadpool);
+            }
+            else
+                submit_task_async_threadpool_with_fanout(m_params.task_duration, join_token, *m_threadpool);
+        }
+
+        // 4. get join condition
+        async::join_condition_t join_condition{
+                m_threadpool->get_join_condition(std::move(join_signal), std::move(join_token))
+            };
+
+        // 5. join the tasks
+        m_threadpool->work_while_waiting(std::move(join_condition));
+
+        return true;
+    }
+
+private:
+    ParamsShuttleAsync m_params;
+    std::unique_ptr<async::ThreadPool> m_threadpool;
+};
+
 //---------------------------------------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------------------------------------
 //---------------------------------------------------------------------------------------------------------------------

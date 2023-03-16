@@ -133,6 +133,7 @@ int main(int argc, char** argv)
   p_async.sleepy_task_sleep_duration = std::chrono::microseconds{0};
   TEST_PERFORMANCE0(filter, p_async, test_common_threadpool); p_async.description = "";
   TEST_PERFORMANCE0(filter, p_async, test_async_threadpool);
+  TEST_PERFORMANCE0(filter, p_async, test_async_threadpool_with_fanout);
   TEST_PERFORMANCE0(filter, p_async, test_parent_threadpool);
 
   p_async.description = "async: main thread, 100 tasks @ 100us";
@@ -143,6 +144,7 @@ int main(int argc, char** argv)
   p_async.sleepy_task_sleep_duration = std::chrono::microseconds{0};
   TEST_PERFORMANCE0(filter, p_async, test_common_threadpool); p_async.description = "";
   TEST_PERFORMANCE0(filter, p_async, test_async_threadpool);
+  TEST_PERFORMANCE0(filter, p_async, test_async_threadpool_with_fanout);
   TEST_PERFORMANCE0(filter, p_async, test_parent_threadpool);
 
   p_async.description = "async: main thread + 1, 100 tasks @ 100us";
@@ -153,6 +155,7 @@ int main(int argc, char** argv)
   p_async.sleepy_task_sleep_duration = std::chrono::microseconds{0};
   TEST_PERFORMANCE0(filter, p_async, test_common_threadpool); p_async.description = "";
   TEST_PERFORMANCE0(filter, p_async, test_async_threadpool);
+  TEST_PERFORMANCE0(filter, p_async, test_async_threadpool_with_fanout);
   TEST_PERFORMANCE0(filter, p_async, test_parent_threadpool);
 
   p_async.description = "async: main thread + 2, 100 tasks @ 100us";
@@ -163,6 +166,7 @@ int main(int argc, char** argv)
   p_async.sleepy_task_sleep_duration = std::chrono::microseconds{0};
   TEST_PERFORMANCE0(filter, p_async, test_common_threadpool); p_async.description = "";
   TEST_PERFORMANCE0(filter, p_async, test_async_threadpool);
+  TEST_PERFORMANCE0(filter, p_async, test_async_threadpool_with_fanout);
   TEST_PERFORMANCE0(filter, p_async, test_parent_threadpool);
 
   p_async.description = "async: main thread + 2, 100 tasks @ 1000us";
@@ -173,6 +177,7 @@ int main(int argc, char** argv)
   p_async.sleepy_task_sleep_duration = std::chrono::microseconds{0};
   TEST_PERFORMANCE0(filter, p_async, test_common_threadpool); p_async.description = "";
   TEST_PERFORMANCE0(filter, p_async, test_async_threadpool);
+  TEST_PERFORMANCE0(filter, p_async, test_async_threadpool_with_fanout);
   TEST_PERFORMANCE0(filter, p_async, test_parent_threadpool);
 
   p_async.description = "async: main thread + 6, 100 tasks @ 1000us";
@@ -183,6 +188,7 @@ int main(int argc, char** argv)
   p_async.sleepy_task_sleep_duration = std::chrono::microseconds{0};
   TEST_PERFORMANCE0(filter, p_async, test_common_threadpool); p_async.description = "";
   TEST_PERFORMANCE0(filter, p_async, test_async_threadpool);
+  TEST_PERFORMANCE0(filter, p_async, test_async_threadpool_with_fanout);
   TEST_PERFORMANCE0(filter, p_async, test_parent_threadpool);
 
   p_async.description = "async: main thread + 6, 10000 tasks @ 1us";
@@ -193,6 +199,7 @@ int main(int argc, char** argv)
   p_async.sleepy_task_sleep_duration = std::chrono::microseconds{0};
   TEST_PERFORMANCE0(filter, p_async, test_common_threadpool); p_async.description = "";
   TEST_PERFORMANCE0(filter, p_async, test_async_threadpool);
+  TEST_PERFORMANCE0(filter, p_async, test_async_threadpool_with_fanout);
   TEST_PERFORMANCE0(filter, p_async, test_parent_threadpool);
 
   p_async.description = "async: main thread + 6, 100000 tasks @ 0us";
@@ -203,6 +210,7 @@ int main(int argc, char** argv)
   p_async.sleepy_task_sleep_duration = std::chrono::microseconds{0};
   TEST_PERFORMANCE0(filter, p_async, test_common_threadpool); p_async.description = "";
   TEST_PERFORMANCE0(filter, p_async, test_async_threadpool);
+  TEST_PERFORMANCE0(filter, p_async, test_async_threadpool_with_fanout);
   TEST_PERFORMANCE0(filter, p_async, test_parent_threadpool);
 
   p_async.description = "async: main thread + 2, 100000 task @ 0us";
@@ -213,6 +221,7 @@ int main(int argc, char** argv)
   p_async.sleepy_task_sleep_duration = std::chrono::microseconds{0};
   TEST_PERFORMANCE0(filter, p_async, test_common_threadpool); p_async.description = "";
   TEST_PERFORMANCE0(filter, p_async, test_async_threadpool);
+  TEST_PERFORMANCE0(filter, p_async, test_async_threadpool_with_fanout);
   TEST_PERFORMANCE0(filter, p_async, test_parent_threadpool);
 
   p_async.description = "async: main thread + 1, 100000 task @ 0us";
@@ -223,6 +232,7 @@ int main(int argc, char** argv)
   p_async.sleepy_task_sleep_duration = std::chrono::microseconds{0};
   TEST_PERFORMANCE0(filter, p_async, test_common_threadpool); p_async.description = "";
   TEST_PERFORMANCE0(filter, p_async, test_async_threadpool);
+  TEST_PERFORMANCE0(filter, p_async, test_async_threadpool_with_fanout);
   TEST_PERFORMANCE0(filter, p_async, test_parent_threadpool);
 
   p_async.description = "async: main thread, 100000 task @ 0us";
@@ -233,6 +243,7 @@ int main(int argc, char** argv)
   p_async.sleepy_task_sleep_duration = std::chrono::microseconds{0};
   TEST_PERFORMANCE0(filter, p_async, test_common_threadpool); p_async.description = "";
   TEST_PERFORMANCE0(filter, p_async, test_async_threadpool);
+  TEST_PERFORMANCE0(filter, p_async, test_async_threadpool_with_fanout);
   TEST_PERFORMANCE0(filter, p_async, test_parent_threadpool);
 
   p_async.description = "async: main thread + 6, 1000 tasks @ 100us, sleep every 5th for 100us";
@@ -243,6 +254,7 @@ int main(int argc, char** argv)
   p_async.sleepy_task_sleep_duration = std::chrono::microseconds{100};
   TEST_PERFORMANCE0(filter, p_async, test_common_threadpool); p_async.description = "";
   TEST_PERFORMANCE0(filter, p_async, test_async_threadpool);
+  TEST_PERFORMANCE0(filter, p_async, test_async_threadpool_with_fanout);
   TEST_PERFORMANCE0(filter, p_async, test_parent_threadpool);
 
   p_async.description = "async: main thread + 6, 1000 tasks @ 10us, sleep every 5th for 1000us";
@@ -253,6 +265,7 @@ int main(int argc, char** argv)
   p_async.sleepy_task_sleep_duration = std::chrono::microseconds{1000};
   TEST_PERFORMANCE0(filter, p_async, test_common_threadpool); p_async.description = "";
   TEST_PERFORMANCE0(filter, p_async, test_async_threadpool);
+  TEST_PERFORMANCE0(filter, p_async, test_async_threadpool_with_fanout);
   TEST_PERFORMANCE0(filter, p_async, test_parent_threadpool);
 
   // test done, save results

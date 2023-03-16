@@ -44,6 +44,7 @@
 //standard headers
 #include <atomic>
 #include <chrono>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -59,6 +60,15 @@ namespace async
 using join_signal_t    = std::shared_ptr<std::atomic<bool>>;
 using join_token_t     = std::shared_ptr<ScopedNotification>;
 using join_condition_t = std::function<bool()>;
+
+/// fanout token helper type
+using fanout_token_t = std::unique_ptr<ScopedNotification>;
+
+struct FanoutCondition final
+{
+    std::shared_ptr<std::atomic<std::uint64_t>> worker_index;
+    std::function<bool()> condition;
+};
 
 /// thread pool
 class ThreadPool final
@@ -96,6 +106,9 @@ public:
     /// run as a pool worker
     /// - this function is only invoked when launching pool workers and from within the pool destructor
     void run_as_worker_DONT_CALL_ME();
+    /// run as a pool fanout worker
+    /// - this function is only invoked when launching pool fanout workers
+    void run_as_fanout_worker_DONT_CALL_ME();
 
 //constructors
     /// default constructor: disabled
@@ -144,6 +157,9 @@ public:
     void work_while_waiting(const std::chrono::nanoseconds &duration, const unsigned char max_task_priority = 0);
     void work_while_waiting(const std::function<bool()> &wait_condition_func, const unsigned char max_task_priority = 0);
 
+    /// launch a temporary worker
+    fanout_token_t launch_temporary_worker();
+
     /// shut down the threadpool
     void shut_down() noexcept;
 
@@ -163,10 +179,12 @@ private:
 
     /// worker context
     std::vector<std::thread> m_workers;
+    std::vector<std::thread> m_fanout_workers;  //extra workers that can be manually activated
 
     /// queues
     std::vector<std::vector<TokenQueue<task_t>>> m_task_queues;  //outer vector: priorities, inner vector: workers
     std::vector<SleepyTaskQueue> m_sleepy_task_queues;   //vector: workers
+    TokenQueue<FanoutCondition> m_fanout_condition_queue;
     std::atomic<std::uint16_t> m_normal_queue_submission_counter{0};
     std::atomic<std::uint16_t> m_sleepy_queue_submission_counter{0};
     std::atomic<std::uint64_t> m_num_unclaimed_sleepy_tasks{0};
