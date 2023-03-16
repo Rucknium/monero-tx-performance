@@ -31,9 +31,10 @@ set(seraphis_main_sources
   contextual_enote_record_utils.cpp
   enote_record_utils.cpp
   enote_record_utils_legacy.cpp
-  enote_scanning.cpp
-  enote_scanning_utils.cpp
+  scan_balance_recovery_utils.cpp
   scan_machine.cpp
+  scan_misc_utils.cpp
+  scan_process_basic.cpp
   serialization_demo_utils.cpp
   sp_knowledge_proof_utils.cpp
   tx_builder_types.cpp

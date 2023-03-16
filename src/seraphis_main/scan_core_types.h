@@ -26,59 +26,61 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// Dependency injectors for updating an enote storage with new enotes during balance recovery.
+// Core types for scanning enotes and key images to recover a user's balance.
 
 #pragma once
 
 //local headers
-#include "contextual_enote_record_types.h"
 #include "ringct/rctTypes.h"
+#include "seraphis_main/contextual_enote_record_types.h"
 
 //third party headers
 
 //standard headers
 #include <list>
 #include <unordered_map>
-#include <vector>
 
 //forward declarations
 
 
 namespace sp
 {
+namespace scanning
+{
 
 ////
-// EnoteStoreUpdater
-// - provides an API for updating an enote store with chunks of enotes from find-received scanning
+// ChunkData
+// - contextual basic enote records for owned enote candidates in a set of scanned txs (at a single point in time)
+// - key images from each of the txs recorded in the basic records map
+//   - add empty entries to that map if you want to include the key images of txs without owned enote candidates, e.g.
+//     for legacy scanning where key images can appear in a tx even if none of the tx outputs were sent to you
+//   - LEGACY OPTIMIZATION (optional): only key images of rings which include a received enote MUST be collected
+//     - if filtering to get those key images is not possible then including all key images works too
 ///
-class EnoteStoreUpdater
+struct ChunkData final
 {
-public:
-//destructor
-    virtual ~EnoteStoreUpdater() = default;
-
-//overloaded operators
-    /// disable copy/move (this is an abstract base class)
-    EnoteStoreUpdater& operator=(EnoteStoreUpdater&&) = delete;
-
-//member functions
-    /// get index of first block the internal enote store cares about
-    virtual std::uint64_t refresh_index() const = 0;
-    /// get index of first block the updater wants to have scanned
-    virtual std::uint64_t desired_first_block() const = 0;
-    /// try to get the recorded block id for a given index
-    virtual bool try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const = 0;
-
-    /// consume a chunk of basic enote records and save the results
-    virtual void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
-        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
-        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images) = 0;
-    virtual void consume_onchain_chunk(
-        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
-        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images,
-        const std::uint64_t first_new_block,
-        const rct::key &alignment_block_id,
-        const std::vector<rct::key> &new_block_ids) = 0;
+    /// owned enote candidates in a set of scanned txs (mapped to tx id)
+    std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> basic_records_per_tx;
+    /// key images from txs with owned enote candidates in the set of scanned txs
+    std::list<SpContextualKeyImageSetV1> contextual_key_images;
 };
 
+////
+// ChunkContext
+// - chunk range (in block indices): [start index, end index)
+//   - end index = start index + num blocks
+// - prefix block id: id of block that comes before the chunk range, used for contiguity checks between chunks and with
+//   a chunk consumer
+///
+struct ChunkContext final
+{
+    /// start index
+    std::uint64_t start_index;
+    /// block id at 'start index - 1'  (implicitly ignored if start_index == 0)
+    rct::key prefix_block_id;
+    /// block ids in range [start index, end index)
+    std::vector<rct::key> block_ids;
+};
+
+} //namespace scanning
 } //namespace sp

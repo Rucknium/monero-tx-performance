@@ -32,11 +32,13 @@
 #include "enote_finding_context_mocks.h"
 
 //local headers
-#include "seraphis_main/enote_scanning.h"
+#include "seraphis_main/scan_core_types.h"
+#include "seraphis_main/scan_ledger_chunk.h"
 
 //third party headers
 
 //standard headers
+#include <memory>
 
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
@@ -47,32 +49,47 @@ namespace sp
 namespace mocks
 {
 //-------------------------------------------------------------------------------------------------------------------
-void EnoteFindingContextLedgerMockLegacy::get_onchain_chunk(const std::uint64_t chunk_start_index,
-    const std::uint64_t chunk_max_size,
-    EnoteScanningChunkLedgerV1 &chunk_out) const
+std::unique_ptr<scanning::LedgerChunk> EnoteFindingContextLedgerMockLegacy::get_onchain_chunk(
+    const std::uint64_t chunk_start_index,
+    const std::uint64_t chunk_max_size) const
 {
+    scanning::ChunkContext chunk_context;
+    scanning::ChunkData chunk_data;
+
     m_mock_ledger_context.get_onchain_chunk_legacy(chunk_start_index,
         chunk_max_size,
         m_legacy_base_spend_pubkey,
         m_legacy_subaddress_map,
         m_legacy_view_privkey,
         m_legacy_scan_mode,
-        chunk_out);
+        chunk_context,
+        chunk_data);
+
+    return std::make_unique<scanning::LedgerChunkStandard>(std::move(chunk_context), std::move(chunk_data));
 }
 //-------------------------------------------------------------------------------------------------------------------
-void EnoteFindingContextLedgerMockSp::get_onchain_chunk(const std::uint64_t chunk_start_index,
-    const std::uint64_t chunk_max_size,
-    EnoteScanningChunkLedgerV1 &chunk_out) const
+std::unique_ptr<scanning::LedgerChunk> EnoteFindingContextLedgerMockSp::get_onchain_chunk(
+    const std::uint64_t chunk_start_index,
+    const std::uint64_t chunk_max_size) const
 {
-    m_mock_ledger_context.get_onchain_chunk_sp(chunk_start_index, chunk_max_size, m_xk_find_received, chunk_out);
+    scanning::ChunkContext chunk_context;
+    scanning::ChunkData chunk_data;
+
+    m_mock_ledger_context.get_onchain_chunk_sp(chunk_start_index,
+        chunk_max_size,
+        m_xk_find_received,
+        chunk_context,
+        chunk_data);
+
+    return std::make_unique<scanning::LedgerChunkStandard>(std::move(chunk_context), std::move(chunk_data));
 }
 //-------------------------------------------------------------------------------------------------------------------
-void EnoteFindingContextUnconfirmedMockSp::get_nonledger_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const
+void EnoteFindingContextUnconfirmedMockSp::get_nonledger_chunk(scanning::ChunkData &chunk_out) const
 {
     m_mock_ledger_context.get_unconfirmed_chunk_sp(m_xk_find_received, chunk_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void EnoteFindingContextOffchainMockSp::get_nonledger_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const
+void EnoteFindingContextOffchainMockSp::get_nonledger_chunk(scanning::ChunkData &chunk_out) const
 {
     m_mock_offchain_context.get_offchain_chunk_sp(m_xk_find_received, chunk_out);
 }

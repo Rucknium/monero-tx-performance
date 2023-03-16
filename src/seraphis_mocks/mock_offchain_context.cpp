@@ -38,8 +38,8 @@
 #include "ringct/rctTypes.h"
 #include "seraphis_core/jamtis_enote_utils.h"
 #include "seraphis_core/sp_core_enote_utils.h"
-#include "seraphis_main/enote_scanning.h"
-#include "seraphis_main/enote_scanning_utils.h"
+#include "seraphis_main/scan_balance_recovery_utils.h"
+#include "seraphis_main/scan_core_types.h"
 #include "seraphis_main/tx_component_types.h"
 #include "seraphis_main/tx_component_types_legacy.h"
 #include "seraphis_main/txtype_squashed_v1.h"
@@ -139,10 +139,10 @@ void MockOffchainContext::clear_cache()
 }
 //-------------------------------------------------------------------------------------------------------------------
 void MockOffchainContext::get_offchain_chunk_sp(const crypto::x25519_secret_key &xk_find_received,
-    EnoteScanningChunkNonLedgerV1 &chunk_out) const
+    scanning::ChunkData &chunk_data_out) const
 {
-    chunk_out.basic_records_per_tx.clear();
-    chunk_out.contextual_key_images.clear();
+    chunk_data_out.basic_records_per_tx.clear();
+    chunk_data_out.contextual_key_images.clear();
 
     // 1. no chunk if no txs to scan
     if (m_output_contents.size() == 0)
@@ -157,7 +157,7 @@ void MockOffchainContext::get_offchain_chunk_sp(const crypto::x25519_secret_key 
         const rct::key &tx_id{tx_with_output_contents.first};  //use input context as proxy for tx id
 
         // if this tx contains at least one view-tag match, then add the tx's key images to the chunk
-        if (try_find_sp_enotes_in_tx(xk_find_received,
+        if (scanning::try_find_sp_enotes_in_tx(xk_find_received,
             -1,
             -1,
             tx_id,
@@ -168,20 +168,20 @@ void MockOffchainContext::get_offchain_chunk_sp(const crypto::x25519_secret_key 
             SpEnoteOriginStatus::OFFCHAIN,
             collected_records))
         {
-            chunk_out.basic_records_per_tx[tx_id]
-                .splice(chunk_out.basic_records_per_tx[tx_id].end(), collected_records);
+            chunk_data_out.basic_records_per_tx[tx_id]
+                .splice(chunk_data_out.basic_records_per_tx[tx_id].end(), collected_records);
 
             CHECK_AND_ASSERT_THROW_MES(m_tx_key_images.find(tx_with_output_contents.first) != m_tx_key_images.end(),
                 "offchain find-received scanning (mock offchain context): key image map missing input context (bug).");
 
-            if (try_collect_key_images_from_tx(-1,
+            if (scanning::try_collect_key_images_from_tx(-1,
                     -1,
                     tx_id,
                     std::get<0>(m_tx_key_images.at(tx_with_output_contents.first)),
                     std::get<1>(m_tx_key_images.at(tx_with_output_contents.first)),
                     SpEnoteSpentStatus::SPENT_OFFCHAIN,
                     collected_key_images))
-                chunk_out.contextual_key_images.emplace_back(std::move(collected_key_images));
+                chunk_data_out.contextual_key_images.emplace_back(std::move(collected_key_images));
         }
     }
 }

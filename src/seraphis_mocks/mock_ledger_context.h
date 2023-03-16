@@ -43,6 +43,7 @@
 #include "ringct/rctTypes.h"
 #include "seraphis_core/legacy_enote_types.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
+#include "seraphis_main/scan_core_types.h"
 #include "seraphis_main/tx_component_types.h"
 
 //third party headers
@@ -62,8 +63,11 @@ namespace mocks
 }
     struct SpTxCoinbaseV1;
     struct SpTxSquashedV1;
-    struct EnoteScanningChunkLedgerV1;
-    struct EnoteScanningChunkNonLedgerV1;
+namespace scanning
+{
+    struct ScanContext;
+    struct ScanData;
+}
 }
 
 namespace sp
@@ -220,10 +224,10 @@ public:
     /**
     * brief: get_unconfirmed_chunk_sp - try to find-received scan the unconfirmed tx cache
     * param: xk_find_received -
-    * outparam: chunk_out -
+    * outparam: chunk_data_out -
     */
     void get_unconfirmed_chunk_sp(const crypto::x25519_secret_key &xk_find_received,
-        EnoteScanningChunkNonLedgerV1 &chunk_out) const;
+        scanning::ChunkData &chunk_data_out) const;
     /**
     * brief: get_onchain_chunk_legacy - legacy view scan a chunk of blocks
     * param: chunk_start_index -
@@ -232,7 +236,8 @@ public:
     * param: legacy_subaddress_map -
     * param: legacy_view_privkey -
     * param: legacy_scan_mode -
-    * outparam: chunk_out - chunk of scanned blocks (or empty chunk representing top of current chain)
+    * outparam: chunk_context_out - chunk of scanned blocks (or empty chunk representing top of current chain)
+    * outparam: chunk_data_out -
     */
     void get_onchain_chunk_legacy(const std::uint64_t chunk_start_index,
         const std::uint64_t chunk_max_size,
@@ -240,18 +245,21 @@ public:
         const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
         const crypto::secret_key &legacy_view_privkey,
         const LegacyScanMode legacy_scan_mode,
-        EnoteScanningChunkLedgerV1 &chunk_out) const;
+        scanning::ChunkContext &chunk_context_out,
+        scanning::ChunkData &chunk_data_out) const;
     /**
     * brief: get_onchain_chunk_sp - find-received scan a chunk of blocks
     * param: chunk_start_index -
     * param: chunk_max_size -
     * param: xk_find_received -
-    * outparam: chunk_out - chunk of scanned blocks (or empty chunk representing top of current chain)
+    * outparam: chunk_context_out - chunk of scanned blocks (or empty chunk representing top of current chain)
+    * outparam: chunk_data_out -
     */
     void get_onchain_chunk_sp(const std::uint64_t chunk_start_index,
         const std::uint64_t chunk_max_size,
         const crypto::x25519_secret_key &xk_find_received,
-        EnoteScanningChunkLedgerV1 &chunk_out) const;
+        scanning::ChunkContext &chunk_context_out,
+        scanning::ChunkData &chunk_data_out) const;
 
 private:
     /// first block where a seraphis tx is allowed (this block and all following must have a seraphis coinbase tx)

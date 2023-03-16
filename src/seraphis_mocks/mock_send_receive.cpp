@@ -36,20 +36,22 @@
 #include "crypto/crypto.h"
 #include "cryptonote_basic/subaddress_index.h"
 #include "enote_finding_context_mocks.h"
-#include "enote_store_updater_mocks.h"
 #include "misc_log_ex.h"
 #include "mock_ledger_context.h"
 #include "mock_tx_builders_inputs.h"
 #include "mock_tx_builders_legacy_inputs.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
+#include "scan_chunk_consumer_mocks.h"
 #include "seraphis_core/binned_reference_set.h"
 #include "seraphis_core/binned_reference_set_utils.h"
 #include "seraphis_core/legacy_core_utils.h"
 #include "seraphis_core/legacy_enote_utils.h"
 #include "seraphis_core/sp_core_types.h"
 #include "seraphis_main/contextual_enote_record_utils.h"
-#include "seraphis_main/enote_scanning_context_simple.h"
+#include "seraphis_main/scanning_context_simple.h"
+#include "seraphis_main/scan_machine_types.h"
+#include "seraphis_main/scan_process_basic.h"
 #include "seraphis_main/tx_builder_types.h"
 #include "seraphis_main/tx_builders_inputs.h"
 #include "seraphis_main/tx_builders_mixed.h"
@@ -73,7 +75,6 @@ namespace sp
 {
 namespace mocks
 {
-//-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 void convert_outlay_to_payment_proposal(const rct::xmr_amount outlay_amount,
     const jamtis::JamtisDestinationV1 &destination,
@@ -436,7 +437,7 @@ void refresh_user_enote_store_legacy_intermediate(const rct::key &legacy_base_sp
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_view_privkey,
     const LegacyScanMode legacy_scan_mode,
-    const RefreshLedgerEnoteStoreConfig &refresh_config,
+    const scanning::ScanMachineConfig &refresh_config,
     const MockLedgerContext &ledger_context,
     SpEnoteStoreMockV1 &user_enote_store_inout)
 {
@@ -447,26 +448,26 @@ void refresh_user_enote_store_legacy_intermediate(const rct::key &legacy_base_sp
             legacy_view_privkey,
             legacy_scan_mode
         };
-    EnoteScanningContextNonLedgerDummy enote_scanning_context_nonledger{};
-    EnoteScanningContextLedgerSimple enote_scanning_context_ledger{enote_finding_context};
-    EnoteStoreUpdaterMockLegacyIntermediate enote_store_updater{
+    scanning::ScanningContextNonLedgerDummy scanning_context_nonledger{};
+    scanning::ScanningContextLedgerSimple scanning_context_ledger{enote_finding_context};
+    ChunkConsumerMockLegacyIntermediate chunk_consumer{
             legacy_base_spend_pubkey,
             legacy_view_privkey,
             legacy_scan_mode,
             user_enote_store_inout
         };
 
-    refresh_enote_store_ledger(refresh_config,
-        enote_scanning_context_nonledger,
-        enote_scanning_context_ledger,
-        enote_store_updater);
+    sp::refresh_enote_store(refresh_config,
+        scanning_context_nonledger,
+        scanning_context_ledger,
+        chunk_consumer);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void refresh_user_enote_store_legacy_full(const rct::key &legacy_base_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_spend_privkey,
     const crypto::secret_key &legacy_view_privkey,
-    const RefreshLedgerEnoteStoreConfig &refresh_config,
+    const scanning::ScanMachineConfig &refresh_config,
     const MockLedgerContext &ledger_context,
     SpEnoteStoreMockV1 &user_enote_store_inout)
 {
@@ -477,31 +478,31 @@ void refresh_user_enote_store_legacy_full(const rct::key &legacy_base_spend_pubk
             legacy_view_privkey,
             LegacyScanMode::SCAN
         };
-    EnoteScanningContextNonLedgerDummy enote_scanning_context_nonledger{};
-    EnoteScanningContextLedgerSimple enote_scanning_context_ledger{enote_finding_context};
-    EnoteStoreUpdaterMockLegacy enote_store_updater{
+    scanning::ScanningContextNonLedgerDummy scanning_context_nonledger{};
+    scanning::ScanningContextLedgerSimple scanning_context_ledger{enote_finding_context};
+    ChunkConsumerMockLegacy chunk_consumer{
             legacy_base_spend_pubkey,
             legacy_spend_privkey,
             legacy_view_privkey,
             user_enote_store_inout
         };
 
-    refresh_enote_store_ledger(refresh_config,
-        enote_scanning_context_nonledger,
-        enote_scanning_context_ledger,
-        enote_store_updater);
+    sp::refresh_enote_store(refresh_config,
+        scanning_context_nonledger,
+        scanning_context_ledger,
+        chunk_consumer);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void refresh_user_enote_store_PV(const jamtis::mocks::jamtis_mock_keys &user_keys,
-    const RefreshLedgerEnoteStoreConfig &refresh_config,
+    const scanning::ScanMachineConfig &refresh_config,
     const MockLedgerContext &ledger_context,
     SpEnoteStoreMockPaymentValidatorV1 &user_enote_store_inout)
 {
     const EnoteFindingContextUnconfirmedMockSp enote_finding_context_unconfirmed{ledger_context, user_keys.xk_fr};
     const EnoteFindingContextLedgerMockSp enote_finding_context_ledger{ledger_context, user_keys.xk_fr};
-    EnoteScanningContextNonLedgerSimple enote_scanning_context_unconfirmed{enote_finding_context_unconfirmed};
-    EnoteScanningContextLedgerSimple enote_scanning_context_ledger{enote_finding_context_ledger};
-    EnoteStoreUpdaterMockSpIntermediate enote_store_updater{
+    scanning::ScanningContextNonLedgerSimple scanning_context_unconfirmed{enote_finding_context_unconfirmed};
+    scanning::ScanningContextLedgerSimple scanning_context_ledger{enote_finding_context_ledger};
+    ChunkConsumerMockSpIntermediate chunk_consumer{
             user_keys.K_1_base,
             user_keys.xk_ua,
             user_keys.xk_fr,
@@ -509,27 +510,27 @@ void refresh_user_enote_store_PV(const jamtis::mocks::jamtis_mock_keys &user_key
             user_enote_store_inout
         };
 
-    refresh_enote_store_ledger(refresh_config,
-        enote_scanning_context_unconfirmed,
-        enote_scanning_context_ledger,
-        enote_store_updater);
+    sp::refresh_enote_store(refresh_config,
+        scanning_context_unconfirmed,
+        scanning_context_ledger,
+        chunk_consumer);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void refresh_user_enote_store(const jamtis::mocks::jamtis_mock_keys &user_keys,
-    const RefreshLedgerEnoteStoreConfig &refresh_config,
+    const scanning::ScanMachineConfig &refresh_config,
     const MockLedgerContext &ledger_context,
     SpEnoteStoreMockV1 &user_enote_store_inout)
 {
     const EnoteFindingContextUnconfirmedMockSp enote_finding_context_unconfirmed{ledger_context, user_keys.xk_fr};
     const EnoteFindingContextLedgerMockSp enote_finding_context_ledger{ledger_context, user_keys.xk_fr};
-    EnoteScanningContextNonLedgerSimple enote_scanning_context_unconfirmed{enote_finding_context_unconfirmed};
-    EnoteScanningContextLedgerSimple enote_scanning_context_ledger{enote_finding_context_ledger};
-    EnoteStoreUpdaterMockSp enote_store_updater{user_keys.K_1_base, user_keys.k_vb, user_enote_store_inout};
+    scanning::ScanningContextNonLedgerSimple scanning_context_unconfirmed{enote_finding_context_unconfirmed};
+    scanning::ScanningContextLedgerSimple scanning_context_ledger{enote_finding_context_ledger};
+    ChunkConsumerMockSp chunk_consumer{user_keys.K_1_base, user_keys.k_vb, user_enote_store_inout};
 
-    refresh_enote_store_ledger(refresh_config,
-        enote_scanning_context_unconfirmed,
-        enote_scanning_context_ledger,
-        enote_store_updater);
+    sp::refresh_enote_store(refresh_config,
+        scanning_context_unconfirmed,
+        scanning_context_ledger,
+        chunk_consumer);
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace mocks

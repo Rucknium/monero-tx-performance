@@ -56,6 +56,8 @@
 
 namespace sp
 {
+namespace scanning
+{
 
 /**
 * brief: try_find_legacy_enotes_in_tx - obtain contextual basic records from a legacy tx's contents
@@ -215,4 +217,5 @@ void process_chunk_full_sp(const rct::key &jamtis_spend_pubkey,
     std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_sp_key_images_out,
     std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &legacy_key_images_in_sp_selfspends_out);
 
+} //namespace scanning
 } //namespace sp

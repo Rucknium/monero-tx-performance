@@ -31,7 +31,6 @@ set(seraphis_mocks_sources
   enote_store_mock_simple_v1.cpp
   enote_store_mock_v1.cpp
   enote_store_mock_validator_v1.cpp
-  enote_store_updater_mocks.cpp
   jamtis_mock_keys.cpp
   legacy_mock_keys.cpp
   make_mock_tx.cpp
@@ -41,6 +40,7 @@ set(seraphis_mocks_sources
   mock_tx_builders_inputs.cpp
   mock_tx_builders_legacy_inputs.cpp
   mock_tx_builders_outputs.cpp
+  scan_chunk_consumer_mocks.cpp
   tx_input_selector_mocks.cpp)
 
 monero_find_all_headers(seraphis_mocks_headers, "${CMAKE_CURRENT_SOURCE_DIR}")

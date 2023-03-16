@@ -26,42 +26,63 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// State machine for scanning a LIFO chain of blocks by incrementally processing chunks of that chain.
+// Dependency injector for consuming data acquired by the candidacy phase of balance recovery.
 
 #pragma once
 
 //local headers
-#include "seraphis_main/scan_machine_types.h"
+#include "contextual_enote_record_types.h"
+#include "ringct/rctTypes.h"
 
 //third party headers
 
 //standard headers
+#include <vector>
 
 //forward declarations
 namespace sp
 {
 namespace scanning
 {
-    class ScanningContextLedger;
-    class ChunkConsumer;
+    struct ChunkData;
 }
 }
+
 
 namespace sp
 {
 namespace scanning
 {
 
-/**
-* brief: try_advance_state_machine - advance the scan state machine to the next state
-* inoutparam: metadata_inout -
-* inoutparam: scanning_context_inout -
-* inoutparam: chunk_consumer_inout -
-* return: true if the machine was advanced to a new non-terminal state, false if the machine is in a terminal state
-*/
-bool try_advance_state_machine(ScanMachineMetadata &metadata_inout,
-    ScanningContextLedger &scanning_context_inout,
-    ChunkConsumer &chunk_consumer_inout);
+////
+// ChunkConsumer
+// - provides an API for consuming chunks of enotes from find-received scanning
+///
+class ChunkConsumer
+{
+public:
+//destructor
+    virtual ~ChunkConsumer() = default;
+
+//overloaded operators
+    /// disable copy/move (this is an abstract base class)
+    ChunkConsumer& operator=(ChunkConsumer&&) = delete;
+
+//member functions
+    /// get index of first block the internal enote store cares about
+    virtual std::uint64_t refresh_index() const = 0;
+    /// get index of first block the updater wants to have scanned
+    virtual std::uint64_t desired_first_block() const = 0;
+    /// try to get the recorded block id for a given index
+    virtual bool try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const = 0;
+
+    /// consume a chunk of basic enote records and save the results
+    virtual void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status, const ChunkData &data) = 0;
+    virtual void consume_onchain_chunk(const ChunkData &data,
+        const std::uint64_t first_new_block,
+        const rct::key &alignment_block_id,
+        const std::vector<rct::key> &new_block_ids) = 0;
+};
 
 } //namespace scanning
 } //namespace sp

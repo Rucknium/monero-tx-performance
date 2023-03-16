@@ -28,7 +28,7 @@
 
 // NOT FOR PRODUCTION
 
-// Enote store updaters for these enote scanning workflows:
+// Chunk consumers for these enote scanning workflows:
 // - legacy view-only (view-scan or key image collection)
 // - legacy full-scan
 // - seraphis payment validator scan
@@ -45,7 +45,7 @@
 #include "ringct/rctTypes.h"
 #include "seraphis_core/jamtis_address_tag_utils.h"
 #include "seraphis_main/enote_record_types.h"
-#include "seraphis_main/enote_store_updater.h"
+#include "seraphis_main/scan_chunk_consumer.h"
 
 //third party headers
 
@@ -64,19 +64,19 @@ namespace sp
 namespace mocks
 {
 
-class EnoteStoreUpdaterMockLegacyIntermediate final : public EnoteStoreUpdater
+class ChunkConsumerMockLegacyIntermediate final : public scanning::ChunkConsumer
 {
 public:
 //constructors
     /// normal constructor
-    EnoteStoreUpdaterMockLegacyIntermediate(const rct::key &legacy_base_spend_pubkey,
+    ChunkConsumerMockLegacyIntermediate(const rct::key &legacy_base_spend_pubkey,
         const crypto::secret_key &legacy_view_privkey,
         const LegacyScanMode legacy_scan_mode,
         SpEnoteStoreMockV1 &enote_store);
 
 //overloaded operators
     /// disable copy/move (this is a scoped manager [reference wrapper])
-    EnoteStoreUpdaterMockLegacyIntermediate& operator=(EnoteStoreUpdaterMockLegacyIntermediate&&) = delete;
+    ChunkConsumerMockLegacyIntermediate& operator=(ChunkConsumerMockLegacyIntermediate&&) = delete;
 
 //member functions
     /// get index of first block the enote store cares about
@@ -88,11 +88,8 @@ public:
 
     /// consume a chunk of basic enote records and save the results
     void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
-        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
-        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images) override;
-    void consume_onchain_chunk(
-        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
-        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images,
+        const scanning::ChunkData &chunk_data) override;
+    void consume_onchain_chunk(const scanning::ChunkData &chunk_data,
         const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
         const std::vector<rct::key> &new_block_ids) override;
@@ -112,19 +109,19 @@ private:
     SpEnoteStoreMockV1 &m_enote_store;
 };
 
-class EnoteStoreUpdaterMockLegacy final : public EnoteStoreUpdater
+class ChunkConsumerMockLegacy final : public scanning::ChunkConsumer
 {
 public:
 //constructors
     /// normal constructor
-    EnoteStoreUpdaterMockLegacy(const rct::key &legacy_base_spend_pubkey,
+    ChunkConsumerMockLegacy(const rct::key &legacy_base_spend_pubkey,
         const crypto::secret_key &legacy_spend_privkey,
         const crypto::secret_key &legacy_view_privkey,
         SpEnoteStoreMockV1 &enote_store);
 
 //overloaded operators
     /// disable copy/move (this is a scoped manager [reference wrapper])
-    EnoteStoreUpdaterMockLegacy& operator=(EnoteStoreUpdaterMockLegacy&&) = delete;
+    ChunkConsumerMockLegacy& operator=(ChunkConsumerMockLegacy&&) = delete;
 
 //member functions
     /// get index of first block the enote store cares about
@@ -136,11 +133,8 @@ public:
 
     /// consume a chunk of basic enote records and save the results
     void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
-        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
-        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images) override;
-    void consume_onchain_chunk(
-        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
-        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images,
+        const scanning::ChunkData &chunk_data) override;
+    void consume_onchain_chunk(const scanning::ChunkData &chunk_data,
         const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
         const std::vector<rct::key> &new_block_ids) override;
@@ -154,12 +148,12 @@ private:
     SpEnoteStoreMockV1 &m_enote_store;
 };
 
-class EnoteStoreUpdaterMockSpIntermediate final : public EnoteStoreUpdater
+class ChunkConsumerMockSpIntermediate final : public scanning::ChunkConsumer
 {
 public:
 //constructors
     /// normal constructor
-    EnoteStoreUpdaterMockSpIntermediate(const rct::key &jamtis_spend_pubkey,
+    ChunkConsumerMockSpIntermediate(const rct::key &jamtis_spend_pubkey,
         const crypto::x25519_secret_key &xk_unlock_amounts,
         const crypto::x25519_secret_key &xk_find_received,
         const crypto::secret_key &s_generate_address,
@@ -167,7 +161,7 @@ public:
 
 //overloaded operators
     /// disable copy/move (this is a scoped manager [reference wrapper])
-    EnoteStoreUpdaterMockSpIntermediate& operator=(EnoteStoreUpdaterMockSpIntermediate&&) = delete;
+    ChunkConsumerMockSpIntermediate& operator=(ChunkConsumerMockSpIntermediate&&) = delete;
 
 //member functions
     /// get index of first block the enote store cares about
@@ -179,11 +173,8 @@ public:
 
     /// consume a chunk of basic enote records and save the results
     void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
-        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
-        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images) override;
-    void consume_onchain_chunk(
-        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
-        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images,
+        const scanning::ChunkData &chunk_data) override;
+    void consume_onchain_chunk(const scanning::ChunkData &chunk_data,
         const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
         const std::vector<rct::key> &new_block_ids) override;
@@ -200,18 +191,18 @@ private:
     std::unique_ptr<jamtis::jamtis_address_tag_cipher_context> m_cipher_context;
 };
 
-class EnoteStoreUpdaterMockSp final : public EnoteStoreUpdater
+class ChunkConsumerMockSp final : public scanning::ChunkConsumer
 {
 public:
 //constructors
     /// normal constructor
-    EnoteStoreUpdaterMockSp(const rct::key &jamtis_spend_pubkey,
+    ChunkConsumerMockSp(const rct::key &jamtis_spend_pubkey,
         const crypto::secret_key &k_view_balance,
         SpEnoteStoreMockV1 &enote_store);
 
 //overloaded operators
     /// disable copy/move (this is a scoped manager [reference wrapper])
-    EnoteStoreUpdaterMockSp& operator=(EnoteStoreUpdaterMockSp&&) = delete;
+    ChunkConsumerMockSp& operator=(ChunkConsumerMockSp&&) = delete;
 
 //member functions
     /// get index of first block the enote store cares about
@@ -223,11 +214,8 @@ public:
 
     /// consume a chunk of basic enote records and save the results
     void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
-        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
-        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images) override;
-    void consume_onchain_chunk(
-        const std::unordered_map<rct::key, std::list<ContextualBasicRecordVariant>> &chunk_basic_records_per_tx,
-        const std::list<SpContextualKeyImageSetV1> &chunk_contextual_key_images,
+        const scanning::ChunkData &chunk_data) override;
+    void consume_onchain_chunk(const scanning::ChunkData &chunk_data,
         const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
         const std::vector<rct::key> &new_block_ids) override;

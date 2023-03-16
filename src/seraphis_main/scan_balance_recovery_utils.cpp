@@ -27,7 +27,7 @@
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //paired header
-#include "enote_scanning_utils.h"
+#include "scan_balance_recovery_utils.h"
 
 //local headers
 #include "contextual_enote_record_types.h"
@@ -36,12 +36,9 @@
 #include "crypto/x25519.h"
 #include "cryptonote_basic/subaddress_index.h"
 #include "device/device.hpp"
-#include "enote_finding_context.h"
 #include "enote_record_types.h"
 #include "enote_record_utils.h"
 #include "enote_record_utils_legacy.h"
-#include "enote_scanning.h"
-#include "enote_scanning_context.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_core/jamtis_core_utils.h"
@@ -65,6 +62,8 @@
 #define MONERO_DEFAULT_LOG_CATEGORY "seraphis"
 
 namespace sp
+{
+namespace scanning
 {
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -853,4 +852,5 @@ void process_chunk_full_sp(const rct::key &jamtis_spend_pubkey,
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
+} //namespace scanning
 } //namespace sp

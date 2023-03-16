@@ -54,8 +54,10 @@ namespace sp
 {
     struct SpPartialTxV1;
     struct SpTxSquashedV1;
-    struct EnoteScanningChunkLedgerV1;
-    struct EnoteScanningChunkNonLedgerV1;
+namespace scanning
+{
+    struct ChunkData;
+}
 }
 
 namespace sp
@@ -109,11 +111,11 @@ public:
     /**
     * brief: get_offchain_chunk_sp - find-received scan the offchain tx cache
     * param: xk_find_received -
-    * outparam: chunk_out -
+    * outparam: chunk_data_out -
     * return: true if chunk is not empty
     */
     void get_offchain_chunk_sp(const crypto::x25519_secret_key &xk_find_received,
-        EnoteScanningChunkNonLedgerV1 &chunk_out) const;
+        scanning::ChunkData &chunk_data_out) const;
 
 private:
     bool try_add_v1_impl(const std::vector<LegacyEnoteImageV2> &legacy_input_images,

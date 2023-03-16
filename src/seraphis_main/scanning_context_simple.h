@@ -26,58 +26,59 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// Simple implementations enote scanning contexts.
+// Simple implementations of enote scanning contexts.
 
 #pragma once
 
 //local headers
-#include "enote_finding_context.h"
-#include "enote_scanning.h"
-#include "enote_scanning_context.h"
+#include "seraphis_main/enote_finding_context.h"
+#include "seraphis_main/scan_core_types.h"
+#include "seraphis_main/scan_ledger_chunk.h"
+#include "seraphis_main/scanning_context.h"
 
 //third party headers
 
 //standard headers
+#include <memory>
 
 //forward declarations
 
 
 namespace sp
 {
+namespace scanning
+{
 
 ////
-// EnoteScanningContextNonLedgerDummy
+// ScanningContextNonLedgerDummy
 // - dummy nonledger scanning context
 ///
-class EnoteScanningContextNonLedgerDummy final : public EnoteScanningContextNonLedger
+class ScanningContextNonLedgerDummy final : public ScanningContextNonLedger
 {
 public:
-    void get_nonledger_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) override
-    {
-        chunk_out = EnoteScanningChunkNonLedgerV1{};
-    }
-    bool is_aborted() const override { return false; }
+    void get_nonledger_chunk(ChunkData &chunk_out) override { chunk_out = ChunkData{}; }
+    bool is_aborted()                        const override { return false; }
 };
 
 ////
-// EnoteScanningContextNonLedgerSimple
+// ScanningContextNonLedgerSimple
 // - simple implementation: synchronously obtain chunks from an enote finding context
 ///
-class EnoteScanningContextNonLedgerSimple final : public EnoteScanningContextNonLedger
+class ScanningContextNonLedgerSimple final : public ScanningContextNonLedger
 {
 public:
 //constructor
-    EnoteScanningContextNonLedgerSimple(const EnoteFindingContextNonLedger &enote_finding_context) :
+    ScanningContextNonLedgerSimple(const EnoteFindingContextNonLedger &enote_finding_context) :
         m_enote_finding_context{enote_finding_context}
     {}
 
 //overloaded operators
     /// disable copy/move (this is a scoped manager [reference wrapper])
-    EnoteScanningContextNonLedgerSimple& operator=(EnoteScanningContextNonLedgerSimple&&) = delete;
+    ScanningContextNonLedgerSimple& operator=(ScanningContextNonLedgerSimple&&) = delete;
 
 //member functions
     /// get a scanning chunk for the nonledger txs in the injected context
-    void get_nonledger_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) override
+    void get_nonledger_chunk(ChunkData &chunk_out) override
     {
         m_enote_finding_context.get_nonledger_chunk(chunk_out);
     }
@@ -86,25 +87,25 @@ public:
 
 //member variables
 private:
-    /// finds chunks of enotes that are potentially owned
+    /// enote finding context: finds chunks of enotes that are potentially owned
     const EnoteFindingContextNonLedger &m_enote_finding_context;
 };
 
 ////
-// EnoteScanningContextLedgerSimple
+// ScanningContextLedgerSimple
 // - simple implementation: synchronously obtain chunks from an enote finding context
 ///
-class EnoteScanningContextLedgerSimple final : public EnoteScanningContextLedger
+class ScanningContextLedgerSimple final : public ScanningContextLedger
 {
 public:
 //constructor
-    EnoteScanningContextLedgerSimple(const EnoteFindingContextLedger &enote_finding_context) :
+    ScanningContextLedgerSimple(const EnoteFindingContextLedger &enote_finding_context) :
         m_enote_finding_context{enote_finding_context}
     {}
 
 //overloaded operators
     /// disable copy/move (this is a scoped manager [reference wrapper])
-    EnoteScanningContextLedgerSimple& operator=(EnoteScanningContextLedgerSimple&&) = delete;
+    ScanningContextLedgerSimple& operator=(ScanningContextLedgerSimple&&) = delete;
 
 //member functions
     /// start scanning from a specified block index
@@ -115,10 +116,18 @@ public:
     }
     /// get the next available onchain chunk (or empty chunk representing top of current chain)
     /// - start past the end of the last chunk acquired since starting to scan
-    void get_onchain_chunk(EnoteScanningChunkLedgerV1 &chunk_out) override
+    std::unique_ptr<LedgerChunk> get_onchain_chunk() override
     {
-        m_enote_finding_context.get_onchain_chunk(m_next_start_index, m_max_chunk_size, chunk_out);
-        m_next_start_index = chunk_out.context.start_index + chunk_out.context.element_ids.size();
+        // 1. try to get a chunk
+        std::unique_ptr<LedgerChunk> chunk{
+                m_enote_finding_context.get_onchain_chunk(m_next_start_index, m_max_chunk_size)
+            };
+        if (!chunk)
+            return nullptr;
+
+        // 2. save the next chunk's expected start index
+        m_next_start_index = chunk->get_context().start_index + chunk->get_context().block_ids.size();
+        return chunk;
     }
     /// stop the current scanning process (should be no-throw no-fail)
     void terminate_scanning() override { /* no-op */ }
@@ -127,11 +136,12 @@ public:
 
 //member variables
 private:
-    /// finds chunks of enotes that are potentially owned
+    /// enote finding context: finds chunks of enotes that are potentially owned
     const EnoteFindingContextLedger &m_enote_finding_context;
 
     std::uint64_t m_next_start_index{static_cast<std::uint64_t>(-1)};
     std::uint64_t m_max_chunk_size{0};
 };
 
+} //namespace scanning
 } //namespace sp

@@ -26,62 +26,85 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// Dependency injectors for the find-received step of enote scanning. Intended to be stateless.
+// Interface for implementing a ledger chunk.
 
 #pragma once
 
 //local headers
+#include "misc_log_ex.h"
 #include "seraphis_main/scan_core_types.h"
-#include "seraphis_main/scan_ledger_chunk.h"
+#include "seraphis_main/scan_misc_utils.h"
 
 //third party headers
 
 //standard headers
-#include <memory>
 
 //forward declarations
 
 
 namespace sp
 {
+namespace scanning
+{
 
 ////
-// EnoteFindingContextNonLedger
-// - wraps a nonledger context of some kind, produces chunks of potentially owned enotes (from find-received scanning)
+// LedgerChunk
+// - interface for implementing a ledger chunk; implementations may store data directly or asynchronously
+//
+// - chunk context: tracks where this chunk exists on-chain
+// - chunk data: data obtained from scanning the chunk
 ///
-class EnoteFindingContextNonLedger
+class LedgerChunk
 {
 public:
-//destructor
-    virtual ~EnoteFindingContextNonLedger() = default;
-
-//overloaded operators
-    /// disable copy/move (this is a virtual base class)
-    EnoteFindingContextNonLedger& operator=(EnoteFindingContextNonLedger&&) = delete;
-
-//member functions
-    /// get a fresh nonledger chunk (this is expected to contain all enotes in the nonledger context)
-    virtual void get_nonledger_chunk(scanning::ChunkData &chunk_out) const = 0;
+    virtual ~LedgerChunk() = default;
+    /// chunk context (includes chunk block range, prefix block id, and chunk block ids)
+    virtual const ChunkContext& get_context() const = 0;
+    /// chunk data (includes owned enote candidates and key image candidates)
+    virtual const ChunkData& get_data() const = 0;
 };
 
 ////
-// EnoteFindingContextLedger
-// - wraps a ledger context of some kind, produces chunks of potentially owned enotes (from find-received scanning)
+// LedgerChunkEmpty
+// - empty chunks only
 ///
-class EnoteFindingContextLedger
+class LedgerChunkEmpty final : public LedgerChunk
 {
 public:
-//destructor
-    virtual ~EnoteFindingContextLedger() = default;
+    LedgerChunkEmpty(ChunkContext context) :
+        m_context{std::move(context)},
+        m_data{}
+    {
+        CHECK_AND_ASSERT_THROW_MES(chunk_is_empty(context), "empty ledger chunk: chunk is not empty.");
+    }
 
-//overloaded operators
-    /// disable copy/move (this is a virtual base class)
-    EnoteFindingContextLedger& operator=(EnoteFindingContextLedger&&) = delete;
+    const ChunkContext& get_context() const override { return m_context; }
+    const ChunkData& get_data()       const override { return m_data;    }
 
-//member functions
-    /// get an onchain chunk (or empty chunk representing top of current chain)
-    virtual std::unique_ptr<scanning::LedgerChunk> get_onchain_chunk(const std::uint64_t chunk_start_index,
-        const std::uint64_t chunk_max_size) const = 0;
+private:
+    ChunkContext m_context;
+    ChunkData m_data;
 };
 
+////
+// LedgerChunkStandard
+// - store data directly
+///
+class LedgerChunkStandard final : public LedgerChunk
+{
+public:
+    LedgerChunkStandard(ChunkContext context, ChunkData data) :
+        m_context{std::move(context)},
+        m_data{std::move(data)}
+    {}
+
+    const ChunkContext& get_context() const override { return m_context; }
+    const ChunkData& get_data()       const override { return m_data;    }
+
+private:
+    ChunkContext m_context;
+    ChunkData m_data;
+};
+
+} //namespace scanning
 } //namespace sp

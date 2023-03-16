@@ -27,58 +27,62 @@
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Dependency injectors for managing the find-received step of enote scanning. Intended to be stateful, managing
-//   a connection to a context and linking together successive 'get chunk' calls.
+//   a connection to a context that contains enotes and key images, and linking together successive 'get chunk' calls.
 
 #pragma once
 
 //local headers
-#include "enote_scanning.h"
+#include "seraphis_main/scan_core_types.h"
+#include "seraphis_main/scan_ledger_chunk.h"
 
 //third party headers
 
 //standard headers
+#include <memory>
 
 //forward declarations
 
 
 namespace sp
 {
+namespace scanning
+{
 
 ////
-// EnoteScanningContextNonLedger
+// ScanningContextNonLedger
 // - manages a source of non-ledger-based enote scanning chunks
 ///
-class EnoteScanningContextNonLedger
+class ScanningContextNonLedger
 {
 public:
 //destructor
-    virtual ~EnoteScanningContextNonLedger() = default;
+    virtual ~ScanningContextNonLedger() = default;
 
 //overloaded operators
     /// disable copy/move (this is a virtual base class)
-    EnoteScanningContextNonLedger& operator=(EnoteScanningContextNonLedger&&) = delete;
+    ScanningContextNonLedger& operator=(ScanningContextNonLedger&&) = delete;
 
 //member functions
     /// get a scanning chunk for the nonledger txs associated with this context
-    virtual void get_nonledger_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) = 0;
+    virtual void get_nonledger_chunk(ChunkData &chunk_out) = 0;
     /// test if scanning has been aborted
     /// EXPECTATION: if this returns true then all subsequent calls to 'get chunk' should return an empty chunk
     virtual bool is_aborted() const = 0;
 };
 
 ////
-// EnoteScanningContextLedger
+// ScanningContextLedger
 // - manages a source of ledger-based enote scanning chunks (i.e. finding potentially owned enotes in a ledger)
 ///
-class EnoteScanningContextLedger
+class ScanningContextLedger
 {
 public:
 //destructor
-    virtual ~EnoteScanningContextLedger() = default;
+    virtual ~ScanningContextLedger() = default;
 
 //overloaded operators
     /// disable copy/move (this is a virtual base class)
-    EnoteScanningContextLedger& operator=(EnoteScanningContextLedger&&) = delete;
+    ScanningContextLedger& operator=(ScanningContextLedger&&) = delete;
 
 //member functions
     /// tell the scanning context a block index to start scanning from
@@ -86,7 +90,7 @@ public:
         const std::uint64_t max_chunk_size) = 0;
     /// get the next available onchain chunk (must be contiguous with the last chunk acquired since starting to scan)
     /// note: if there is no chunk to return, return an empty chunk representing the top of the current chain
-    virtual void get_onchain_chunk(EnoteScanningChunkLedgerV1 &chunk_out) = 0;
+    virtual std::unique_ptr<LedgerChunk> get_onchain_chunk() = 0;
     /// tell the scanning context to stop its scanning process (should be no-throw no-fail)
     virtual void terminate_scanning() = 0;
     /// test if scanning has been aborted
@@ -94,4 +98,5 @@ public:
     virtual bool is_aborted() const = 0;
 };
 
+} //namespace scanning
 } //namespace sp

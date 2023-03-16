@@ -54,8 +54,8 @@
 #include "seraphis_main/contextual_enote_record_utils.h"
 #include "seraphis_main/enote_record_types.h"
 #include "seraphis_main/enote_record_utils.h"
-#include "seraphis_main/enote_scanning.h"
-#include "seraphis_main/enote_scanning_context_simple.h"
+#include "seraphis_main/scan_machine_types.h"
+#include "seraphis_main/scanning_context_simple.h"
 #include "seraphis_main/sp_knowledge_proof_types.h"
 #include "seraphis_main/sp_knowledge_proof_utils.h"
 #include "seraphis_main/tx_builder_types.h"
@@ -407,8 +407,8 @@ TEST(seraphis_knowledge_proofs, reserve_proof)
     const std::size_t ref_set_decomp_n{2};
     const std::size_t ref_set_decomp_m{2};
 
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -526,7 +526,7 @@ TEST(seraphis_knowledge_proofs, sp_all_knowledge_proofs)
     const std::size_t ref_set_decomp_n{2};
     const std::size_t ref_set_decomp_m{2};
 
-    const RefreshLedgerEnoteStoreConfig refresh_config{
+    const scan_machine::ScanConfig refresh_config{
             .reorg_avoidance_depth = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0

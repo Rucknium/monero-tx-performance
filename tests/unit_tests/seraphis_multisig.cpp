@@ -61,8 +61,8 @@
 #include "seraphis_main/contextual_enote_record_utils.h"
 #include "seraphis_main/enote_record_types.h"
 #include "seraphis_main/enote_record_utils.h"
-#include "seraphis_main/enote_scanning.h"
-#include "seraphis_main/enote_scanning_context_simple.h"
+#include "seraphis_main/scan_machine_types.h"
+#include "seraphis_main/scanning_context_simple.h"
 #include "seraphis_main/tx_builder_types.h"
 #include "seraphis_main/tx_builder_types_multisig.h"
 #include "seraphis_main/tx_builders_inputs.h"
@@ -108,7 +108,7 @@ static void make_multisig_jamtis_mock_keys(const multisig::multisig_account &acc
 //-------------------------------------------------------------------------------------------------------------------
 static void refresh_user_enote_store_legacy_multisig(const std::vector<multisig::multisig_account> &accounts,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
-    const RefreshLedgerEnoteStoreConfig &refresh_config,
+    const scanning::ScanMachineConfig &refresh_config,
     const MockLedgerContext &ledger_context,
     SpEnoteStoreMockV1 &enote_store_inout)
 {
@@ -375,8 +375,8 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
     const std::size_t bin_radius{1};
     const std::size_t num_bin_members{2};
 
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };

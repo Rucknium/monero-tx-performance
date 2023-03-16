@@ -39,11 +39,13 @@
 #include "mock_offchain_context.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_main/enote_finding_context.h"
-#include "seraphis_main/enote_scanning.h"
+#include "seraphis_main/scan_core_types.h"
+#include "seraphis_main/scan_ledger_chunk.h"
 
 //third party headers
 
 //standard headers
+#include <memory>
 #include <unordered_map>
 
 //forward declarations
@@ -88,9 +90,8 @@ public:
 
 //member functions
     /// get an onchain chunk (or empty chunk representing top of current chain)
-    void get_onchain_chunk(const std::uint64_t chunk_start_index,
-        const std::uint64_t chunk_max_size,
-        EnoteScanningChunkLedgerV1 &chunk_out) const override;
+    std::unique_ptr<scanning::LedgerChunk> get_onchain_chunk(const std::uint64_t chunk_start_index,
+        const std::uint64_t chunk_max_size) const override;
 
 //member variables
 private:
@@ -121,9 +122,8 @@ public:
 
 //member functions
     /// get an onchain chunk (or empty chunk representing top of current chain)
-    void get_onchain_chunk(const std::uint64_t chunk_start_index,
-        const std::uint64_t chunk_max_size,
-        EnoteScanningChunkLedgerV1 &chunk_out) const override;
+    std::unique_ptr<scanning::LedgerChunk> get_onchain_chunk(const std::uint64_t chunk_start_index,
+        const std::uint64_t chunk_max_size) const override;
 
 //member variables
 private:
@@ -151,7 +151,7 @@ public:
 
 //member functions
     /// get a fresh unconfirmed chunk
-    void get_nonledger_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const override;
+    void get_nonledger_chunk(scanning::ChunkData &chunk_out) const override;
 
 //member variables
 private:
@@ -179,7 +179,7 @@ public:
 
 //member functions
     /// get a fresh offchain chunk
-    void get_nonledger_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) const override;
+    void get_nonledger_chunk(scanning::ChunkData &chunk_out) const override;
 
 //member variables
 private:

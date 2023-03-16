@@ -53,8 +53,9 @@
 #include "seraphis_main/enote_record_types.h"
 #include "seraphis_main/enote_record_utils.h"
 #include "seraphis_main/enote_record_utils_legacy.h"
-#include "seraphis_main/enote_scanning.h"
-#include "seraphis_main/enote_scanning_context_simple.h"
+#include "seraphis_main/scan_process_basic.h"
+#include "seraphis_main/scanning_context_simple.h"
+#include "seraphis_main/scan_machine_types.h"
 #include "seraphis_main/tx_builder_types.h"
 #include "seraphis_main/tx_builders_inputs.h"
 #include "seraphis_main/tx_builders_legacy_inputs.h"
@@ -94,15 +95,15 @@ namespace sp
 {
 
 ////
-// EnoteScanningContextNonLedgerTEST
+// ScanningContextNonLedgerTEST
 // - enote scanning context for injecting behavior into the nonledger component of a scanning process
 ///
-class EnoteScanningContextNonLedgerTEST final : public EnoteScanningContextNonLedger
+class ScanningContextNonLedgerTEST final : public scanning::ScanningContextNonLedger
 {
 public:
 //constructors
     /// normal constructor
-    EnoteScanningContextNonLedgerTEST(EnoteScanningContextNonLedgerSimple &core_scanning_context,
+    ScanningContextNonLedgerTEST(scanning::ScanningContextNonLedgerSimple &core_scanning_context,
         Invocable &invocable_get_nonledger_chunk) :
             m_core_scanning_context{core_scanning_context},
             m_invocable_get_nonledger_chunk{invocable_get_nonledger_chunk}
@@ -110,11 +111,11 @@ public:
 
 //overloaded operators
     /// disable copy/move (this is a scoped manager [reference werapper])
-    EnoteScanningContextNonLedgerTEST& operator=(EnoteScanningContextNonLedgerTEST&&) = delete;
+    ScanningContextNonLedgerTEST& operator=(ScanningContextNonLedgerTEST&&) = delete;
 
 //member functions
     /// try to get a scanning chunk for the unconfirmed txs in a ledger
-    void get_nonledger_chunk(EnoteScanningChunkNonLedgerV1 &chunk_out) override
+    void get_nonledger_chunk(scanning::ChunkData &chunk_out) override
     {
         m_invocable_get_nonledger_chunk.invoke();
         m_core_scanning_context.get_nonledger_chunk(chunk_out);
@@ -125,22 +126,22 @@ public:
 private:
 //member variables
     /// enote scanning context that this test context wraps
-    EnoteScanningContextNonLedgerSimple &m_core_scanning_context;
+    scanning::ScanningContextNonLedgerSimple &m_core_scanning_context;
 
     /// injected invocable objects
     Invocable &m_invocable_get_nonledger_chunk;
 };
 
 ////
-// EnoteScanningContextLedgerTEST
+// ScanningContextLedgerTEST
 // - enote scanning context for injecting behavior into the ledger component of a scanning process
 ///
-class EnoteScanningContextLedgerTEST final : public EnoteScanningContextLedger
+class ScanningContextLedgerTEST final : public scanning::ScanningContextLedger
 {
 public:
 //constructors
     /// normal constructor
-    EnoteScanningContextLedgerTEST(EnoteScanningContextLedgerSimple &core_scanning_context,
+    ScanningContextLedgerTEST(scanning::ScanningContextLedgerSimple &core_scanning_context,
         Invocable &invocable_begin_scanning,
         Invocable &invocable_get_onchain_chunk,
         Invocable &invocable_terminate) :
@@ -152,7 +153,7 @@ public:
 
 //overloaded operators
     /// disable copy/move (this is a scoped manager [reference werapper])
-    EnoteScanningContextLedgerTEST& operator=(EnoteScanningContextLedgerTEST&&) = delete;
+    ScanningContextLedgerTEST& operator=(ScanningContextLedgerTEST&&) = delete;
 
 //member functions
     /// tell the enote finder it can start scanning from a specified block index
@@ -164,10 +165,10 @@ public:
     }
     /// get the next available onchain chunk (must be contiguous with the last chunk acquired since starting to scan)
     /// note: if chunk is empty, chunk represents top of current chain
-    void get_onchain_chunk(EnoteScanningChunkLedgerV1 &chunk_out) override
+    std::unique_ptr<scanning::LedgerChunk> get_onchain_chunk() override
     {
         m_invocable_get_onchain_chunk.invoke();
-        m_core_scanning_context.get_onchain_chunk(chunk_out);
+        return m_core_scanning_context.get_onchain_chunk();
     }
     /// tell the enote finder to stop its scanning process (should be no-throw no-fail)
     void terminate_scanning() override
@@ -180,7 +181,7 @@ public:
 
 private:
     /// enote scanning context that this test context wraps
-    EnoteScanningContextLedgerSimple &m_core_scanning_context;
+    scanning::ScanningContextLedgerSimple &m_core_scanning_context;
 
     /// injected invocable objects
     Invocable &m_invocable_begin_scanning;
@@ -285,21 +286,21 @@ TEST(seraphis_enote_scanning, trivial_ledger)
 
     // make and refresh enote store with mock ledger context
     SpEnoteStoreMockV1 user_enote_store{0, 0, 0};
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
     const EnoteFindingContextUnconfirmedMockSp enote_finding_context_unconfirmed{ledger_context, user_keys.xk_fr};
     const EnoteFindingContextLedgerMockSp enote_finding_context_ledger{ledger_context, user_keys.xk_fr};
-    EnoteScanningContextNonLedgerSimple enote_scanning_context_unconfirmed{enote_finding_context_unconfirmed};
-    EnoteScanningContextLedgerSimple enote_scanning_context_ledger{enote_finding_context_ledger};
-    EnoteStoreUpdaterMockSp enote_store_updater{user_keys.K_1_base, user_keys.k_vb, user_enote_store};
+    scanning::ScanningContextNonLedgerSimple scanning_context_unconfirmed{enote_finding_context_unconfirmed};
+    scanning::ScanningContextLedgerSimple scanning_context_ledger{enote_finding_context_ledger};
+    ChunkConsumerMockSp chunk_consumer{user_keys.K_1_base, user_keys.k_vb, user_enote_store};
 
-    ASSERT_NO_THROW(refresh_enote_store_ledger(refresh_config,
-        enote_scanning_context_unconfirmed,
-        enote_scanning_context_ledger,
-        enote_store_updater));
+    ASSERT_NO_THROW(refresh_enote_store(refresh_config,
+        scanning_context_unconfirmed,
+        scanning_context_ledger,
+        chunk_consumer));
 
     // make a copy of the expected enote record
     SpEnoteRecordV1 single_enote_record;
@@ -320,8 +321,8 @@ TEST(seraphis_enote_scanning, simple_ledger_1)
     /// setup
 
     // 1. config
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 0,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 0,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -358,8 +359,8 @@ TEST(seraphis_enote_scanning, simple_ledger_2)
     /// setup
 
     // 1. config
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 0,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 0,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -396,8 +397,8 @@ TEST(seraphis_enote_scanning, simple_ledger_3)
     /// setup
 
     // 1. config
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 0,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 0,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -440,8 +441,8 @@ TEST(seraphis_enote_scanning, simple_ledger_4)
     /// setup
 
     // 1. config
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 0,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 0,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -486,8 +487,8 @@ TEST(seraphis_enote_scanning, simple_ledger_5)
     /// setup
 
     // 1. config
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -548,8 +549,8 @@ TEST(seraphis_enote_scanning, simple_ledger_6)
     /// setup
 
     // 1. config
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -620,8 +621,8 @@ TEST(seraphis_enote_scanning, simple_ledger_locked)
     /// setup
 
     // 1. config
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 0,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 0,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -704,8 +705,8 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_1)
     const std::size_t ref_set_decomp_n{2};
     const std::size_t ref_set_decomp_m{2};
 
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -805,8 +806,8 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_2)
     const std::size_t ref_set_decomp_n{2};
     const std::size_t ref_set_decomp_m{2};
 
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -896,8 +897,8 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_3)
     const std::size_t ref_set_decomp_n{2};
     const std::size_t ref_set_decomp_m{2};
 
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -988,8 +989,8 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_4)
     const std::size_t ref_set_decomp_n{2};
     const std::size_t ref_set_decomp_m{2};
 
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -1168,8 +1169,8 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_5)
     const std::size_t ref_set_decomp_n{2};
     const std::size_t ref_set_decomp_m{2};
 
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -1365,8 +1366,8 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_6)
     const std::size_t ref_set_decomp_n{2};
     const std::size_t ref_set_decomp_m{2};
 
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 5,
             .max_partialscan_attempts = 0
         };
@@ -1632,8 +1633,8 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_1)
     /// test
 
     // 1. full internal reorg
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -1680,18 +1681,18 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_1)
     // 5. DONE: refresh enote store of A
     const EnoteFindingContextUnconfirmedMockSp enote_finding_context_unconfirmed_A{ledger_context, user_keys_A.xk_fr};
     const EnoteFindingContextLedgerMockSp enote_finding_context_ledger_A{ledger_context, user_keys_A.xk_fr};
-    EnoteScanningContextNonLedgerSimple enote_scanning_context_unconfirmed_A{enote_finding_context_unconfirmed_A};
-    EnoteScanningContextLedgerSimple enote_scanning_context_ledger_A{enote_finding_context_ledger_A};
+    scanning::ScanningContextNonLedgerSimple scanning_context_unconfirmed_A{enote_finding_context_unconfirmed_A};
+    scanning::ScanningContextLedgerSimple scanning_context_ledger_A{enote_finding_context_ledger_A};
     InvocableTest1 invocable_get_onchain{ledger_context};
-    EnoteScanningContextLedgerTEST test_scanning_context_A(enote_scanning_context_ledger_A,
+    ScanningContextLedgerTEST test_scanning_context_A(scanning_context_ledger_A,
         dummy_invocable,
         invocable_get_onchain,
         dummy_invocable);
-    EnoteStoreUpdaterMockSp enote_store_updater{user_keys_A.K_1_base, user_keys_A.k_vb, enote_store_A};
-    ASSERT_NO_THROW(refresh_enote_store_ledger(refresh_config,
-        enote_scanning_context_unconfirmed_A,
+    ChunkConsumerMockSp chunk_consumer{user_keys_A.K_1_base, user_keys_A.k_vb, enote_store_A};
+    ASSERT_NO_THROW(refresh_enote_store(refresh_config,
+        scanning_context_unconfirmed_A,
         test_scanning_context_A,
-        enote_store_updater));
+        chunk_consumer));
 
     // d. after refreshing, both users should have no balance
     refresh_user_enote_store(user_keys_B, refresh_config, ledger_context, enote_store_B);
@@ -1744,8 +1745,8 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_2)
     /// test
 
     // 2. full internal reorg with replacement
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -1808,18 +1809,18 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_2)
     // 5. DONE: refresh enote store of A
     const EnoteFindingContextUnconfirmedMockSp enote_finding_context_unconfirmed_A{ledger_context, user_keys_A.xk_fr};
     const EnoteFindingContextLedgerMockSp enote_finding_context_ledger_A{ledger_context, user_keys_A.xk_fr};
-    EnoteScanningContextNonLedgerSimple enote_scanning_context_unconfirmed_A{enote_finding_context_unconfirmed_A};
-    EnoteScanningContextLedgerSimple enote_scanning_context_ledger_A{enote_finding_context_ledger_A};
+    scanning::ScanningContextNonLedgerSimple scanning_context_unconfirmed_A{enote_finding_context_unconfirmed_A};
+    scanning::ScanningContextLedgerSimple scanning_context_ledger_A{enote_finding_context_ledger_A};
     InvocableTest2 invocable_get_onchain{destination_A, {3, 5}, ledger_context};
-    EnoteScanningContextLedgerTEST test_scanning_context_A(enote_scanning_context_ledger_A,
+    ScanningContextLedgerTEST test_scanning_context_A(scanning_context_ledger_A,
         dummy_invocable,
         invocable_get_onchain,
         dummy_invocable);
-    EnoteStoreUpdaterMockSp enote_store_updater{user_keys_A.K_1_base, user_keys_A.k_vb, enote_store_A};
-    ASSERT_NO_THROW(refresh_enote_store_ledger(refresh_config,
-        enote_scanning_context_unconfirmed_A,
+    ChunkConsumerMockSp chunk_consumer{user_keys_A.K_1_base, user_keys_A.k_vb, enote_store_A};
+    ASSERT_NO_THROW(refresh_enote_store(refresh_config,
+        scanning_context_unconfirmed_A,
         test_scanning_context_A,
-        enote_store_updater));
+        chunk_consumer));
 
     // d. check balances after refreshing
     refresh_user_enote_store(user_keys_B, refresh_config, ledger_context, enote_store_B);
@@ -1872,8 +1873,8 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_3)
     /// test
 
     // 3. partial internal reorg with replacement
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 1
         };
@@ -1935,18 +1936,18 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_3)
     // 5. DONE: refresh enote store of B
     const EnoteFindingContextUnconfirmedMockSp enote_finding_context_unconfirmed_B{ledger_context, user_keys_B.xk_fr};
     const EnoteFindingContextLedgerMockSp enote_finding_context_ledger_B{ledger_context, user_keys_B.xk_fr};
-    EnoteScanningContextNonLedgerSimple enote_scanning_context_unconfirmed_B{enote_finding_context_unconfirmed_B};
-    EnoteScanningContextLedgerSimple enote_scanning_context_ledger_B{enote_finding_context_ledger_B};
+    scanning::ScanningContextNonLedgerSimple scanning_context_unconfirmed_B{enote_finding_context_unconfirmed_B};
+    scanning::ScanningContextLedgerSimple scanning_context_ledger_B{enote_finding_context_ledger_B};
     InvocableTest3 invocable_get_onchain{destination_B, {3, 5}, ledger_context};
-    EnoteScanningContextLedgerTEST test_scanning_context_B(enote_scanning_context_ledger_B,
+    ScanningContextLedgerTEST test_scanning_context_B(scanning_context_ledger_B,
         dummy_invocable,
         invocable_get_onchain,
         dummy_invocable);
-    EnoteStoreUpdaterMockSp enote_store_updater{user_keys_B.K_1_base, user_keys_B.k_vb, enote_store_B};
-    ASSERT_NO_THROW(refresh_enote_store_ledger(refresh_config,
-        enote_scanning_context_unconfirmed_B,
+    ChunkConsumerMockSp chunk_consumer{user_keys_B.K_1_base, user_keys_B.k_vb, enote_store_B};
+    ASSERT_NO_THROW(refresh_enote_store(refresh_config,
+        scanning_context_unconfirmed_B,
         test_scanning_context_B,
-        enote_store_updater));
+        chunk_consumer));
 
     // d. make sure NEED_FULLSCAN was not triggered on the reorg (would be == 8 here because fullscan will rescan block 0)
     ASSERT_TRUE(invocable_get_onchain.num_invocations() == 7);
@@ -2002,8 +2003,8 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_4)
     /// test
 
     // 4. partial internal reorgs to failure
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 2,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 2,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 4
         };
@@ -2051,18 +2052,18 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_4)
     // 5. ... etc. until partialscan attempts runs out (then throw)
     const EnoteFindingContextUnconfirmedMockSp enote_finding_context_unconfirmed_B{ledger_context, user_keys_B.xk_fr};
     const EnoteFindingContextLedgerMockSp enote_finding_context_ledger_B{ledger_context, user_keys_B.xk_fr};
-    EnoteScanningContextNonLedgerSimple enote_scanning_context_unconfirmed_B{enote_finding_context_unconfirmed_B};
-    EnoteScanningContextLedgerSimple enote_scanning_context_ledger_B{enote_finding_context_ledger_B};
+    scanning::ScanningContextNonLedgerSimple scanning_context_unconfirmed_B{enote_finding_context_unconfirmed_B};
+    scanning::ScanningContextLedgerSimple scanning_context_ledger_B{enote_finding_context_ledger_B};
     InvocableTest4 invocable_get_onchain{destination_B, 1, ledger_context};
-    EnoteScanningContextLedgerTEST test_scanning_context_B(enote_scanning_context_ledger_B,
+    ScanningContextLedgerTEST test_scanning_context_B(scanning_context_ledger_B,
         dummy_invocable,
         invocable_get_onchain,
         dummy_invocable);
-    EnoteStoreUpdaterMockSp enote_store_updater{user_keys_B.K_1_base, user_keys_B.k_vb, enote_store_B};
-    ASSERT_FALSE(refresh_enote_store_ledger(refresh_config,
-        enote_scanning_context_unconfirmed_B,
+    ChunkConsumerMockSp chunk_consumer{user_keys_B.K_1_base, user_keys_B.k_vb, enote_store_B};
+    ASSERT_FALSE(refresh_enote_store(refresh_config,
+        scanning_context_unconfirmed_B,
         test_scanning_context_B,
-        enote_store_updater));
+        chunk_consumer));
 }
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, reorgs_while_scanning_5)
@@ -2099,8 +2100,8 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_5)
     /// test
 
     // 5. sneaky tx found in follow-up loop
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 4
         };
@@ -2162,21 +2163,21 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_5)
     // 4. DONE: refresh enote store of B
     const EnoteFindingContextUnconfirmedMockSp enote_finding_context_unconfirmed_B{ledger_context, user_keys_B.xk_fr};
     const EnoteFindingContextLedgerMockSp enote_finding_context_ledger_B{ledger_context, user_keys_B.xk_fr};
-    EnoteScanningContextNonLedgerSimple enote_scanning_context_unconfirmed_B{enote_finding_context_unconfirmed_B};
-    EnoteScanningContextLedgerSimple enote_scanning_context_ledger_B{enote_finding_context_ledger_B};
+    scanning::ScanningContextNonLedgerSimple scanning_context_unconfirmed_B{enote_finding_context_unconfirmed_B};
+    scanning::ScanningContextLedgerSimple scanning_context_ledger_B{enote_finding_context_ledger_B};
     InvocableTest5Commit invocable_get_unconfirmed{ledger_context};
     InvocableTest5Submit invocable_get_onchain{std::move(sneaky_tx), ledger_context};
-    EnoteScanningContextNonLedgerTEST test_scanning_context_unconfirmed_B(enote_scanning_context_unconfirmed_B,
+    ScanningContextNonLedgerTEST test_scanning_context_unconfirmed_B(scanning_context_unconfirmed_B,
         invocable_get_unconfirmed);
-    EnoteScanningContextLedgerTEST test_scanning_context_ledger_B(enote_scanning_context_ledger_B,
+    ScanningContextLedgerTEST test_scanning_context_ledger_B(scanning_context_ledger_B,
         dummy_invocable,
         invocable_get_onchain,
         dummy_invocable);
-    EnoteStoreUpdaterMockSp enote_store_updater{user_keys_B.K_1_base, user_keys_B.k_vb, enote_store_B};
-    ASSERT_NO_THROW(refresh_enote_store_ledger(refresh_config,
+    ChunkConsumerMockSp chunk_consumer{user_keys_B.K_1_base, user_keys_B.k_vb, enote_store_B};
+    ASSERT_NO_THROW(refresh_enote_store(refresh_config,
         test_scanning_context_unconfirmed_B,
         test_scanning_context_ledger_B,
-        enote_store_updater));
+        chunk_consumer));
 
     // d. check users' balances
     refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
@@ -2203,8 +2204,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_1)
     /// setup
 
     // 1. config
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -2405,8 +2406,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_2)
     /// setup
 
     // 1. config
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -2637,8 +2638,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_3)
     /// setup
 
     // 1. config
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -3130,8 +3131,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_4)
     /// setup
 
     // 1. config
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -3325,8 +3326,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_5)
     /// setup
 
     // 1. config
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -3529,8 +3530,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_6)
     /// setup
 
     // 1. config
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -3970,8 +3971,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_7)
     /// setup
 
     // 1. config
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -4429,8 +4430,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_8)
     /// setup
 
     // 1. config
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -4825,8 +4826,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_9)
     /// setup
 
     // 1. config
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -5234,7 +5235,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_9)
 //-------------------------------------------------------------------------------------------------------------------
 static void legacy_view_scan_recovery_cycle(const legacy_mock_keys &legacy_keys,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
-    const RefreshLedgerEnoteStoreConfig &refresh_config,
+    const scanning::ScanMachineConfig &refresh_config,
     const MockLedgerContext &ledger_context,
     const std::vector<rct::key> &legacy_onetime_addresses_expected,
     const std::vector<crypto::key_image> &legacy_key_images_expected,
@@ -5379,7 +5380,7 @@ static void legacy_view_scan_recovery_cycle(const legacy_mock_keys &legacy_keys,
 static void legacy_sp_transition_test_recovery_assertions(const legacy_mock_keys &legacy_keys,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const jamtis_mock_keys &sp_keys,
-    const RefreshLedgerEnoteStoreConfig &refresh_config,
+    const scanning::ScanMachineConfig &refresh_config,
     const MockLedgerContext &ledger_context,
 
     const std::vector<rct::key> &view_scan_legacy_onetime_addresses_expected,
@@ -5510,8 +5511,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
     /// setup
 
     // 1. config
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 2,
             .max_partialscan_attempts = 0
         };
@@ -6598,8 +6599,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
     /// setup
 
     // 1. config
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 2,
             .max_partialscan_attempts = 0
         };
@@ -7622,8 +7623,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_3)
     /// setup
 
     // 1. config
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
             .max_partialscan_attempts = 0
         };
@@ -8155,8 +8156,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_4)
     /// setup
 
     // 1. config
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 2,
             .max_partialscan_attempts = 0
         };
@@ -8774,8 +8775,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_5)
     /// setup
 
     // 1. config
-    const RefreshLedgerEnoteStoreConfig refresh_config{
-            .reorg_avoidance_depth = 1,
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
             .max_chunk_size = 2,
             .max_partialscan_attempts = 0
         };
