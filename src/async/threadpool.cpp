@@ -594,17 +594,21 @@ join_token_t ThreadPool::get_join_token(join_signal_t &join_signal_inout)
 
     return std::make_shared<ScopedNotification>(
             [
-                l_waiter_index = threadpool_worker_id(),
                 this,
-                l_join_signal = join_signal_inout
+                l_waiter_index        = threadpool_worker_id(),
+                l_threadpool_id       = m_threadpool_id,
+                l_threadpool_owner_id = m_threadpool_owner_id,
+                l_join_signal         = join_signal_inout
             ]() mutable
             {
-                m_waiter_manager.notify_conditional_waiter(l_waiter_index,
-                        [ll_join_signal = std::move(l_join_signal)]() mutable
-                        {
-                            if (ll_join_signal) ll_join_signal->store(true, std::memory_order_relaxed);
-                        }
-                    );
+                // set the signal early in case the invariants were violated
+                if (l_join_signal) { try { l_join_signal->store(true, std::memory_order_relaxed); } catch (...) {} }
+
+                // check thread id invariants (to avoid accessing a dangling 'this' pointer)
+                if (!test_threadpool_member_invariants(l_threadpool_id, l_threadpool_owner_id)) return;
+
+                // notify any waiter
+                m_waiter_manager.notify_conditional_waiter(l_waiter_index, [](){});
             }
         );
 }
@@ -686,7 +690,6 @@ void ThreadPool::work_while_waiting(const std::chrono::nanoseconds &duration, co
 void ThreadPool::work_while_waiting(const std::function<bool()> &wait_condition_func,
     const unsigned char max_task_priority)
 {
-    //todo: use shared_ptr<atomic<bool>> for the signaling channel so it can be copied into a std::function
     assert(test_threadpool_member_invariants(m_threadpool_id, m_threadpool_owner_id));
     const std::uint16_t worker_id{threadpool_worker_id()};
 
@@ -761,8 +764,10 @@ fanout_token_t ThreadPool::launch_temporary_worker()
     return std::make_unique<ScopedNotification>(
             [
                 this,
-                l_join_signal  = std::move(join_signal),
-                l_worker_index = std::move(worker_index_channel)
+                l_threadpool_id       = m_threadpool_id,
+                l_threadpool_owner_id = m_threadpool_owner_id,
+                l_join_signal         = std::move(join_signal),
+                l_worker_index        = std::move(worker_index_channel)
             ]() mutable
             {
                 // leave early if we got here before the worker id became available
@@ -772,13 +777,14 @@ fanout_token_t ThreadPool::launch_temporary_worker()
                     };
                 if (worker_id == 0) return;
 
+                // set the signal early in case the invariants were violated
+                if (l_join_signal) { try { l_join_signal->store(true, std::memory_order_relaxed); } catch (...) {} }
+
+                // check thread id invariants (to avoid accessing a dangling 'this' pointer)
+                if (!test_threadpool_member_invariants(l_threadpool_id, l_threadpool_owner_id)) return;
+
                 // notify the waiting fanout worker
-                m_waiter_manager.notify_conditional_waiter(worker_id,
-                        [ll_join_signal = std::move(l_join_signal)]() mutable
-                        {
-                            if (ll_join_signal) ll_join_signal->store(true, std::memory_order_relaxed);
-                        }
-                    );
+                m_waiter_manager.notify_conditional_waiter(worker_id, [](){});
             }
         );
 }
