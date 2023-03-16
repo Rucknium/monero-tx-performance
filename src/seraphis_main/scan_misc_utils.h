@@ -79,13 +79,10 @@ void check_chunk_data_semantics_v1(const ChunkData &chunk_data,
 /**
 * brief: check_ledger_chunk_semantics_v1 - check semantics of an on-chain chunk
 *   - throws on failure
-* param: onchain_chunk -
+* param: ledger_chunk -
 * param: expected_prefix_index -
 */
-void check_ledger_chunk_semantics_v1(const ChunkContext &chunk_context,
-    const ChunkData &chunk_data,
-    const std::uint64_t expected_prefix_index);
-void check_ledger_chunk_semantics_v1(const LedgerChunk &onchain_chunk, const std::uint64_t expected_prefix_index);
+void check_ledger_chunk_semantics_v1(const LedgerChunk &ledger_chunk, const std::uint64_t expected_prefix_index);
 /**
 * brief: initialize_scan_machine_metadata - initialize a scan machine with a specified configuration
 * param: scan_config -

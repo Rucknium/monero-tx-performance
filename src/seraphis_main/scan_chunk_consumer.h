@@ -33,6 +33,7 @@
 //local headers
 #include "contextual_enote_record_types.h"
 #include "ringct/rctTypes.h"
+#include "scan_ledger_chunk.h"
 
 //third party headers
 
@@ -78,7 +79,7 @@ public:
 
     /// consume a chunk of basic enote records and save the results
     virtual void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status, const ChunkData &data) = 0;
-    virtual void consume_onchain_chunk(const ChunkData &data,
+    virtual void consume_onchain_chunk(const LedgerChunk &chunk,
         const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
         const std::vector<rct::key> &new_block_ids) = 0;

@@ -234,20 +234,20 @@ static void align_block_ids(const ChunkConsumer &chunk_consumer,
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static ScanMachineStatus handle_nonempty_chunk(const std::uint64_t first_contiguity_index,
-    const ChunkContext &chunk_context,
-    const ChunkData &chunk_data,
+    const LedgerChunk &ledger_chunk,
     ChunkConsumer &chunk_consumer_inout,
     ContiguityMarker &contiguity_marker_inout)
 {
     // note: we don't check if the scanning context is aborted here because the process could have been aborted after
     //   the chunk was acquired
+    const ChunkContext &chunk_context{ledger_chunk.get_context()};
 
     // 1. verify that this is a non-empty chunk
-    CHECK_AND_ASSERT_THROW_MES(chunk_context.block_ids.size() > 0,
+    CHECK_AND_ASSERT_THROW_MES(!chunk_is_empty(ledger_chunk),
         "seraphis scan state machine (handle nonempty chunk): chunk is empty unexpectedly.");
 
     // 2. validate chunk semantics (this should check all array bounds to prevent out-of-range accesses below)
-    check_ledger_chunk_semantics_v1(chunk_context, chunk_data, contiguity_marker_inout.block_index);
+    check_ledger_chunk_semantics_v1(ledger_chunk, contiguity_marker_inout.block_index);
 
     // 3. check if this chunk is contiguous with the contiguity marker
     // - if not contiguous, then there must have been a reorg, so we need to rescan
@@ -281,7 +281,7 @@ static ScanMachineStatus handle_nonempty_chunk(const std::uint64_t first_contigu
     //   to the top of this chunk
     if (scanned_block_ids_cropped.size() > 0)
     {
-        chunk_consumer_inout.consume_onchain_chunk(chunk_data,
+        chunk_consumer_inout.consume_onchain_chunk(ledger_chunk,
             alignment_marker.block_index + 1,
             alignment_marker.block_id ? *(alignment_marker.block_id) : rct::zero(),
             scanned_block_ids_cropped);
@@ -303,8 +303,8 @@ static ScanMachineStatus handle_empty_chunk(const std::uint64_t first_contiguity
     ContiguityMarker &contiguity_marker_inout)
 {
     // 1. verify that the last chunk obtained is an empty chunk representing the top of the current block chain
-    CHECK_AND_ASSERT_THROW_MES(new_chunk_context.block_ids.size() == 0,
-        "seraphis scan state machine (handle empty chunk): final chunk does not have zero block ids as expected.");
+    CHECK_AND_ASSERT_THROW_MES(chunk_is_empty(new_chunk_context),
+        "seraphis scan state machine (handle empty chunk): final chunk is not empty as expected.");
 
     // 2. check if the scan process is aborted
     // - when a scan process is aborted, the empty chunk returned may not represent the end of the chain, so we don't
@@ -331,7 +331,8 @@ static ScanMachineStatus handle_empty_chunk(const std::uint64_t first_contiguity
     // 4. final update for our chunk consumer
     // - we need to update with the termination chunk in case a reorg popped blocks, so the chunk consumer can roll back
     //   its state
-    chunk_consumer_inout.consume_onchain_chunk({},
+    const LedgerChunkEmpty empty_chunk{new_chunk_context};
+    chunk_consumer_inout.consume_onchain_chunk(empty_chunk,
         contiguity_marker_inout.block_index + 1,
         contiguity_marker_inout.block_id ? *(contiguity_marker_inout.block_id) : rct::zero(),
         {});
@@ -371,8 +372,7 @@ static ScanMachineStatus do_scan_pass(const std::uint64_t first_contiguity_index
     else
     {
         return handle_nonempty_chunk(first_contiguity_index,
-            new_chunk->get_context(),
-            new_chunk->get_data(),
+            *new_chunk,
             chunk_consumer_inout,
             contiguity_marker_inout);
     }

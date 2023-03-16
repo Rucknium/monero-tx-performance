@@ -65,7 +65,11 @@ std::unique_ptr<scanning::LedgerChunk> EnoteFindingContextLedgerMockLegacy::get_
         chunk_context,
         chunk_data);
 
-    return std::make_unique<scanning::LedgerChunkStandard>(std::move(chunk_context), std::move(chunk_data));
+    return std::make_unique<scanning::LedgerChunkStandard>(
+            std::move(chunk_context),
+            std::vector<scanning::ChunkData>{std::move(chunk_data)},
+            std::vector<rct::key>{rct::zero()}
+        );
 }
 //-------------------------------------------------------------------------------------------------------------------
 std::unique_ptr<scanning::LedgerChunk> EnoteFindingContextLedgerMockSp::get_onchain_chunk(
@@ -81,7 +85,11 @@ std::unique_ptr<scanning::LedgerChunk> EnoteFindingContextLedgerMockSp::get_onch
         chunk_context,
         chunk_data);
 
-    return std::make_unique<scanning::LedgerChunkStandard>(std::move(chunk_context), std::move(chunk_data));
+    return std::make_unique<scanning::LedgerChunkStandard>(
+            std::move(chunk_context),
+            std::vector<scanning::ChunkData>{std::move(chunk_data)},
+            std::vector<rct::key>{rct::zero()}
+        );
 }
 //-------------------------------------------------------------------------------------------------------------------
 void EnoteFindingContextUnconfirmedMockSp::get_nonledger_chunk(scanning::ChunkData &chunk_out) const

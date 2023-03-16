@@ -125,12 +125,16 @@ void ChunkConsumerMockLegacyIntermediate::consume_nonledger_chunk(const SpEnoteO
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-void ChunkConsumerMockLegacyIntermediate::consume_onchain_chunk(const scanning::ChunkData &chunk_data,
+void ChunkConsumerMockLegacyIntermediate::consume_onchain_chunk(const scanning::LedgerChunk &chunk,
     const std::uint64_t first_new_block,
     const rct::key &alignment_block_id,
     const std::vector<rct::key> &new_block_ids)
 {
-    // 1. process the chunk
+    // 1. extract the data
+    const scanning::ChunkData *chunk_data{chunk.try_get_data(rct::zero())};
+    CHECK_AND_ASSERT_THROW_MES(chunk_data, "chunk consumer mock legacy intermediate: no chunk data.");
+
+    // 2. process the chunk
     std::unordered_map<rct::key, LegacyContextualIntermediateEnoteRecordV1> found_enote_records;
     std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> found_spent_key_images;
 
@@ -140,13 +144,13 @@ void ChunkConsumerMockLegacyIntermediate::consume_onchain_chunk(const scanning::
         {
             return this->m_enote_store.has_enote_with_key_image(key_image);
         },
-        chunk_data.basic_records_per_tx,
-        chunk_data.contextual_key_images,
+        chunk_data->basic_records_per_tx,
+        chunk_data->contextual_key_images,
         hw::get_device("default"),
         found_enote_records,
         found_spent_key_images);
 
-    // 2. save the results
+    // 3. save the results
     std::list<EnoteStoreEvent> events;
     if (m_legacy_scan_mode == LegacyScanMode::KEY_IMAGES_ONLY)
         m_enote_store.update_with_intermediate_legacy_found_spent_key_images(found_spent_key_images, events);
@@ -216,12 +220,16 @@ void ChunkConsumerMockLegacy::consume_nonledger_chunk(const SpEnoteOriginStatus 
         events);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void ChunkConsumerMockLegacy::consume_onchain_chunk(const scanning::ChunkData &chunk_data,
+void ChunkConsumerMockLegacy::consume_onchain_chunk(const scanning::LedgerChunk &chunk,
     const std::uint64_t first_new_block,
     const rct::key &alignment_block_id,
     const std::vector<rct::key> &new_block_ids)
 {
-    // 1. process the chunk
+    // 1. extract the data
+    const scanning::ChunkData *chunk_data{chunk.try_get_data(rct::zero())};
+    CHECK_AND_ASSERT_THROW_MES(chunk_data, "chunk consumer mock legacy: no chunk data.");
+
+    // 2. process the chunk
     std::unordered_map<rct::key, LegacyContextualEnoteRecordV1> found_enote_records;
     std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> found_spent_key_images;
 
@@ -232,13 +240,13 @@ void ChunkConsumerMockLegacy::consume_onchain_chunk(const scanning::ChunkData &c
         {
             return this->m_enote_store.has_enote_with_key_image(key_image);
         },
-        chunk_data.basic_records_per_tx,
-        chunk_data.contextual_key_images,
+        chunk_data->basic_records_per_tx,
+        chunk_data->contextual_key_images,
         hw::get_device("default"),
         found_enote_records,
         found_spent_key_images);
 
-    // 2. save the results
+    // 3. save the results
     std::list<EnoteStoreEvent> events;
     m_enote_store.update_with_legacy_records_from_ledger(first_new_block,
         alignment_block_id,
@@ -301,12 +309,16 @@ void ChunkConsumerMockSpIntermediate::consume_nonledger_chunk(const SpEnoteOrigi
     m_enote_store.update_with_sp_records_from_nonledger(nonledger_origin_status, found_enote_records, events);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void ChunkConsumerMockSpIntermediate::consume_onchain_chunk(const scanning::ChunkData &chunk_data,
+void ChunkConsumerMockSpIntermediate::consume_onchain_chunk(const scanning::LedgerChunk &chunk,
     const std::uint64_t first_new_block,
     const rct::key &alignment_block_id,
     const std::vector<rct::key> &new_block_ids)
 {
-    // 1. process the chunk
+    // 1. extract the data
+    const scanning::ChunkData *chunk_data{chunk.try_get_data(rct::zero())};
+    CHECK_AND_ASSERT_THROW_MES(chunk_data, "chunk consumer mock sp intermediate: no chunk data.");
+
+    // 2. process the chunk
     std::unordered_map<rct::key, SpContextualIntermediateEnoteRecordV1> found_enote_records;
 
     scanning::process_chunk_intermediate_sp(m_jamtis_spend_pubkey,
@@ -314,10 +326,10 @@ void ChunkConsumerMockSpIntermediate::consume_onchain_chunk(const scanning::Chun
         m_xk_find_received,
         m_s_generate_address,
         *m_cipher_context,
-        chunk_data.basic_records_per_tx,
+        chunk_data->basic_records_per_tx,
         found_enote_records);
 
-    // 2. save the results
+    // 3. save the results
     std::list<SpPaymentValidatorStoreEvent> events;
     m_enote_store.update_with_sp_records_from_ledger(first_new_block,
         alignment_block_id,
@@ -391,12 +403,16 @@ void ChunkConsumerMockSp::consume_nonledger_chunk(const SpEnoteOriginStatus nonl
         events);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void ChunkConsumerMockSp::consume_onchain_chunk(const scanning::ChunkData &chunk_data,
+void ChunkConsumerMockSp::consume_onchain_chunk(const scanning::LedgerChunk &chunk,
     const std::uint64_t first_new_block,
     const rct::key &alignment_block_id,
     const std::vector<rct::key> &new_block_ids)
 {
-    // 1. process the chunk
+    // 1. extract the data
+    const scanning::ChunkData *chunk_data{chunk.try_get_data(rct::zero())};
+    CHECK_AND_ASSERT_THROW_MES(chunk_data, "chunk consumer mock sp: no chunk data.");
+
+    // 2. process the chunk
     std::unordered_map<crypto::key_image, SpContextualEnoteRecordV1> found_enote_records;
     std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> found_spent_key_images;
     std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> legacy_key_images_in_sp_selfsends;
@@ -411,8 +427,8 @@ void ChunkConsumerMockSp::consume_onchain_chunk(const scanning::ChunkData &chunk
         {
             return this->m_enote_store.has_enote_with_key_image(key_image);
         },
-        chunk_data.basic_records_per_tx,
-        chunk_data.contextual_key_images,
+        chunk_data->basic_records_per_tx,
+        chunk_data->contextual_key_images,
         found_enote_records,
         found_spent_key_images,
         legacy_key_images_in_sp_selfsends);

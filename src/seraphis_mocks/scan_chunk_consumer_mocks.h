@@ -89,7 +89,7 @@ public:
     /// consume a chunk of basic enote records and save the results
     void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
         const scanning::ChunkData &chunk_data) override;
-    void consume_onchain_chunk(const scanning::ChunkData &chunk_data,
+    void consume_onchain_chunk(const scanning::LedgerChunk &chunk,
         const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
         const std::vector<rct::key> &new_block_ids) override;
@@ -134,7 +134,7 @@ public:
     /// consume a chunk of basic enote records and save the results
     void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
         const scanning::ChunkData &chunk_data) override;
-    void consume_onchain_chunk(const scanning::ChunkData &chunk_data,
+    void consume_onchain_chunk(const scanning::LedgerChunk &chunk,
         const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
         const std::vector<rct::key> &new_block_ids) override;
@@ -174,7 +174,7 @@ public:
     /// consume a chunk of basic enote records and save the results
     void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
         const scanning::ChunkData &chunk_data) override;
-    void consume_onchain_chunk(const scanning::ChunkData &chunk_data,
+    void consume_onchain_chunk(const scanning::LedgerChunk &chunk,
         const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
         const std::vector<rct::key> &new_block_ids) override;
@@ -215,7 +215,7 @@ public:
     /// consume a chunk of basic enote records and save the results
     void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
         const scanning::ChunkData &chunk_data) override;
-    void consume_onchain_chunk(const scanning::ChunkData &chunk_data,
+    void consume_onchain_chunk(const scanning::LedgerChunk &chunk,
         const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
         const std::vector<rct::key> &new_block_ids) override;
