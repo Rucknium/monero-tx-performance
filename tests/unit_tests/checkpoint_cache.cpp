@@ -64,8 +64,8 @@ public:
             m_num_unprunable{num_unprunable},
             m_density_factor{density_factor}
     {
-        CHECK_AND_ASSERT_THROW_MES(window_size >= 3,
-            "checkpoint cache (constructor): window_size must be >= 3.");
+        CHECK_AND_ASSERT_THROW_MES(window_size >= 2,
+            "checkpoint cache (constructor): window_size must be >= 2.");
         CHECK_AND_ASSERT_THROW_MES(m_max_separation < math::uint_pow(2, 32),
             "checkpoint cache (constructor): max_separation must be < 2^32.");  //heuristic to avoid overflow issues
         CHECK_AND_ASSERT_THROW_MES(m_density_factor >= 1,
@@ -73,10 +73,18 @@ public:
     }
 
 //member functions
+    /// get cached minimum index
+    std::uint64_t min_checkpoint_index() const { return m_min_checkpoint_index; }
     /// get the number of stored checkpoints
     std::uint64_t num_stored_checkpoints() const { return m_checkpoints.size(); }
+    /// get the lowest stored index or -1 if cache is empty
+    std::uint64_t bottom_block_index() const;
+    /// get the highest stored index or -1 if cache is empty
+    std::uint64_t top_block_index() const;
     /// get the block index of the nearest checkpoint <= the test index, or -1 on failure
     std::uint64_t get_nearest_block_index_clampdown(const std::uint64_t test_index) const;
+    /// get the block index of the nearest checkpoint > the test index, or -1 on failure
+    std::uint64_t get_next_block_index(const std::uint64_t test_index) const;
     /// try to get the block id with the given index (fails if index is unknown)
     bool try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const;
 
@@ -106,6 +114,22 @@ private:
 };
 
 //-------------------------------------------------------------------------------------------------------------------
+std::uint64_t CheckpointCache::bottom_block_index() const
+{
+    if (num_stored_checkpoints() == 0)
+        return -1;
+
+    return m_checkpoints.cbegin()->first;
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t CheckpointCache::top_block_index() const
+{
+    if (num_stored_checkpoints() == 0)
+        return -1;
+
+    return m_checkpoints.crbegin()->first;
+}
+//-------------------------------------------------------------------------------------------------------------------
 std::uint64_t CheckpointCache::get_nearest_block_index_clampdown(const std::uint64_t test_index) const
 {
     // get the block index of the closest checkpoint <= the test index
@@ -118,15 +142,28 @@ std::uint64_t CheckpointCache::get_nearest_block_index_clampdown(const std::uint
     auto test_checkpoint = m_checkpoints.upper_bound(test_index);
 
     // 3. edge condition: if test index >= highest checkpoint, return the highest checkpoint
-    if (test_checkpoint == m_checkpoints.end())
-        return m_checkpoints.rbegin()->first;
+    if (test_checkpoint == m_checkpoints.cend())
+        return m_checkpoints.crbegin()->first;
 
     // 4. edge condition: if test index < lowest checkpoint, return failure
-    if (test_checkpoint == m_checkpoints.begin())
+    if (test_checkpoint == m_checkpoints.cbegin())
         return -1;
 
     // 5. normal case: there is a checkpoint <= the test index
     return (--test_checkpoint)->first;
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t CheckpointCache::get_next_block_index(const std::uint64_t test_index) const
+{
+    // 1. get closest checkpoint > test index
+    auto test_checkpoint = m_checkpoints.upper_bound(test_index);
+
+    // 2. edge condition: no checkpoints above test index
+    if (test_checkpoint == m_checkpoints.cend())
+        return -1;
+
+    // 3. return next block index
+    return test_checkpoint->first;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool CheckpointCache::try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const
@@ -198,8 +235,8 @@ bool CheckpointCache::window_is_prunable(const std::deque<std::uint64_t> &window
     const std::uint64_t max_candidate_index) const
 {
     // 1. sanity checks
-    CHECK_AND_ASSERT_THROW_MES(window.size() >= 3,
-        "checkpoint cache (should prune window): window size < 3.");
+    CHECK_AND_ASSERT_THROW_MES(window.size() >= 2,
+        "checkpoint cache (should prune window): window size < 2.");
     CHECK_AND_ASSERT_THROW_MES(window.front() >= window.back(),
         "checkpoint cache (should prune window): window range is invalid.");
 
@@ -286,16 +323,23 @@ void CheckpointCache::prune_checkpoints()
         CHECK_AND_ASSERT_THROW_MES(window_prune_element != window.end(),
             "checkpoint cache (pruning checkpoints): could not get prune candidate.");
 
-        // g. if we are going to prune our iterator element, increment the iterator so it doesn't get invalidated
-        // - the post-incremented iterator will never be pruned since the checkpoints are stored in a map (they are unique)
+        // g. remove the window element from our checkpoints (if it exists)
+        // - reverse iterators store the next element's iterator, so we need to do a little dance to avoid iterator
+        //   invalidation
         if (checkpoint_it != m_checkpoints.rend() &&
-            checkpoint_it->first == *window_prune_element)
+            checkpoint_it.base()->first == *window_prune_element)
         {
             ++checkpoint_it;
+            m_checkpoints.erase(*window_prune_element);
+            --checkpoint_it;
         }
-
-        // h. remove the window element from our checkpoints (if it exists)
-        m_checkpoints.erase(*window_prune_element);
+        else if (checkpoint_it == m_checkpoints.rend())
+        {
+            m_checkpoints.erase(*window_prune_element);
+            checkpoint_it = std::reverse_iterator<decltype(m_checkpoints)::iterator>(m_checkpoints.begin());
+        }
+        else
+            m_checkpoints.erase(*window_prune_element);
 
         // i. remove the pruned element from our window
         window.erase(window_prune_element);
@@ -312,6 +356,58 @@ static std::vector<rct::key> create_dummy_blocks(const std::uint64_t num_blocks)
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
+
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+static void check_checkpoint_cache_state(const sp::CheckpointCache &cache,
+    const std::uint64_t expected_top_index,
+    const std::uint64_t expected_num_unpruned)
+{
+    ASSERT_NE(cache.bottom_block_index(), -1);
+    ASSERT_EQ(cache.top_block_index(), expected_top_index);
+    for (std::uint64_t i{cache.top_block_index()};
+        i > cache.top_block_index() - (std::min(expected_num_unpruned + 1, cache.top_block_index() + 1) - 1);
+        --i)
+    {
+        ASSERT_EQ(cache.get_nearest_block_index_clampdown(i), i);
+    }
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+
+//-------------------------------------------------------------------------------------------------------------------
+TEST(seraphis_cache, unprunable_only)
+{
+    // prepare cache
+    const std::uint64_t min_checkpoint_index{0};
+    const std::uint64_t window_size{2};
+    const std::uint64_t max_separation{1};
+    const std::uint64_t num_unprunable{20};
+    const std::uint64_t density_factor{1};
+
+    sp::CheckpointCache cache{min_checkpoint_index, window_size, max_separation, num_unprunable, density_factor};
+    ASSERT_TRUE(cache.min_checkpoint_index() == min_checkpoint_index);
+
+    // add some blocks
+    ASSERT_NO_THROW(cache.insert_new_block_ids(0, create_dummy_blocks(num_unprunable)));
+    check_checkpoint_cache_state(cache, num_unprunable - 1, num_unprunable);
+
+    // add some more blocks to the end
+    // - this is past the prunable section, but using max separation 1
+    ASSERT_NO_THROW(cache.insert_new_block_ids(cache.top_block_index() + 1, create_dummy_blocks(num_unprunable)));
+    check_checkpoint_cache_state(cache, 2*num_unprunable - 1, 2*num_unprunable);
+
+    // replace all the blocks
+    ASSERT_NO_THROW(cache.insert_new_block_ids(0, create_dummy_blocks(num_unprunable)));
+    check_checkpoint_cache_state(cache, num_unprunable - 1, num_unprunable);
+
+    // replace half the blocks
+    ASSERT_NO_THROW(cache.insert_new_block_ids(num_unprunable/2, create_dummy_blocks(num_unprunable)));
+    check_checkpoint_cache_state(cache, num_unprunable - 1 + num_unprunable/2, num_unprunable + num_unprunable/2);
+}
+//-------------------------------------------------------------------------------------------------------------------
+
+
 
 // TODO: better unit tests
 //-------------------------------------------------------------------------------------------------------------------
@@ -352,7 +448,7 @@ TEST(seraphis_cache, window_bigger_than_rest)
     // window > last_checkpoint - num_unprunable
     sp::CheckpointCache cache{min_checkpoint_index, window_size, max_separation, num_unprunable, density_factor};
     cache.insert_new_block_ids(0, create_dummy_blocks(20));
-    ASSERT_EQ(cache.num_stored_checkpoints(), 19);
+    ASSERT_EQ(cache.num_stored_checkpoints(), 14);
 }
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_cache, window_bigger_than_dummy)
@@ -365,7 +461,7 @@ TEST(seraphis_cache, window_bigger_than_dummy)
 
     sp::CheckpointCache cache{min_checkpoint_index, window_size, max_separation, num_unprunable, density_factor};
     cache.insert_new_block_ids(0, create_dummy_blocks(10));
-    ASSERT_EQ(cache.num_stored_checkpoints(), 10);
+    ASSERT_EQ(cache.num_stored_checkpoints(), 9);
 }
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_cache, big_cache_demo)
@@ -378,6 +474,6 @@ TEST(seraphis_cache, big_cache_demo)
 
     sp::CheckpointCache cache{min_checkpoint_index, window_size, max_separation, num_unprunable, density_factor};
     cache.insert_new_block_ids(0, create_dummy_blocks(1000000));
-    ASSERT_EQ(cache.num_stored_checkpoints(), 152);
+    ASSERT_EQ(cache.num_stored_checkpoints(), 220);
 }
 //-------------------------------------------------------------------------------------------------------------------
