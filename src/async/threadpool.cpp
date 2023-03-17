@@ -746,9 +746,10 @@ fanout_token_t ThreadPool::launch_temporary_worker()
     join_signal_t join_signal{this->make_join_signal()};
 
     // 2. worker index channel for targeted notifications
-    std::shared_ptr<std::atomic<std::uint64_t>> worker_index_channel = std::make_shared<std::atomic<std::uint64_t>>(0);
+    std::shared_ptr<std::atomic<std::uint64_t>> worker_index_channel{std::make_shared<std::atomic<std::uint64_t>>(0)};
 
-    // 3. fanout condition (when condition is satisfied, return one fanout worker to the fanout pool)
+    // 3. fanout condition
+    // - when condition is satisfied, return one fanout worker to the fanout pool
     m_fanout_condition_queue.force_push(
             FanoutCondition{
                     .worker_index = worker_index_channel,
@@ -760,20 +761,21 @@ fanout_token_t ThreadPool::launch_temporary_worker()
                 }
         );
 
-    // 4. fanout token (when token is destroyed, the fanout condition will be triggered)
+    // 4. fanout token
+    // - when token is destroyed, the fanout condition will be triggered
     return std::make_unique<ScopedNotification>(
             [
                 this,
-                l_threadpool_id       = m_threadpool_id,
-                l_threadpool_owner_id = m_threadpool_owner_id,
-                l_join_signal         = std::move(join_signal),
-                l_worker_index        = std::move(worker_index_channel)
+                l_threadpool_id        = m_threadpool_id,
+                l_threadpool_owner_id  = m_threadpool_owner_id,
+                l_join_signal          = std::move(join_signal),
+                l_worker_index_channel = std::move(worker_index_channel)
             ]() mutable
             {
                 // leave early if we got here before the worker id became available
-                if (!l_worker_index) return;
+                if (!l_worker_index_channel) return;
                 const std::uint64_t worker_id{
-                        l_worker_index->exchange(static_cast<std::uint64_t>(-1), std::memory_order_acq_rel)
+                        l_worker_index_channel->exchange(static_cast<std::uint64_t>(-1), std::memory_order_acq_rel)
                     };
                 if (worker_id == 0) return;
 
