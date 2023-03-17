@@ -45,7 +45,7 @@ namespace sp
 // - the pruning strategy is as follows:
 //   - [refresh index, ..., (top index - num unprunable)]: exponentially falling density from the top of the range to
 //     the bottom of the range, with minimum density = 1/max_separation; pruning is achieved by sliding a window down
-//     the range and removing the middle window element if the index range covered by the window is too small; simulated
+//     the range and removing the lowest window element if the index range covered by the window is too small; simulated
 //     elements are used for the edge conditions where the window would otherwise be hanging over 'empty space'
 //   - ((top index - num unprunable), top index]: not pruned
 ///
@@ -172,11 +172,11 @@ void CheckpointCache::insert_new_block_ids(const std::uint64_t first_block_index
 std::deque<std::uint64_t>::const_iterator CheckpointCache::get_window_prune_candidate(
     const std::deque<std::uint64_t> &window) const
 {
-    // return the middle element
+    // return the lowest element
     CHECK_AND_ASSERT_THROW_MES(window.size() > 0,
         "checkpoint cache (get window prune candidate): window size is zero.");
     auto it = window.begin();
-    std::advance(it, window.size() / 2);
+    std::advance(it, window.size() - 1);
     return it;
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -250,25 +250,21 @@ void CheckpointCache::prune_checkpoints()
         m_window_size == 0)
         return;
 
-    // 2. compute offset for shifting all indices
-    // - we offset by the max index range of elements that will be simulated below our lowest checkpoint
-    const std::uint64_t simulation_offset{m_max_separation * (m_window_size - 1)};
-
-    // 3. highest checkpoint index
+    // 2. highest checkpoint index
     const std::uint64_t highest_checkpoint_index{m_checkpoints.rbegin()->first};
 
-    // 4. initialize window with simulated elements above our highest checkpoint
+    // 3. initialize window with simulated elements above our highest checkpoint
     // - window is sorted from highest to lowest
     std::deque<std::uint64_t> window;
 
     for (std::uint64_t window_index{0}; window_index < m_window_size; ++window_index)
-        window.push_front(highest_checkpoint_index + simulation_offset + window_index);
+        window.push_front(highest_checkpoint_index + window_index);
 
-    // 5. slide the window from our highest checkpoint to our lowest checkpoint, pruning elements as we go
+    // 4. slide the window from our highest checkpoint to our lowest checkpoint, pruning elements as we go
     for (auto checkpoint_it = m_checkpoints.rbegin(); checkpoint_it != m_checkpoints.rend();)
     {
         // a. insert this checkpoint to our window (it is the lowest index in our window)
-        window.push_back(checkpoint_it->first + simulation_offset);
+        window.push_back(checkpoint_it->first);
 
         // b. early-increment the iterator so it is ready for whatever happens next
         ++checkpoint_it;
@@ -282,7 +278,7 @@ void CheckpointCache::prune_checkpoints()
             window.pop_front();
 
         // e. skip to next checkpoint if this window is not prunable
-        if (!this->window_is_prunable(window, highest_checkpoint_index + simulation_offset))
+        if (!this->window_is_prunable(window, highest_checkpoint_index))
             continue;
 
         // f. get window element to prune
@@ -290,53 +286,18 @@ void CheckpointCache::prune_checkpoints()
         CHECK_AND_ASSERT_THROW_MES(window_prune_element != window.end(),
             "checkpoint cache (pruning checkpoints): could not get prune candidate.");
 
-        // g. if for some reason the element to prune equals our iterator, increment it so it doesn't get invalidated
-        // - since the checkpoints are stored in a map, the new checkpoint can't equal our element to be pruned
+        // g. if we are going to prune our iterator element, increment the iterator so it doesn't get invalidated
+        // - the post-incremented iterator will never be pruned since the checkpoints are stored in a map (they are unique)
         if (checkpoint_it != m_checkpoints.rend() &&
-            checkpoint_it->first == *window_prune_element - simulation_offset)
+            checkpoint_it->first == *window_prune_element)
         {
             ++checkpoint_it;
         }
 
         // h. remove the window element from our checkpoints (if it exists)
-        m_checkpoints.erase(*window_prune_element - simulation_offset);
+        m_checkpoints.erase(*window_prune_element);
 
         // i. remove the pruned element from our window
-        window.erase(window_prune_element);
-    }
-
-    // 6. slide the window into simulated elements below our lowest checkpoint
-    for (std::uint64_t low_end_sim_number{0}; low_end_sim_number < m_window_size; ++low_end_sim_number)
-    {
-        // a. sanity checks
-        if (window.size() == 0 ||
-            window.back() < m_max_separation)
-            break;
-
-        // b. insert a simulated element below the current lowest element
-        window.push_back(window.back() - m_max_separation);
-
-        // c. skip to next if our window is too small
-        if (window.size() < m_window_size)
-            continue;
-
-        // d. trim the highest indices in our window
-        while (window.size() > m_window_size)
-            window.pop_front();
-
-        // e. skip to next if this window is not prunable
-        if (!this->window_is_prunable(window, highest_checkpoint_index + simulation_offset))
-            continue;
-
-        // f. get window element to prune
-        const auto window_prune_element{this->get_window_prune_candidate(window)};
-        CHECK_AND_ASSERT_THROW_MES(window_prune_element != window.end(),
-            "checkpoint cache (pruning checkpoints): could not get prune candidate.");
-
-        // g. remove the window element from our checkpoints (if it exists)
-        m_checkpoints.erase(*window_prune_element - simulation_offset);
-
-        // h. remove the pruned element from our window
         window.erase(window_prune_element);
     }
 }
