@@ -35,7 +35,6 @@
 //local headers
 #include "crypto/crypto.h"
 #include "seraphis_impl/enote_store_event_types.h"
-#include "seraphis_impl/enote_store.h"
 #include "seraphis_main/contextual_enote_record_types.h"
 
 //third party headers
