@@ -34,7 +34,7 @@
 #include "seraphis_crypto/math_utils.h"
 #include "seraphis_main/scan_chunk_consumer.h"
 #include "seraphis_main/scan_core_types.h"
-#include "seraphis_main/scan_ledger_chunk.h"
+#include "seraphis_main/scan_ledger_chunk_simple.h"
 #include "seraphis_main/scan_machine_types.h"
 #include "seraphis_main/scan_misc_utils.h"
 #include "seraphis_main/scanning_context.h"

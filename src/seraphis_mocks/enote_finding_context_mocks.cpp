@@ -33,7 +33,7 @@
 
 //local headers
 #include "seraphis_main/scan_core_types.h"
-#include "seraphis_main/scan_ledger_chunk.h"
+#include "seraphis_main/scan_ledger_chunk_simple.h"
 
 //third party headers
 

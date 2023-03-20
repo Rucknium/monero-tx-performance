@@ -55,6 +55,12 @@ namespace scanning
 {
 
 /**
+* brief: chunk_size - get number of blocks in chunk
+* param: chunk_context -
+* return: number of blocks in chunk
+*/
+std::size_t chunk_size(const ChunkContext &chunk_context);
+/**
 * brief: chunk_is_empty - check if a chunk is empty (has no records)
 * ...
 * return: true if the chunk is empty

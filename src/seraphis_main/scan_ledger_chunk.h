@@ -33,7 +33,6 @@
 //local headers
 #include "misc_log_ex.h"
 #include "seraphis_main/scan_core_types.h"
-#include "seraphis_main/scan_misc_utils.h"
 
 //third party headers
 
@@ -66,62 +65,6 @@ public:
     /// chunk data (includes owned enote candidates and key image candidates)
     virtual const ChunkData* try_get_data(const rct::key &subconsumer_id) const = 0;
     virtual const std::vector<rct::key>& subconsumer_ids() const = 0;
-};
-
-////
-// LedgerChunkEmpty
-// - empty chunks only
-///
-class LedgerChunkEmpty final : public LedgerChunk
-{
-public:
-    LedgerChunkEmpty(ChunkContext context) :
-        m_context{std::move(context)},
-        m_data{},
-        m_subconsumer_ids{rct::zero()}
-    {
-        CHECK_AND_ASSERT_THROW_MES(chunk_is_empty(context), "empty ledger chunk: chunk is not empty.");
-    }
-
-    const ChunkContext& get_context()              const override { return m_context;         }
-    const ChunkData* try_get_data(const rct::key&) const override { return &m_data;           }
-    const std::vector<rct::key>& subconsumer_ids() const override { return m_subconsumer_ids; }
-
-private:
-    ChunkContext m_context;
-    ChunkData m_data;
-    std::vector<rct::key> m_subconsumer_ids;
-};
-
-////
-// LedgerChunkStandard
-// - store data directly
-///
-class LedgerChunkStandard final : public LedgerChunk
-{
-public:
-    LedgerChunkStandard(ChunkContext context, std::vector<ChunkData> data, std::vector<rct::key> subconsumer_ids) :
-        m_context{std::move(context)},
-        m_data{std::move(data)},
-        m_subconsumer_ids{std::move(subconsumer_ids)}
-    {
-        CHECK_AND_ASSERT_THROW_MES(m_data.size() == m_subconsumer_ids.size(),
-            "standard ledger chunk: mismatch between data and subconsumer ids.");
-    }
-
-    const ChunkContext& get_context() const override { return m_context;         }
-    const ChunkData* try_get_data(const rct::key &subconsumer_id) const override
-    {
-        auto id_it = std::find(m_subconsumer_ids.begin(), m_subconsumer_ids.end(), subconsumer_id);
-        if (id_it == m_subconsumer_ids.end()) return nullptr;
-        return &(m_data[std::distance(m_subconsumer_ids.begin(), id_it)]);
-    }
-    const std::vector<rct::key>& subconsumer_ids() const override { return m_subconsumer_ids; }
-
-private:
-    ChunkContext m_context;
-    std::vector<ChunkData> m_data;
-    std::vector<rct::key> m_subconsumer_ids;
 };
 
 } //namespace scanning

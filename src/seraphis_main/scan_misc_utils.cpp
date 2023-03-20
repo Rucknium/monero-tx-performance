@@ -48,6 +48,11 @@ namespace sp
 namespace scanning
 {
 //-------------------------------------------------------------------------------------------------------------------
+std::size_t chunk_size(const ChunkContext &chunk_context)
+{
+    return chunk_context.block_ids.size();
+}
+//-------------------------------------------------------------------------------------------------------------------
 bool chunk_is_empty(const ChunkData &chunk_data)
 {
     return chunk_data.basic_records_per_tx.size() == 0 &&
@@ -56,7 +61,7 @@ bool chunk_is_empty(const ChunkData &chunk_data)
 //-------------------------------------------------------------------------------------------------------------------
 bool chunk_is_empty(const ChunkContext &chunk_context)
 {
-    return chunk_context.block_ids.size() == 0;
+    return chunk_size(chunk_context) == 0;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool chunk_is_empty(const LedgerChunk &chunk)

@@ -62,7 +62,7 @@ static void mul_int(const int x, int &i_inout)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(async, hello_world)
 {
-    async::ThreadPool pool{1, 0, 40, std::chrono::seconds{1}};
+    async::Threadpool pool{1, 0, 40, std::chrono::seconds{1}};
 
     pool.submit(async::make_simple_task(0,
             []() -> async::TaskVariant
@@ -75,7 +75,7 @@ TEST(async, hello_world)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(async, basic_join)
 {
-    async::ThreadPool pool{1, 0, 40, std::chrono::seconds{1}};
+    async::Threadpool pool{1, 0, 40, std::chrono::seconds{1}};
 
     // 1. make join signal
     auto join_signal = pool.make_join_signal();
@@ -110,7 +110,7 @@ TEST(async, basic_join)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(async, basic_fanout)
 {
-    async::ThreadPool pool{1, 0, 40, std::chrono::seconds{1}};
+    async::Threadpool pool{1, 0, 40, std::chrono::seconds{1}};
 
     // launch task in the middle of a fanout
     {
@@ -132,7 +132,7 @@ TEST(async, basic_fanout)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(async, basic_multithreaded)
 {
-    async::ThreadPool pool{1, 2, 40, std::chrono::seconds{1}};
+    async::Threadpool pool{1, 2, 40, std::chrono::seconds{1}};
 
     // 1. submit tasks
     pool.submit(async::make_simple_task(0,

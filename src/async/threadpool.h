@@ -71,7 +71,7 @@ struct FanoutCondition final
 };
 
 /// thread pool
-class ThreadPool final
+class Threadpool final
 {
     /// clean up pass on the sleepy queues
     void perform_sleepy_queue_maintenance();
@@ -112,15 +112,15 @@ public:
 
 //constructors
     /// default constructor: disabled
-    ThreadPool() = delete;
+    Threadpool() = delete;
     /// normal constructor: from config
-    ThreadPool(const unsigned char max_priority_level,
+    Threadpool(const unsigned char max_priority_level,
         const std::uint16_t num_managed_workers,
         const unsigned char num_submit_cycle_attempts,
         const std::chrono::nanoseconds max_wait_duration);
 
     /// disable copy/moves so references to this object can't be invalidated until this object's lifetime ends
-    ThreadPool& operator=(ThreadPool&&) = delete;
+    Threadpool& operator=(Threadpool&&) = delete;
 
 //destructor
     /// destroy the threadpool
@@ -129,7 +129,7 @@ public:
     /// 3) clears out any remaining tasks
     ///    - note that this ensures any ScopedNotifications attached to tasks will be executed before the pool dies,
     ///      which ensures references in those notifications
-    ~ThreadPool();
+    ~Threadpool();
 
 //member functions
     /// submit a task
@@ -195,7 +195,7 @@ private:
 
 
 /// default priorities
-enum class DefaultPriorityLevels : unsigned char
+enum DefaultPriorityLevels : unsigned char
 {
     MAX = 0,
     MEDIUM,
@@ -204,9 +204,9 @@ enum class DefaultPriorityLevels : unsigned char
 };
 
 /// default threadpool
-inline ThreadPool& get_default_threadpool()
+inline Threadpool& get_default_threadpool()
 {
-    static ThreadPool default_threadpool{
+    static Threadpool default_threadpool{
             static_cast<unsigned char>(DefaultPriorityLevels::MIN),
             static_cast<uint16_t>(std::max(2u, std::thread::hardware_concurrency()) - 1),
             20,

@@ -137,7 +137,7 @@ static TaskVariant execute_task(task_t &task) noexcept
 //-------------------------------------------------------------------------------------------------------------------
 // ThreadPool INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void ThreadPool::perform_sleepy_queue_maintenance()
+void Threadpool::perform_sleepy_queue_maintenance()
 {
     // don't do maintenance if there are no unclaimed sleepy tasks (this can allow dead sleepy tasks to linger longer,
     //   but at the benefit of not performing maintenance when it's not needed)
@@ -167,7 +167,7 @@ void ThreadPool::perform_sleepy_queue_maintenance()
 //-------------------------------------------------------------------------------------------------------------------
 // ThreadPool INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void ThreadPool::submit_simple_task(SimpleTask &&simple_task)
+void Threadpool::submit_simple_task(SimpleTask &&simple_task)
 {
     // spin through the simple task queues at our task's priority level
     // - start at the task queue one-after the previous start queue as a naive/simple way to spread tasks out evenly
@@ -197,7 +197,7 @@ void ThreadPool::submit_simple_task(SimpleTask &&simple_task)
 //-------------------------------------------------------------------------------------------------------------------
 // ThreadPool INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void ThreadPool::submit_sleepy_task(SleepyTask &&sleepy_task)
+void Threadpool::submit_sleepy_task(SleepyTask &&sleepy_task)
 {
     // set the start time of sleepy tasks with undefined start time
     set_current_time_if_undefined(sleepy_task.wake_time.start_time);
@@ -235,7 +235,7 @@ void ThreadPool::submit_sleepy_task(SleepyTask &&sleepy_task)
 //-------------------------------------------------------------------------------------------------------------------
 // ThreadPool INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-boost::optional<task_t> ThreadPool::try_get_simple_task_to_run(const unsigned char max_task_priority,
+boost::optional<task_t> Threadpool::try_get_simple_task_to_run(const unsigned char max_task_priority,
     const std::uint16_t worker_index)
 {
     // cycle the simple queues once, from highest to lowest priority (starting at the specified max task priority)
@@ -265,7 +265,7 @@ boost::optional<task_t> ThreadPool::try_get_simple_task_to_run(const unsigned ch
 //-------------------------------------------------------------------------------------------------------------------
 // ThreadPool INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-boost::optional<task_t> ThreadPool::try_wait_for_sleepy_task_to_run(const unsigned char max_task_priority,
+boost::optional<task_t> Threadpool::try_wait_for_sleepy_task_to_run(const unsigned char max_task_priority,
     const std::uint16_t worker_index,
     const std::function<
             WaiterManager::Result(
@@ -358,7 +358,7 @@ boost::optional<task_t> ThreadPool::try_wait_for_sleepy_task_to_run(const unsign
 //-------------------------------------------------------------------------------------------------------------------
 // ThreadPool INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-boost::optional<task_t> ThreadPool::try_get_task_to_run(const unsigned char max_task_priority,
+boost::optional<task_t> Threadpool::try_get_task_to_run(const unsigned char max_task_priority,
     const std::uint16_t worker_index,
     const std::function<
             WaiterManager::Result(
@@ -387,7 +387,7 @@ boost::optional<task_t> ThreadPool::try_get_task_to_run(const unsigned char max_
 //-------------------------------------------------------------------------------------------------------------------
 // ThreadPool INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void ThreadPool::run_as_worker_DONT_CALL_ME()
+void Threadpool::run_as_worker_DONT_CALL_ME()
 {
     // only call run_as_worker_DONT_CALL_ME() from worker subthreads of the threadpool or from the owner when shutting down
     assert(test_threadpool_member_invariants(m_threadpool_id, m_threadpool_owner_id));
@@ -450,7 +450,7 @@ void ThreadPool::run_as_worker_DONT_CALL_ME()
 //-------------------------------------------------------------------------------------------------------------------
 // ThreadPool INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void ThreadPool::run_as_fanout_worker_DONT_CALL_ME()
+void Threadpool::run_as_fanout_worker_DONT_CALL_ME()
 {
     // only call run_as_fanout_worker_DONT_CALL_ME() from fanout subthreads of the threadpool
     assert(test_threadpool_member_invariants(m_threadpool_id, m_threadpool_owner_id));
@@ -479,7 +479,7 @@ void ThreadPool::run_as_fanout_worker_DONT_CALL_ME()
 //-------------------------------------------------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------------------------------------------------
-ThreadPool::ThreadPool(const unsigned char max_priority_level,
+Threadpool::Threadpool(const unsigned char max_priority_level,
     const std::uint16_t num_managed_workers,
     const unsigned char num_submit_cycle_attempts,
     const std::chrono::nanoseconds max_wait_duration) :
@@ -537,7 +537,7 @@ ThreadPool::ThreadPool(const unsigned char max_priority_level,
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-ThreadPool::~ThreadPool()
+Threadpool::~Threadpool()
 {
     (void)test_threadpool_member_invariants;  //suppress unused warning...
     assert(test_threadpool_member_invariants(m_threadpool_id, m_threadpool_owner_id));
@@ -560,7 +560,7 @@ ThreadPool::~ThreadPool()
     //      just abort when an exception is detected
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool ThreadPool::submit(TaskVariant task) noexcept
+bool Threadpool::submit(TaskVariant task) noexcept
 {
     assert(test_threadpool_member_invariants(m_threadpool_id, m_threadpool_owner_id));
 
@@ -583,12 +583,12 @@ bool ThreadPool::submit(TaskVariant task) noexcept
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
-join_signal_t ThreadPool::make_join_signal()
+join_signal_t Threadpool::make_join_signal()
 {
     return std::make_shared<std::atomic<bool>>();
 }
 //-------------------------------------------------------------------------------------------------------------------
-join_token_t ThreadPool::get_join_token(join_signal_t &join_signal_inout)
+join_token_t Threadpool::get_join_token(join_signal_t &join_signal_inout)
 {
     assert(test_threadpool_member_invariants(m_threadpool_id, m_threadpool_owner_id));
 
@@ -613,7 +613,7 @@ join_token_t ThreadPool::get_join_token(join_signal_t &join_signal_inout)
         );
 }
 //-------------------------------------------------------------------------------------------------------------------
-join_condition_t ThreadPool::get_join_condition(join_signal_t &&join_signal_in, join_token_t &&join_token_in)
+join_condition_t Threadpool::get_join_condition(join_signal_t &&join_signal_in, join_token_t &&join_token_in)
 {
     // clear the joiner's copy of the join token
     join_token_in = nullptr;
@@ -626,7 +626,7 @@ join_condition_t ThreadPool::get_join_condition(join_signal_t &&join_signal_in, 
         };
 }
 //-------------------------------------------------------------------------------------------------------------------
-void ThreadPool::work_while_waiting(const std::chrono::time_point<std::chrono::steady_clock> &deadline,
+void Threadpool::work_while_waiting(const std::chrono::time_point<std::chrono::steady_clock> &deadline,
     const unsigned char max_task_priority)
 {
     assert(test_threadpool_member_invariants(m_threadpool_id, m_threadpool_owner_id));
@@ -682,12 +682,12 @@ void ThreadPool::work_while_waiting(const std::chrono::time_point<std::chrono::s
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-void ThreadPool::work_while_waiting(const std::chrono::nanoseconds &duration, const unsigned char max_task_priority)
+void Threadpool::work_while_waiting(const std::chrono::nanoseconds &duration, const unsigned char max_task_priority)
 {
     this->work_while_waiting(std::chrono::steady_clock::now() + duration, max_task_priority);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void ThreadPool::work_while_waiting(const std::function<bool()> &wait_condition_func,
+void Threadpool::work_while_waiting(const std::function<bool()> &wait_condition_func,
     const unsigned char max_task_priority)
 {
     assert(test_threadpool_member_invariants(m_threadpool_id, m_threadpool_owner_id));
@@ -738,7 +738,7 @@ void ThreadPool::work_while_waiting(const std::function<bool()> &wait_condition_
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-fanout_token_t ThreadPool::launch_temporary_worker()
+fanout_token_t Threadpool::launch_temporary_worker()
 {
     assert(test_threadpool_member_invariants(m_threadpool_id, m_threadpool_owner_id));
 
@@ -791,7 +791,7 @@ fanout_token_t ThreadPool::launch_temporary_worker()
         );
 }
 //-------------------------------------------------------------------------------------------------------------------
-void ThreadPool::shut_down() noexcept
+void Threadpool::shut_down() noexcept
 {
     // shut down the fanout queue
     m_fanout_condition_queue.shut_down();

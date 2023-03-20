@@ -143,7 +143,7 @@ private:
 
 static void submit_task_async_threadpool(const std::chrono::nanoseconds task_duration,
     async::join_token_t &join_token,
-    async::ThreadPool &threadpool)
+    async::Threadpool &threadpool)
 {
     // prepare task
     auto task =
@@ -164,7 +164,7 @@ static void submit_task_async_threadpool(const std::chrono::nanoseconds task_dur
 static void submit_sleepy_task_async_threadpool(const std::chrono::nanoseconds task_duration,
     const std::chrono::nanoseconds sleep_duration,
     async::join_token_t &join_token,
-    async::ThreadPool &threadpool)
+    async::Threadpool &threadpool)
 {
     // prepare task whose continuation will sleep until 'sleep_duration' after the task is done
     auto task =
@@ -208,7 +208,7 @@ public:
 
         // create the threadpool
         // - note: use 3 priority levels {0, 1, 2} for realism
-        m_threadpool = std::make_unique<async::ThreadPool>(
+        m_threadpool = std::make_unique<async::Threadpool>(
                 2, params.num_extra_threads, 20, std::chrono::seconds{1}
             );
 
@@ -250,7 +250,7 @@ public:
 
 private:
     ParamsShuttleAsync m_params;
-    std::unique_ptr<async::ThreadPool> m_threadpool;
+    std::unique_ptr<async::Threadpool> m_threadpool;
 };
 
 
@@ -260,7 +260,7 @@ private:
 
 static void submit_task_async_threadpool_with_fanout(const std::chrono::nanoseconds task_duration,
     async::join_token_t &join_token,
-    async::ThreadPool &threadpool)
+    async::Threadpool &threadpool)
 {
     // prepare task
     auto task =
@@ -286,7 +286,7 @@ static void submit_task_async_threadpool_with_fanout(const std::chrono::nanoseco
 static void submit_sleepy_task_async_threadpool_with_fanout(const std::chrono::nanoseconds task_duration,
     const std::chrono::nanoseconds sleep_duration,
     async::join_token_t &join_token,
-    async::ThreadPool &threadpool)
+    async::Threadpool &threadpool)
 {
     // prepare task whose continuation will sleep until 'sleep_duration' after the task is done
     auto task =
@@ -330,7 +330,7 @@ public:
 
         // create the threadpool
         // - note: use 3 priority levels {0, 1, 2} for realism
-        m_threadpool = std::make_unique<async::ThreadPool>(
+        m_threadpool = std::make_unique<async::Threadpool>(
                 2, params.num_extra_threads, 20, std::chrono::seconds{1}
             );
 
@@ -372,7 +372,7 @@ public:
 
 private:
     ParamsShuttleAsync m_params;
-    std::unique_ptr<async::ThreadPool> m_threadpool;
+    std::unique_ptr<async::Threadpool> m_threadpool;
 };
 
 //---------------------------------------------------------------------------------------------------------------------
