@@ -141,6 +141,7 @@ target_link_libraries(unit_tests
     serialization
     seraphis_core
     seraphis_crypto
+    seraphis_impl
     seraphis_main
     seraphis_mocks
     wallet

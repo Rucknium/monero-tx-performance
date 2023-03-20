@@ -34,7 +34,7 @@
 #include "seraphis_crypto/math_utils.h"
 #include "seraphis_main/scan_chunk_consumer.h"
 #include "seraphis_main/scan_core_types.h"
-#include "seraphis_main/scan_ledger_chunk_simple.h"
+#include "seraphis_main/scan_ledger_chunk.h"
 #include "seraphis_main/scan_machine_types.h"
 #include "seraphis_main/scan_misc_utils.h"
 #include "seraphis_main/scanning_context.h"
@@ -297,13 +297,15 @@ static ScanMachineStatus handle_nonempty_chunk(const std::uint64_t first_contigu
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static ScanMachineStatus handle_empty_chunk(const std::uint64_t first_contiguity_index,
-    const ChunkContext &new_chunk_context,
+    const LedgerChunk &ledger_chunk,
     ScanningContextLedger &scanning_context_inout,
     ChunkConsumer &chunk_consumer_inout,
     ContiguityMarker &contiguity_marker_inout)
 {
+    const ChunkContext &chunk_context{ledger_chunk.get_context()};
+
     // 1. verify that the last chunk obtained is an empty chunk representing the top of the current block chain
-    CHECK_AND_ASSERT_THROW_MES(chunk_is_empty(new_chunk_context),
+    CHECK_AND_ASSERT_THROW_MES(chunk_is_empty(chunk_context),
         "seraphis scan state machine (handle empty chunk): final chunk is not empty as expected.");
 
     // 2. check if the scan process is aborted
@@ -320,9 +322,9 @@ static ScanMachineStatus handle_empty_chunk(const std::uint64_t first_contiguity
     //       lowest point in our chunk consumer) when we haven't actually scanned any blocks
     const ScanMachineStatus scan_status{
             new_chunk_scan_status(contiguity_marker_inout,
-                new_chunk_context,
+                chunk_context,
                 first_contiguity_index,
-                new_chunk_context.start_index - 1)
+                chunk_context.start_index - 1)
         };
 
     if (scan_status != ScanMachineStatus::SUCCESS)
@@ -331,8 +333,7 @@ static ScanMachineStatus handle_empty_chunk(const std::uint64_t first_contiguity
     // 4. final update for our chunk consumer
     // - we need to update with the termination chunk in case a reorg popped blocks, so the chunk consumer can roll back
     //   its state
-    const LedgerChunkEmpty empty_chunk{new_chunk_context};
-    chunk_consumer_inout.consume_onchain_chunk(empty_chunk,
+    chunk_consumer_inout.consume_onchain_chunk(ledger_chunk,
         contiguity_marker_inout.block_index + 1,
         contiguity_marker_inout.block_id ? *(contiguity_marker_inout.block_id) : rct::zero(),
         {});
@@ -364,7 +365,7 @@ static ScanMachineStatus do_scan_pass(const std::uint64_t first_contiguity_index
     if (chunk_is_empty(*new_chunk))
     {
         return handle_empty_chunk(first_contiguity_index,
-            new_chunk->get_context(),
+            *new_chunk,
             scanning_context_inout,
             chunk_consumer_inout,
             contiguity_marker_inout);

@@ -39,13 +39,13 @@
 #include "seraphis_core/binned_reference_set.h"
 #include "seraphis_core/discretized_fee.h"
 #include "seraphis_core/sp_core_types.h"
+#include "seraphis_impl/serialization_demo_types.h"
+#include "seraphis_main/tx_component_types.h"
+#include "seraphis_main/tx_component_types_legacy.h"
+#include "seraphis_main/txtype_squashed_v1.h"
 #include "serialization/binary_archive.h"
 #include "serialization/serialization.h"
-#include "serialization_demo_types.h"
 #include "span.h"
-#include "tx_component_types.h"
-#include "tx_component_types_legacy.h"
-#include "txtype_squashed_v1.h"
 
 //third party headers
 

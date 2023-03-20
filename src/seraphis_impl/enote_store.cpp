@@ -29,14 +29,15 @@
 // NOT FOR PRODUCTION
 
 //paired header
-#include "enote_store_mock_v1.h"
+#include "enote_store.h"
 
 //local headers
 #include "common/container_helpers.h"
-#include "enote_store_event_types.h"
 #include "misc_log_ex.h"
 #include "seraphis_core/legacy_enote_types.h"
 #include "seraphis_core/legacy_enote_utils.h"
+#include "seraphis_impl/enote_store_event_types.h"
+#include "seraphis_impl/enote_store_utils.h"
 #include "seraphis_main/contextual_enote_record_types.h"
 #include "seraphis_main/contextual_enote_record_utils.h"
 #include "seraphis_main/enote_record_utils_legacy.h"
@@ -53,49 +54,12 @@
 #include <utility>
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
-#define MONERO_DEFAULT_LOG_CATEGORY "seraphis_mocks"
+#define MONERO_DEFAULT_LOG_CATEGORY "seraphis_impl"
 
 namespace sp
 {
-namespace mocks
-{
 //-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-static void update_block_ids_with_new_block_ids(const std::uint64_t first_allowed_index,
-    const std::uint64_t first_new_block_index,
-    const rct::key &alignment_block_id,
-    const std::vector<rct::key> &new_block_ids,
-    std::vector<rct::key> &block_ids_inout,
-    std::uint64_t &old_top_index_out,
-    std::uint64_t &range_start_index_out,
-    std::uint64_t &num_blocks_added_out)
-{
-    // 1. check inputs
-    CHECK_AND_ASSERT_THROW_MES(first_new_block_index >= first_allowed_index,
-        "enote store set new block ids (mock): first new block is below the refresh index.");
-    CHECK_AND_ASSERT_THROW_MES(first_new_block_index - first_allowed_index <= block_ids_inout.size(),
-        "enote store set new block ids (mock): new blocks don't line up with existing blocks.");
-    if (first_new_block_index > first_allowed_index)
-    {
-        CHECK_AND_ASSERT_THROW_MES(alignment_block_id ==
-                block_ids_inout[first_new_block_index - first_allowed_index - 1],
-            "enote store set new block ids (mock): alignment block id doesn't align with recorded block ids.");
-    }
-
-    // 2. save the diff
-    old_top_index_out     = first_allowed_index + block_ids_inout.size();
-    range_start_index_out = first_new_block_index;
-    num_blocks_added_out  = new_block_ids.size();
-
-    // 3. update the block ids
-    block_ids_inout.resize(first_new_block_index - first_allowed_index);  //crop old blocks
-    block_ids_inout.insert(block_ids_inout.end(), new_block_ids.begin(), new_block_ids.end());
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------------------
-SpEnoteStoreMockV1::SpEnoteStoreMockV1(const std::uint64_t refresh_index,
+SpEnoteStore::SpEnoteStore(const std::uint64_t refresh_index,
     const std::uint64_t first_sp_enabled_block_in_chain,
     const std::uint64_t default_spendable_age) :
         m_refresh_index{refresh_index},
@@ -106,7 +70,7 @@ SpEnoteStoreMockV1::SpEnoteStoreMockV1(const std::uint64_t refresh_index,
         m_default_spendable_age{default_spendable_age}
 {}
 //-------------------------------------------------------------------------------------------------------------------
-std::uint64_t SpEnoteStoreMockV1::top_block_index() const
+std::uint64_t SpEnoteStore::top_block_index() const
 {
     // 1. no blocks
     if (m_legacy_block_ids.size() == 0 &&
@@ -128,7 +92,7 @@ std::uint64_t SpEnoteStoreMockV1::top_block_index() const
         );
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteStoreMockV1::try_get_block_id_for_legacy_partialscan(const std::uint64_t block_index,
+bool SpEnoteStore::try_get_block_id_for_legacy_partialscan(const std::uint64_t block_index,
     rct::key &block_id_out) const
 {
     // 1. check error states
@@ -147,7 +111,7 @@ bool SpEnoteStoreMockV1::try_get_block_id_for_legacy_partialscan(const std::uint
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteStoreMockV1::try_get_block_id_for_legacy_fullscan(const std::uint64_t block_index,
+bool SpEnoteStore::try_get_block_id_for_legacy_fullscan(const std::uint64_t block_index,
     rct::key &block_id_out) const
 {
     // 1. check error states
@@ -166,7 +130,7 @@ bool SpEnoteStoreMockV1::try_get_block_id_for_legacy_fullscan(const std::uint64_
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteStoreMockV1::try_get_block_id_for_sp(const std::uint64_t block_index, rct::key &block_id_out) const
+bool SpEnoteStore::try_get_block_id_for_sp(const std::uint64_t block_index, rct::key &block_id_out) const
 {
     // 1. check error states
     if (block_index < this->sp_refresh_index() ||
@@ -184,7 +148,7 @@ bool SpEnoteStoreMockV1::try_get_block_id_for_sp(const std::uint64_t block_index
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteStoreMockV1::try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const
+bool SpEnoteStore::try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const
 {
     // try to get the block id from each of the scan types
     return try_get_block_id_for_legacy_partialscan(block_index, block_id_out) ||
@@ -192,13 +156,13 @@ bool SpEnoteStoreMockV1::try_get_block_id(const std::uint64_t block_index, rct::
         try_get_block_id_for_sp(block_index, block_id_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteStoreMockV1::has_enote_with_key_image(const crypto::key_image &key_image) const
+bool SpEnoteStore::has_enote_with_key_image(const crypto::key_image &key_image) const
 {
     return m_sp_contextual_enote_records.find(key_image) != m_sp_contextual_enote_records.end() ||
         m_legacy_key_images.find(key_image) != m_legacy_key_images.end();
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteStoreMockV1::try_get_legacy_enote_record(const crypto::key_image &key_image,
+bool SpEnoteStore::try_get_legacy_enote_record(const crypto::key_image &key_image,
     LegacyContextualEnoteRecordV1 &contextual_record_out) const
 {
     // drill into the legacy maps searching for at least one matching legacy enote record
@@ -253,7 +217,7 @@ bool SpEnoteStoreMockV1::try_get_legacy_enote_record(const crypto::key_image &ke
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteStoreMockV1::try_get_sp_enote_record(const crypto::key_image &key_image,
+bool SpEnoteStore::try_get_sp_enote_record(const crypto::key_image &key_image,
     SpContextualEnoteRecordV1 &contextual_record_out) const
 {
     if (m_sp_contextual_enote_records.find(key_image) == m_sp_contextual_enote_records.end())
@@ -263,7 +227,7 @@ bool SpEnoteStoreMockV1::try_get_sp_enote_record(const crypto::key_image &key_im
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteStoreMockV1::try_import_legacy_key_image(const crypto::key_image &legacy_key_image,
+bool SpEnoteStore::try_import_legacy_key_image(const crypto::key_image &legacy_key_image,
     const rct::key &onetime_address,
     std::list<EnoteStoreEvent> &events_inout)
 {
@@ -304,7 +268,7 @@ bool SpEnoteStoreMockV1::try_import_legacy_key_image(const crypto::key_image &le
         // b. if this identifier has an intermediate record, it should not have a full record
         CHECK_AND_ASSERT_THROW_MES(m_legacy_contextual_enote_records.find(legacy_enote_identifier) ==
                 m_legacy_contextual_enote_records.end(),
-            "import legacy key image (enote store mock): intermediate and full legacy maps inconsistent (bug).");
+            "import legacy key image (enote store): intermediate and full legacy maps inconsistent (bug).");
 
         // c. set the full record
         get_legacy_enote_record(
@@ -332,20 +296,20 @@ bool SpEnoteStoreMockV1::try_import_legacy_key_image(const crypto::key_image &le
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::update_legacy_fullscan_index_for_import_cycle(const std::uint64_t saved_index)
+void SpEnoteStore::update_legacy_fullscan_index_for_import_cycle(const std::uint64_t saved_index)
 {
     // clamp the imported index to the top known block index in case blocks were popped in the middle of an import
     //   cycle and the enote store was refreshed before this function call
     this->set_last_legacy_fullscan_index(std::min(saved_index + 1, m_refresh_index + m_legacy_block_ids.size()) - 1);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::set_last_legacy_fullscan_index(const std::uint64_t new_index)
+void SpEnoteStore::set_last_legacy_fullscan_index(const std::uint64_t new_index)
 {
     // 1. set this scan index (+1 because if no scanning has been done then we are below the refresh index)
     CHECK_AND_ASSERT_THROW_MES(new_index + 1 >= m_refresh_index,
-        "mock enote store (set legacy fullscan index): new index is below refresh index.");
+        "enote store (set legacy fullscan index): new index is below refresh index.");
     CHECK_AND_ASSERT_THROW_MES(new_index + 1 <= m_refresh_index + m_legacy_block_ids.size(),
-        "mock enote store (set legacy fullscan index): new index is above known block range.");
+        "enote store (set legacy fullscan index): new index is above known block range.");
 
     m_legacy_fullscan_index = new_index;
 
@@ -358,13 +322,13 @@ void SpEnoteStoreMockV1::set_last_legacy_fullscan_index(const std::uint64_t new_
     m_legacy_partialscan_index = std::max(m_legacy_partialscan_index + 1, m_legacy_fullscan_index + 1) - 1;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::set_last_legacy_partialscan_index(const std::uint64_t new_index)
+void SpEnoteStore::set_last_legacy_partialscan_index(const std::uint64_t new_index)
 {
     // 1. set this scan index
     CHECK_AND_ASSERT_THROW_MES(new_index + 1 >= m_refresh_index,
-        "mock enote store (set legacy partialscan index): new index is below refresh index.");
+        "enote store (set legacy partialscan index): new index is below refresh index.");
     CHECK_AND_ASSERT_THROW_MES(new_index + 1 <= m_refresh_index + m_legacy_block_ids.size(),
-        "mock enote store (set legacy partialscan index): new index is above known block range.");
+        "enote store (set legacy partialscan index): new index is above known block range.");
 
     m_legacy_partialscan_index = new_index;
 
@@ -373,18 +337,18 @@ void SpEnoteStoreMockV1::set_last_legacy_partialscan_index(const std::uint64_t n
     m_legacy_fullscan_index = std::min(m_legacy_fullscan_index + 1, m_legacy_partialscan_index + 1) - 1;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::set_last_sp_scanned_index(const std::uint64_t new_index)
+void SpEnoteStore::set_last_sp_scanned_index(const std::uint64_t new_index)
 {
     // set this scan index
     CHECK_AND_ASSERT_THROW_MES(new_index + 1 >= this->sp_refresh_index(),
-        "mock enote store (set seraphis scan index): new index is below refresh index.");
+        "enote store (set seraphis scan index): new index is below refresh index.");
     CHECK_AND_ASSERT_THROW_MES(new_index + 1 <= this->sp_refresh_index() + m_sp_block_ids.size(),
-        "mock enote store (set seraphis scan index): new index is above known block range.");
+        "enote store (set seraphis scan index): new index is above known block range.");
 
     m_sp_scanned_index = new_index;
 }
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::update_with_intermediate_legacy_records_from_nonledger(
+void SpEnoteStore::update_with_intermediate_legacy_records_from_nonledger(
     const SpEnoteOriginStatus nonledger_origin_status,
     const std::unordered_map<rct::key, LegacyContextualIntermediateEnoteRecordV1> &found_enote_records,
     const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
@@ -401,7 +365,7 @@ void SpEnoteStoreMockV1::update_with_intermediate_legacy_records_from_nonledger(
     this->update_legacy_with_fresh_found_spent_key_images(found_spent_key_images, events_inout);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::update_with_intermediate_legacy_records_from_ledger(const std::uint64_t first_new_block,
+void SpEnoteStore::update_with_intermediate_legacy_records_from_ledger(const std::uint64_t first_new_block,
     const rct::key &alignment_block_id,
     const std::vector<rct::key> &new_block_ids,
     const std::unordered_map<rct::key, LegacyContextualIntermediateEnoteRecordV1> &found_enote_records,
@@ -425,7 +389,7 @@ void SpEnoteStoreMockV1::update_with_intermediate_legacy_records_from_ledger(con
     this->update_legacy_with_fresh_found_spent_key_images(found_spent_key_images, events_inout);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::update_with_intermediate_legacy_found_spent_key_images(
+void SpEnoteStore::update_with_intermediate_legacy_found_spent_key_images(
     const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
     std::list<EnoteStoreEvent> &events_inout)
 {
@@ -436,7 +400,7 @@ void SpEnoteStoreMockV1::update_with_intermediate_legacy_found_spent_key_images(
     this->update_legacy_with_fresh_found_spent_key_images(found_spent_key_images, events_inout);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::update_with_legacy_records_from_nonledger(const SpEnoteOriginStatus nonledger_origin_status,
+void SpEnoteStore::update_with_legacy_records_from_nonledger(const SpEnoteOriginStatus nonledger_origin_status,
     const std::unordered_map<rct::key, LegacyContextualEnoteRecordV1> &found_enote_records,
     const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
     std::list<EnoteStoreEvent> &events_inout)
@@ -452,7 +416,7 @@ void SpEnoteStoreMockV1::update_with_legacy_records_from_nonledger(const SpEnote
     this->update_legacy_with_fresh_found_spent_key_images(found_spent_key_images, events_inout);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::update_with_legacy_records_from_ledger(const std::uint64_t first_new_block,
+void SpEnoteStore::update_with_legacy_records_from_ledger(const std::uint64_t first_new_block,
     const rct::key &alignment_block_id,
     const std::vector<rct::key> &new_block_ids,
     const std::unordered_map<rct::key, LegacyContextualEnoteRecordV1> &found_enote_records,
@@ -476,7 +440,7 @@ void SpEnoteStoreMockV1::update_with_legacy_records_from_ledger(const std::uint6
     this->update_legacy_with_fresh_found_spent_key_images(found_spent_key_images, events_inout);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::update_with_sp_records_from_nonledger(const SpEnoteOriginStatus nonledger_origin_status, 
+void SpEnoteStore::update_with_sp_records_from_nonledger(const SpEnoteOriginStatus nonledger_origin_status, 
     const std::unordered_map<crypto::key_image, SpContextualEnoteRecordV1> &found_enote_records,
     const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
     const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &legacy_key_images_in_sp_selfsends,
@@ -496,7 +460,7 @@ void SpEnoteStoreMockV1::update_with_sp_records_from_nonledger(const SpEnoteOrig
     this->handle_legacy_key_images_from_sp_selfsends(legacy_key_images_in_sp_selfsends, events_inout);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::update_with_sp_records_from_ledger(const std::uint64_t first_new_block,
+void SpEnoteStore::update_with_sp_records_from_ledger(const std::uint64_t first_new_block,
     const rct::key &alignment_block_id,
     const std::vector<rct::key> &new_block_ids,
     const std::unordered_map<crypto::key_image, SpContextualEnoteRecordV1> &found_enote_records,
@@ -521,9 +485,9 @@ void SpEnoteStoreMockV1::update_with_sp_records_from_ledger(const std::uint64_t 
     this->handle_legacy_key_images_from_sp_selfsends(legacy_key_images_in_sp_selfsends, events_inout);
 }
 //-------------------------------------------------------------------------------------------------------------------
-// MOCK ENOTE STORE INTERNAL
+// ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::update_with_new_blocks_from_ledger_legacy_intermediate(const std::uint64_t first_new_block,
+void SpEnoteStore::update_with_new_blocks_from_ledger_legacy_intermediate(const std::uint64_t first_new_block,
     const rct::key &alignment_block_id,
     const std::vector<rct::key> &new_block_ids,
     std::list<EnoteStoreEvent> &events_inout)
@@ -544,9 +508,9 @@ void SpEnoteStoreMockV1::update_with_new_blocks_from_ledger_legacy_intermediate(
     this->set_last_legacy_partialscan_index(first_new_block + new_block_ids.size() - 1);
 }
 //-------------------------------------------------------------------------------------------------------------------
-// MOCK ENOTE STORE INTERNAL
+// ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::update_with_new_blocks_from_ledger_legacy_full(const std::uint64_t first_new_block,
+void SpEnoteStore::update_with_new_blocks_from_ledger_legacy_full(const std::uint64_t first_new_block,
     const rct::key &alignment_block_id,
     const std::vector<rct::key> &new_block_ids,
     std::list<EnoteStoreEvent> &events_inout)
@@ -571,9 +535,9 @@ void SpEnoteStoreMockV1::update_with_new_blocks_from_ledger_legacy_full(const st
     this->set_last_legacy_fullscan_index(first_new_block + new_block_ids.size() - 1);
 }
 //-------------------------------------------------------------------------------------------------------------------
-// MOCK ENOTE STORE INTERNAL
+// ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::update_with_new_blocks_from_ledger_sp(const std::uint64_t first_new_block,
+void SpEnoteStore::update_with_new_blocks_from_ledger_sp(const std::uint64_t first_new_block,
     const rct::key &alignment_block_id,
     const std::vector<rct::key> &new_block_ids,
     std::list<EnoteStoreEvent> &events_inout)
@@ -594,9 +558,9 @@ void SpEnoteStoreMockV1::update_with_new_blocks_from_ledger_sp(const std::uint64
     this->set_last_sp_scanned_index(first_new_block + new_block_ids.size() - 1);
 }
 //-------------------------------------------------------------------------------------------------------------------
-// MOCK ENOTE STORE INTERNAL
+// ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::clean_maps_for_found_spent_legacy_key_images(
+void SpEnoteStore::clean_maps_for_found_spent_legacy_key_images(
     const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
     std::list<EnoteStoreEvent> &events_inout)
 {
@@ -643,9 +607,9 @@ void SpEnoteStoreMockV1::clean_maps_for_found_spent_legacy_key_images(
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-// MOCK ENOTE STORE INTERNAL
+// ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::clean_maps_for_removed_legacy_enotes(
+void SpEnoteStore::clean_maps_for_removed_legacy_enotes(
     const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
     const std::unordered_map<rct::key, std::unordered_set<rct::key>> &mapped_identifiers_of_removed_enotes,
     const std::unordered_map<rct::key, crypto::key_image> &mapped_key_images_of_removed_enotes,
@@ -705,15 +669,15 @@ void SpEnoteStoreMockV1::clean_maps_for_removed_legacy_enotes(
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-// MOCK ENOTE STORE INTERNAL
+// ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::clean_maps_for_legacy_nonledger_update(const SpEnoteOriginStatus nonledger_origin_status,
+void SpEnoteStore::clean_maps_for_legacy_nonledger_update(const SpEnoteOriginStatus nonledger_origin_status,
     const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
     std::list<EnoteStoreEvent> &events_inout)
 {
     CHECK_AND_ASSERT_THROW_MES(nonledger_origin_status == SpEnoteOriginStatus::OFFCHAIN ||
             nonledger_origin_status == SpEnoteOriginStatus::UNCONFIRMED,
-        "enote store mock v1 (clean maps for sp nonledger update): invalid origin status.");
+        "enote store (clean maps for sp nonledger update): invalid origin status.");
 
     // 1. remove records that will be replaced
     std::unordered_map<rct::key, std::unordered_set<rct::key>> mapped_identifiers_of_removed_enotes;
@@ -796,9 +760,9 @@ void SpEnoteStoreMockV1::clean_maps_for_legacy_nonledger_update(const SpEnoteOri
         events_inout);
 }
 //-------------------------------------------------------------------------------------------------------------------
-// MOCK ENOTE STORE INTERNAL
+// ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::clean_maps_for_legacy_ledger_update(const std::uint64_t first_new_block,
+void SpEnoteStore::clean_maps_for_legacy_ledger_update(const std::uint64_t first_new_block,
     const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
     std::list<EnoteStoreEvent> &events_inout)
 {
@@ -878,9 +842,9 @@ void SpEnoteStoreMockV1::clean_maps_for_legacy_ledger_update(const std::uint64_t
         events_inout);
 }
 //-------------------------------------------------------------------------------------------------------------------
-// MOCK ENOTE STORE INTERNAL
+// ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::clean_maps_for_removed_sp_enotes(const std::unordered_set<rct::key> &tx_ids_of_removed_enotes,
+void SpEnoteStore::clean_maps_for_removed_sp_enotes(const std::unordered_set<rct::key> &tx_ids_of_removed_enotes,
     std::list<EnoteStoreEvent> &events_inout)
 {
     // clear spent contexts referencing the txs of removed enotes (key images only appear at the same time as selfsends)
@@ -917,14 +881,14 @@ void SpEnoteStoreMockV1::clean_maps_for_removed_sp_enotes(const std::unordered_s
         );
 }
 //-------------------------------------------------------------------------------------------------------------------
-// MOCK ENOTE STORE INTERNAL
+// ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::clean_maps_for_sp_nonledger_update(const SpEnoteOriginStatus nonledger_origin_status,
+void SpEnoteStore::clean_maps_for_sp_nonledger_update(const SpEnoteOriginStatus nonledger_origin_status,
     std::list<EnoteStoreEvent> &events_inout)
 {
     CHECK_AND_ASSERT_THROW_MES(nonledger_origin_status == SpEnoteOriginStatus::OFFCHAIN ||
             nonledger_origin_status == SpEnoteOriginStatus::UNCONFIRMED,
-        "enote store mock v1 (clean maps for sp nonledger update): invalid origin status.");
+        "enote store (clean maps for sp nonledger update): invalid origin status.");
 
     // 1. remove records
     std::unordered_set<rct::key> tx_ids_of_removed_enotes;  //note: only txs with selfsends are needed in practice
@@ -953,9 +917,9 @@ void SpEnoteStoreMockV1::clean_maps_for_sp_nonledger_update(const SpEnoteOriginS
     this->clean_maps_for_removed_sp_enotes(tx_ids_of_removed_enotes, events_inout);
 }
 //-------------------------------------------------------------------------------------------------------------------
-// MOCK ENOTE STORE INTERNAL
+// ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::clean_maps_for_sp_ledger_update(const std::uint64_t first_new_block,
+void SpEnoteStore::clean_maps_for_sp_ledger_update(const std::uint64_t first_new_block,
     std::list<EnoteStoreEvent> &events_inout)
 {
     // 1. remove records
@@ -990,9 +954,9 @@ void SpEnoteStoreMockV1::clean_maps_for_sp_ledger_update(const std::uint64_t fir
     this->clean_maps_for_removed_sp_enotes(tx_ids_of_removed_enotes, events_inout);
 }
 //-------------------------------------------------------------------------------------------------------------------
-// MOCK ENOTE STORE INTERNAL
+// ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::add_record(const LegacyContextualIntermediateEnoteRecordV1 &new_record,
+void SpEnoteStore::add_record(const LegacyContextualIntermediateEnoteRecordV1 &new_record,
     std::list<EnoteStoreEvent> &events_inout)
 {
     // 1. if key image is known, promote to a full enote record
@@ -1003,7 +967,7 @@ void SpEnoteStoreMockV1::add_record(const LegacyContextualIntermediateEnoteRecor
             m_tracked_legacy_onetime_address_duplicates.at(onetime_address_ref(new_record.record.enote));
 
         CHECK_AND_ASSERT_THROW_MES(identifiers_of_known_enotes.size() > 0,
-            "add intermediate record (mock enote store): record's onetime address is known, but there are no "
+            "add intermediate record (enote store): record's onetime address is known, but there are no "
             "identifiers (bug).");
 
         for (const rct::key &identifier : identifiers_of_known_enotes)
@@ -1013,7 +977,7 @@ void SpEnoteStoreMockV1::add_record(const LegacyContextualIntermediateEnoteRecor
                 continue;
 
             CHECK_AND_ASSERT_THROW_MES(identifier == *(identifiers_of_known_enotes.begin()),
-                "add intermediate record (mock enote store): key image is known but there are intermediate "
+                "add intermediate record (enote store): key image is known but there are intermediate "
                 "records with this onetime address (a given onetime address should have only intermediate or only "
                 "full legacy records).");
 
@@ -1055,9 +1019,9 @@ void SpEnoteStoreMockV1::add_record(const LegacyContextualIntermediateEnoteRecor
         .insert(new_record_identifier);
 }
 //-------------------------------------------------------------------------------------------------------------------
-// MOCK ENOTE STORE INTERNAL
+// ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::add_record(const LegacyContextualEnoteRecordV1 &new_record,
+void SpEnoteStore::add_record(const LegacyContextualEnoteRecordV1 &new_record,
     std::list<EnoteStoreEvent> &events_inout)
 {
     rct::key new_record_identifier;
@@ -1142,9 +1106,9 @@ void SpEnoteStoreMockV1::add_record(const LegacyContextualEnoteRecordV1 &new_rec
         events_inout);
 }
 //-------------------------------------------------------------------------------------------------------------------
-// MOCK ENOTE STORE INTERNAL
+// ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::add_record(const SpContextualEnoteRecordV1 &new_record,
+void SpEnoteStore::add_record(const SpContextualEnoteRecordV1 &new_record,
     std::list<EnoteStoreEvent> &events_inout)
 {
     const crypto::key_image &record_key_image{key_image_ref(new_record)};
@@ -1163,9 +1127,9 @@ void SpEnoteStoreMockV1::add_record(const SpContextualEnoteRecordV1 &new_record,
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-// MOCK ENOTE STORE INTERNAL
+// ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::update_legacy_with_fresh_found_spent_key_images(
+void SpEnoteStore::update_legacy_with_fresh_found_spent_key_images(
     const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
     std::list<EnoteStoreEvent> &events_inout)
 {
@@ -1179,7 +1143,7 @@ void SpEnoteStoreMockV1::update_legacy_with_fresh_found_spent_key_images(
         CHECK_AND_ASSERT_THROW_MES(m_tracked_legacy_onetime_address_duplicates.find(
                     m_legacy_key_images.at(found_spent_key_image.first)) !=
                 m_tracked_legacy_onetime_address_duplicates.end(),
-            "enote store update with legacy enote records (mock): duplicate tracker is missing a onetime address "
+            "enote store update with legacy enote records: duplicate tracker is missing a onetime address "
             "(bug).");
 
         // c. update spent contexts of any enotes associated with this key image
@@ -1190,11 +1154,11 @@ void SpEnoteStoreMockV1::update_legacy_with_fresh_found_spent_key_images(
         {
             CHECK_AND_ASSERT_THROW_MES(m_legacy_contextual_enote_records.find(identifier_of_enote_to_update) !=
                     m_legacy_contextual_enote_records.end(),
-                "enote store update with legacy enote records (mock): full record map is missing identifier (bug).");
+                "enote store update with legacy enote records: full record map is missing identifier (bug).");
             CHECK_AND_ASSERT_THROW_MES(
                     m_legacy_contextual_enote_records[identifier_of_enote_to_update].record.key_image ==
                     found_spent_key_image.first,
-                "enote store update with legacy enote records (mock): full record map is inconsistent (bug).");
+                "enote store update with legacy enote records: full record map is inconsistent (bug).");
 
             update_contextual_enote_record_contexts_v1(
                 m_legacy_contextual_enote_records[identifier_of_enote_to_update].origin_context,
@@ -1207,9 +1171,9 @@ void SpEnoteStoreMockV1::update_legacy_with_fresh_found_spent_key_images(
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-// MOCK ENOTE STORE INTERNAL
+// ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::update_sp_with_fresh_found_spent_key_images(
+void SpEnoteStore::update_sp_with_fresh_found_spent_key_images(
     const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
     std::list<EnoteStoreEvent> &events_inout)
 {
@@ -1230,9 +1194,9 @@ void SpEnoteStoreMockV1::update_sp_with_fresh_found_spent_key_images(
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-// MOCK ENOTE STORE INTERNAL
+// ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStoreMockV1::handle_legacy_key_images_from_sp_selfsends(
+void SpEnoteStore::handle_legacy_key_images_from_sp_selfsends(
     const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &legacy_key_images_in_sp_selfsends,
     std::list<EnoteStoreEvent> &events_inout)
 {
@@ -1260,5 +1224,4 @@ void SpEnoteStoreMockV1::handle_legacy_key_images_from_sp_selfsends(
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-} //namespace mocks
 } //namespace sp

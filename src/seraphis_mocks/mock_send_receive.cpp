@@ -48,10 +48,11 @@
 #include "seraphis_core/legacy_core_utils.h"
 #include "seraphis_core/legacy_enote_utils.h"
 #include "seraphis_core/sp_core_types.h"
+#include "seraphis_impl/scan_process_basic.h"
+#include "seraphis_impl/scanning_context_simple.h"
+#include "seraphis_impl/tx_builder_utils.h"
 #include "seraphis_main/contextual_enote_record_utils.h"
-#include "seraphis_main/scanning_context_simple.h"
 #include "seraphis_main/scan_machine_types.h"
-#include "seraphis_main/scan_process_basic.h"
 #include "seraphis_main/tx_builder_types.h"
 #include "seraphis_main/tx_builders_inputs.h"
 #include "seraphis_main/tx_builders_mixed.h"
@@ -439,7 +440,7 @@ void refresh_user_enote_store_legacy_intermediate(const rct::key &legacy_base_sp
     const LegacyScanMode legacy_scan_mode,
     const scanning::ScanMachineConfig &refresh_config,
     const MockLedgerContext &ledger_context,
-    SpEnoteStoreMockV1 &user_enote_store_inout)
+    SpEnoteStore &user_enote_store_inout)
 {
     const EnoteFindingContextLedgerMockLegacy enote_finding_context{
             ledger_context,
@@ -469,7 +470,7 @@ void refresh_user_enote_store_legacy_full(const rct::key &legacy_base_spend_pubk
     const crypto::secret_key &legacy_view_privkey,
     const scanning::ScanMachineConfig &refresh_config,
     const MockLedgerContext &ledger_context,
-    SpEnoteStoreMockV1 &user_enote_store_inout)
+    SpEnoteStore &user_enote_store_inout)
 {
     const EnoteFindingContextLedgerMockLegacy enote_finding_context{
             ledger_context,
@@ -496,7 +497,7 @@ void refresh_user_enote_store_legacy_full(const rct::key &legacy_base_spend_pubk
 void refresh_user_enote_store_PV(const jamtis::mocks::jamtis_mock_keys &user_keys,
     const scanning::ScanMachineConfig &refresh_config,
     const MockLedgerContext &ledger_context,
-    SpEnoteStoreMockPaymentValidatorV1 &user_enote_store_inout)
+    SpEnoteStorePaymentValidator &user_enote_store_inout)
 {
     const EnoteFindingContextUnconfirmedMockSp enote_finding_context_unconfirmed{ledger_context, user_keys.xk_fr};
     const EnoteFindingContextLedgerMockSp enote_finding_context_ledger{ledger_context, user_keys.xk_fr};
@@ -519,7 +520,7 @@ void refresh_user_enote_store_PV(const jamtis::mocks::jamtis_mock_keys &user_key
 void refresh_user_enote_store(const jamtis::mocks::jamtis_mock_keys &user_keys,
     const scanning::ScanMachineConfig &refresh_config,
     const MockLedgerContext &ledger_context,
-    SpEnoteStoreMockV1 &user_enote_store_inout)
+    SpEnoteStore &user_enote_store_inout)
 {
     const EnoteFindingContextUnconfirmedMockSp enote_finding_context_unconfirmed{ledger_context, user_keys.xk_fr};
     const EnoteFindingContextLedgerMockSp enote_finding_context_ledger{ledger_context, user_keys.xk_fr};

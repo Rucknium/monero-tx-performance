@@ -49,20 +49,21 @@
 #include "seraphis_core/tx_extra.h"
 #include "seraphis_crypto/sp_composition_proof.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
+#include "seraphis_impl/enote_store_utils.h"
+#include "seraphis_impl/scanning_context_simple.h"
+#include "seraphis_impl/tx_fee_calculator_squashed_v1.h"
+#include "seraphis_impl/tx_input_selection_output_context_v1.h"
 #include "seraphis_main/contextual_enote_record_utils.h"
 #include "seraphis_main/enote_record_types.h"
 #include "seraphis_main/enote_record_utils.h"
 #include "seraphis_main/scan_machine_types.h"
-#include "seraphis_main/scanning_context_simple.h"
 #include "seraphis_main/tx_builder_types.h"
 #include "seraphis_main/tx_builders_inputs.h"
 #include "seraphis_main/tx_builders_legacy_inputs.h"
 #include "seraphis_main/tx_builders_mixed.h"
 #include "seraphis_main/tx_builders_outputs.h"
 #include "seraphis_main/tx_component_types.h"
-#include "seraphis_main/tx_fee_calculator_squashed_v1.h"
 #include "seraphis_main/tx_input_selection.h"
-#include "seraphis_main/tx_input_selection_output_context_v1.h"
 #include "seraphis_main/txtype_base.h"
 #include "seraphis_main/txtype_squashed_v1.h"
 #include "seraphis_mocks/seraphis_mocks.h"
@@ -160,8 +161,8 @@ TEST(seraphis_integration, txtype_squashed_v1)
     make_random_address_for_user(user_keys_B, destination_B);
 
     // d. user enote stores (refresh index = 0; seraphis initial block = 0; default spendable age = 0)
-    SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
-    SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
+    SpEnoteStore enote_store_A{0, 0, 0};
+    SpEnoteStore enote_store_B{0, 0, 0};
 
     // e. user input selectors
     const InputSelectorMockV1 input_selector_A{enote_store_A};

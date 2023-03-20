@@ -35,9 +35,9 @@
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
 #include "enote_finding_context_mocks.h"
-#include "enote_store_mock_v1.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_core/jamtis_core_utils.h"
+#include "seraphis_impl/enote_store.h"
 #include "seraphis_main/enote_record_types.h"
 #include "seraphis_main/scan_balance_recovery_utils.h"
 #include "seraphis_main/scan_core_types.h"
@@ -64,7 +64,7 @@ ChunkConsumerMockLegacyIntermediate::ChunkConsumerMockLegacyIntermediate(
     const rct::key &legacy_base_spend_pubkey,
     const crypto::secret_key &legacy_view_privkey,
     const LegacyScanMode legacy_scan_mode,
-    SpEnoteStoreMockV1 &enote_store) :
+    SpEnoteStore &enote_store) :
         m_legacy_base_spend_pubkey{legacy_base_spend_pubkey},
         m_legacy_view_privkey{legacy_view_privkey},
         m_legacy_scan_mode{legacy_scan_mode},
@@ -170,7 +170,7 @@ void ChunkConsumerMockLegacyIntermediate::consume_onchain_chunk(const scanning::
 ChunkConsumerMockLegacy::ChunkConsumerMockLegacy(const rct::key &legacy_base_spend_pubkey,
     const crypto::secret_key &legacy_spend_privkey,
     const crypto::secret_key &legacy_view_privkey,
-    SpEnoteStoreMockV1 &enote_store) :
+    SpEnoteStore &enote_store) :
         m_legacy_base_spend_pubkey{legacy_base_spend_pubkey},
         m_legacy_spend_privkey{legacy_spend_privkey},
         m_legacy_view_privkey{legacy_view_privkey},
@@ -262,7 +262,7 @@ ChunkConsumerMockSpIntermediate::ChunkConsumerMockSpIntermediate(const rct::key 
     const crypto::x25519_secret_key &xk_unlock_amounts,
     const crypto::x25519_secret_key &xk_find_received,
     const crypto::secret_key &s_generate_address,
-    SpEnoteStoreMockPaymentValidatorV1 &enote_store) :
+    SpEnoteStorePaymentValidator &enote_store) :
         m_jamtis_spend_pubkey{jamtis_spend_pubkey},
         m_xk_unlock_amounts{xk_unlock_amounts},
         m_xk_find_received{xk_find_received},
@@ -305,7 +305,7 @@ void ChunkConsumerMockSpIntermediate::consume_nonledger_chunk(const SpEnoteOrigi
         found_enote_records);
 
     // 2. save the results
-    std::list<SpPaymentValidatorStoreEvent> events;
+    std::list<PaymentValidatorStoreEvent> events;
     m_enote_store.update_with_sp_records_from_nonledger(nonledger_origin_status, found_enote_records, events);
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -330,7 +330,7 @@ void ChunkConsumerMockSpIntermediate::consume_onchain_chunk(const scanning::Ledg
         found_enote_records);
 
     // 3. save the results
-    std::list<SpPaymentValidatorStoreEvent> events;
+    std::list<PaymentValidatorStoreEvent> events;
     m_enote_store.update_with_sp_records_from_ledger(first_new_block,
         alignment_block_id,
         found_enote_records,
@@ -342,7 +342,7 @@ void ChunkConsumerMockSpIntermediate::consume_onchain_chunk(const scanning::Ledg
 //-------------------------------------------------------------------------------------------------------------------
 ChunkConsumerMockSp::ChunkConsumerMockSp(const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
-    SpEnoteStoreMockV1 &enote_store) :
+    SpEnoteStore &enote_store) :
         m_jamtis_spend_pubkey{jamtis_spend_pubkey},
         m_k_view_balance{k_view_balance},
         m_enote_store{enote_store}

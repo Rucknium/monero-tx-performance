@@ -26,54 +26,52 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
-// Utilities for interacting with an enote store.
+// Output set context for use during input selection.
 
 #pragma once
 
 //local headers
-#include "seraphis_main/contextual_enote_record_types.h"
+#include "seraphis_core/jamtis_payment_proposal.h"
+#include "seraphis_core/jamtis_support_types.h"
+#include "seraphis_main/tx_input_selection_output_context.h"
 
 //third party headers
 #include "boost/multiprecision/cpp_int.hpp"
 
 //standard headers
-#include <unordered_set>
+#include <vector>
 
 //forward declarations
-namespace sp
-{
-namespace mocks
-{
-    class SpEnoteStoreMockV1;
-    class SpEnoteStoreMockPaymentValidatorV1;
-}
-}
+
 
 namespace sp
 {
-namespace mocks
-{
 
-enum class EnoteStoreBalanceExclusions
+class OutputSetContextForInputSelectionV1 final : public OutputSetContextForInputSelection
 {
-    LEGACY_FULL,
-    LEGACY_INTERMEDIATE,
-    SERAPHIS,
-    ORIGIN_LEDGER_LOCKED
+public:
+//constructors
+    OutputSetContextForInputSelectionV1(const std::vector<jamtis::JamtisPaymentProposalV1> &normal_payment_proposals,
+        const std::vector<jamtis::JamtisPaymentProposalSelfSendV1> &selfsend_payment_proposals);
+
+//overloaded operators
+    /// disable copy/move (this is a scoped manager (concept: context binding))
+    OutputSetContextForInputSelectionV1& operator=(OutputSetContextForInputSelectionV1&&) = delete;
+
+//member functions
+    /// get total output amount
+    boost::multiprecision::uint128_t total_amount() const override;
+    /// get number of outputs assuming no change
+    std::size_t num_outputs_nochange() const override;
+    /// get number of outputs assuming non-zero change
+    std::size_t num_outputs_withchange() const override;
+
+//member variables
+private:
+    std::size_t m_num_outputs;
+    bool m_output_ephemeral_pubkeys_are_unique;
+    std::vector<jamtis::JamtisSelfSendType> m_self_send_output_types;
+    boost::multiprecision::uint128_t m_total_output_amount;
 };
 
-/// get current balance of an enote store using specified origin/spent statuses and exclusions
-boost::multiprecision::uint128_t get_balance(const SpEnoteStoreMockV1 &enote_store,
-    const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
-    const std::unordered_set<SpEnoteSpentStatus> &spent_statuses = {},
-    const std::unordered_set<EnoteStoreBalanceExclusions> &exclusions = {});
-
-/// get current total amount received using specified origin statuses
-boost::multiprecision::uint128_t get_received_sum(const SpEnoteStoreMockPaymentValidatorV1 &payment_validator,
-    const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
-    const std::unordered_set<EnoteStoreBalanceExclusions> &exclusions = {});
-
-} //namespace mocks
 } //namespace sp

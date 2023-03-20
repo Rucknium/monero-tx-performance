@@ -132,37 +132,6 @@ void make_tx_artifacts_merkle_root_v1(const rct::key &input_images_prefix,
     const rct::key &tx_proofs_prefix,
     rct::key &tx_artifacts_merkle_root_out);
 /**
-* brief: try_prepare_inputs_and_outputs_for_transfer_v1 - try to select inputs then finalize outputs for a tx
-* param: change_address -
-* param: dummy_address -
-* param: local_user_input_selector -
-* param: tx_fee_calculator -
-* param: fee_per_tx_weight -
-* param: max_inputs -
-* param: normal_payment_proposals -
-* param: selfsend_payment_proposals -
-* param: k_view_balance -
-* outparam: legacy_contextual_inputs_out -
-* outparam: sp_contextual_inputs_out -
-* outparam: final_normal_payment_proposals_out -
-* outparam: final_selfsend_payment_proposals_out -
-* outparam: discretized_transaction_fee_out -
-*/
-bool try_prepare_inputs_and_outputs_for_transfer_v1(const jamtis::JamtisDestinationV1 &change_address,
-    const jamtis::JamtisDestinationV1 &dummy_address,
-    const InputSelectorV1 &local_user_input_selector,
-    const FeeCalculator &tx_fee_calculator,
-    const rct::xmr_amount fee_per_tx_weight,
-    const std::size_t max_inputs,
-    std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals,
-    std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals,
-    const crypto::secret_key &k_view_balance,
-    std::vector<LegacyContextualEnoteRecordV1> &legacy_contextual_inputs_out,
-    std::vector<SpContextualEnoteRecordV1> &sp_contextual_inputs_out,
-    std::vector<jamtis::JamtisPaymentProposalV1> &final_normal_payment_proposals_out,
-    std::vector<jamtis::JamtisPaymentProposalSelfSendV1> &final_selfsend_payment_proposals_out,
-    DiscretizedFee &discretized_transaction_fee_out);
-/**
 * brief: check_v1_coinbase_tx_proposal_semantics_v1 - check semantics of a coinbase tx proposal
 *   - throws if a check fails
 *   - NOTE: it is permitted for there to be no output coinbase enotes (i.e. for unit testing/mockups)

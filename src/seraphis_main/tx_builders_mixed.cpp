@@ -55,7 +55,6 @@
 #include "tx_builders_outputs.h"
 #include "tx_component_types.h"
 #include "tx_component_types_legacy.h"
-#include "tx_input_selection_output_context_v1.h"
 #include "tx_validators.h"
 #include "txtype_base.h"
 #include "txtype_squashed_v1.h"
@@ -743,79 +742,6 @@ void make_tx_artifacts_merkle_root_v1(const rct::key &input_images_prefix,
     transcript.append("tx_proofs_prefix", tx_proofs_prefix);
 
     sp_hash_to_32(transcript.data(), transcript.size(), tx_artifacts_merkle_root_out.bytes);
-}
-//-------------------------------------------------------------------------------------------------------------------
-bool try_prepare_inputs_and_outputs_for_transfer_v1(const jamtis::JamtisDestinationV1 &change_address,
-    const jamtis::JamtisDestinationV1 &dummy_address,
-    const InputSelectorV1 &local_user_input_selector,
-    const FeeCalculator &tx_fee_calculator,
-    const rct::xmr_amount fee_per_tx_weight,
-    const std::size_t max_inputs,
-    std::vector<jamtis::JamtisPaymentProposalV1> normal_payment_proposals,
-    std::vector<jamtis::JamtisPaymentProposalSelfSendV1> selfsend_payment_proposals,
-    const crypto::secret_key &k_view_balance,
-    std::vector<LegacyContextualEnoteRecordV1> &legacy_contextual_inputs_out,
-    std::vector<SpContextualEnoteRecordV1> &sp_contextual_inputs_out,
-    std::vector<jamtis::JamtisPaymentProposalV1> &final_normal_payment_proposals_out,
-    std::vector<jamtis::JamtisPaymentProposalSelfSendV1> &final_selfsend_payment_proposals_out,
-    DiscretizedFee &discretized_transaction_fee_out)
-{
-    legacy_contextual_inputs_out.clear();
-    sp_contextual_inputs_out.clear();
-    final_normal_payment_proposals_out.clear();
-    final_selfsend_payment_proposals_out.clear();
-
-    // 1. try to select inputs for the tx
-    const OutputSetContextForInputSelectionV1 output_set_context{
-            normal_payment_proposals,
-            selfsend_payment_proposals
-        };
-
-    rct::xmr_amount reported_final_fee;
-    input_set_tracker_t selected_input_set;
-
-    if (!try_get_input_set_v1(output_set_context,
-            max_inputs,
-            local_user_input_selector,
-            fee_per_tx_weight,
-            tx_fee_calculator,
-            reported_final_fee,
-            selected_input_set))
-        return false;
-
-    // 2. separate into legacy and seraphis inputs
-    split_selected_input_set(selected_input_set, legacy_contextual_inputs_out, sp_contextual_inputs_out);
-
-    // 3.  get total input amount
-    const boost::multiprecision::uint128_t total_input_amount{
-            total_amount(legacy_contextual_inputs_out) +
-            total_amount(sp_contextual_inputs_out)
-        };
-
-    // 4. finalize output set
-    finalize_v1_output_proposal_set_v1(total_input_amount,
-        reported_final_fee,
-        change_address,
-        dummy_address,
-        k_view_balance,
-        normal_payment_proposals,
-        selfsend_payment_proposals);
-
-    CHECK_AND_ASSERT_THROW_MES(tx_fee_calculator.compute_fee(fee_per_tx_weight,
-                legacy_contextual_inputs_out.size(), sp_contextual_inputs_out.size(),
-                normal_payment_proposals.size() + selfsend_payment_proposals.size()) ==
-            reported_final_fee,
-        "prepare inputs and outputs for transfer (v1): final fee is not consistent with input selector fee (bug).");
-
-    final_normal_payment_proposals_out   = std::move(normal_payment_proposals);
-    final_selfsend_payment_proposals_out = std::move(selfsend_payment_proposals);
-
-    // 5. set transaction fee
-    discretized_transaction_fee_out = discretize_fee(reported_final_fee);
-    CHECK_AND_ASSERT_THROW_MES(discretized_transaction_fee_out == reported_final_fee,
-        "prepare inputs and outputs for transfer (v1): the input selector fee was not properly discretized (bug).");
-
-    return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 void check_v1_coinbase_tx_proposal_semantics_v1(const SpCoinbaseTxProposalV1 &tx_proposal)

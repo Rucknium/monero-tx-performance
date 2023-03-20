@@ -26,20 +26,19 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// Output set context for use during input selection.
+// Calculate the fee for an SpTxSquashedV1 tx.
 
 #pragma once
 
 //local headers
-#include "seraphis_core/jamtis_payment_proposal.h"
-#include "seraphis_core/jamtis_support_types.h"
-#include "tx_input_selection_output_context.h"
+#include "ringct/rctTypes.h"
+#include "seraphis_core/tx_extra.h"
+#include "seraphis_main/tx_fee_calculator.h"
+#include "seraphis_main/txtype_squashed_v1.h"
 
 //third party headers
-#include "boost/multiprecision/cpp_int.hpp"
 
 //standard headers
-#include <vector>
 
 //forward declarations
 
@@ -47,31 +46,32 @@
 namespace sp
 {
 
-class OutputSetContextForInputSelectionV1 final : public OutputSetContextForInputSelection
+class FeeCalculatorSpTxSquashedV1 final : public FeeCalculator
 {
 public:
 //constructors
-    OutputSetContextForInputSelectionV1(const std::vector<jamtis::JamtisPaymentProposalV1> &normal_payment_proposals,
-        const std::vector<jamtis::JamtisPaymentProposalSelfSendV1> &selfsend_payment_proposals);
-
-//overloaded operators
-    /// disable copy/move (this is a scoped manager (concept: context binding))
-    OutputSetContextForInputSelectionV1& operator=(OutputSetContextForInputSelectionV1&&) = delete;
+    FeeCalculatorSpTxSquashedV1(const std::size_t legacy_ring_size,
+        const std::size_t ref_set_decomp_n,
+        const std::size_t ref_set_decomp_m,
+        const std::size_t num_bin_members,
+        const TxExtra &tx_extra);
 
 //member functions
-    /// get total output amount
-    boost::multiprecision::uint128_t total_amount() const override;
-    /// get number of outputs assuming no change
-    std::size_t num_outputs_nochange() const override;
-    /// get number of outputs assuming non-zero change
-    std::size_t num_outputs_withchange() const override;
+    static rct::xmr_amount compute_fee(const std::size_t fee_per_weight, const std::size_t weight);
+    static rct::xmr_amount compute_fee(const std::size_t fee_per_weight, const SpTxSquashedV1 &tx);
+    rct::xmr_amount compute_fee(const std::size_t fee_per_weight,
+        const std::size_t num_legacy_inputs,
+        const std::size_t num_sp_inputs,
+        const std::size_t num_outputs) const override;
 
-//member variables
 private:
-    std::size_t m_num_outputs;
-    bool m_output_ephemeral_pubkeys_are_unique;
-    std::vector<jamtis::JamtisSelfSendType> m_self_send_output_types;
-    boost::multiprecision::uint128_t m_total_output_amount;
+//member variables
+    /// misc. info for calculating tx weight
+    std::size_t m_legacy_ring_size;
+    std::size_t m_ref_set_decomp_n;
+    std::size_t m_ref_set_decomp_m;
+    std::size_t m_num_bin_members;
+    TxExtra m_tx_extra;
 };
 
 } //namespace sp

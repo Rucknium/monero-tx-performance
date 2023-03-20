@@ -50,12 +50,15 @@
 #include "seraphis_core/tx_extra.h"
 #include "seraphis_crypto/sp_composition_proof.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
+#include "seraphis_impl/enote_store_utils.h"
+#include "seraphis_impl/scanning_context_simple.h"
+#include "seraphis_impl/tx_fee_calculator_squashed_v1.h"
+#include "seraphis_impl/tx_input_selection_output_context_v1.h"
 #include "seraphis_main/contextual_enote_record_types.h"
 #include "seraphis_main/contextual_enote_record_utils.h"
 #include "seraphis_main/enote_record_types.h"
 #include "seraphis_main/enote_record_utils.h"
 #include "seraphis_main/scan_machine_types.h"
-#include "seraphis_main/scanning_context_simple.h"
 #include "seraphis_main/sp_knowledge_proof_types.h"
 #include "seraphis_main/sp_knowledge_proof_utils.h"
 #include "seraphis_main/tx_builder_types.h"
@@ -64,9 +67,7 @@
 #include "seraphis_main/tx_builders_mixed.h"
 #include "seraphis_main/tx_builders_outputs.h"
 #include "seraphis_main/tx_component_types.h"
-#include "seraphis_main/tx_fee_calculator_squashed_v1.h"
 #include "seraphis_main/tx_input_selection.h"
-#include "seraphis_main/tx_input_selection_output_context_v1.h"
 #include "seraphis_main/txtype_squashed_v1.h"
 #include "seraphis_mocks/seraphis_mocks.h"
 
@@ -156,7 +157,7 @@ static void enote_knowledge_proofs_helper(const jamtis_mock_keys &keys,
 //-------------------------------------------------------------------------------------------------------------------
 static void reserve_proof_helper(const TxValidationContext &validation_context,
     const jamtis_mock_keys &prover_keys,
-    const SpEnoteStoreMockV1 &enote_store,
+    const SpEnoteStore &enote_store,
     const boost::multiprecision::uint128_t expected_reserve_amount)
 {
     // 1. get all of the user's enote records
@@ -451,8 +452,8 @@ TEST(seraphis_knowledge_proofs, reserve_proof)
     make_random_address_for_user(user_keys_B, destination_B);
 
     // c. user enote stores (refresh index = 0; seraphis initial block = 0; default spendable age = 0)
-    SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
-    SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
+    SpEnoteStore enote_store_A{0, 0, 0};
+    SpEnoteStore enote_store_B{0, 0, 0};
 
     // d. user input selectors
     const InputSelectorMockV1 input_selector_A{enote_store_A};
@@ -584,8 +585,8 @@ TEST(seraphis_knowledge_proofs, sp_all_knowledge_proofs)
     make_random_address_for_user(user_keys_B, destination_B);
 
     // d. user enote stores (refresh height = 0; seraphis initial block = 0; default spendable age = 0)
-    SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
-    SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
+    SpEnoteStore enote_store_A{0, 0, 0};
+    SpEnoteStore enote_store_B{0, 0, 0};
 
     // e. user input selectors
     const InputSelectorMockV1 input_selector_A{enote_store_A};

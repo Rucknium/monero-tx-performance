@@ -26,28 +26,23 @@
 # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 # THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set(seraphis_mocks_sources
-  enote_finding_context_mocks.cpp
-  enote_store_mock_simple_v1.cpp
-  jamtis_mock_keys.cpp
-  legacy_mock_keys.cpp
-  make_mock_tx.cpp
-  mock_ledger_context.cpp
-  mock_offchain_context.cpp
-  mock_send_receive.cpp
-  mock_tx_builders_inputs.cpp
-  mock_tx_builders_legacy_inputs.cpp
-  mock_tx_builders_outputs.cpp
-  scan_chunk_consumer_mocks.cpp
-  tx_input_selector_mocks.cpp)
+set(seraphis_impl_sources
+  enote_store.cpp
+  enote_store_payment_validator.cpp
+  enote_store_utils.cpp
+  scan_process_basic.cpp
+  serialization_demo_utils.cpp
+  tx_builder_utils.cpp
+  tx_fee_calculator_squashed_v1.cpp
+  tx_input_selection_output_context_v1.cpp)
 
-monero_find_all_headers(seraphis_mocks_headers, "${CMAKE_CURRENT_SOURCE_DIR}")
+monero_find_all_headers(seraphis_impl_headers, "${CMAKE_CURRENT_SOURCE_DIR}")
 
-monero_add_library(seraphis_mocks
-  ${seraphis_mocks_sources}
-  ${seraphis_mocks_headers})
+monero_add_library(seraphis_impl
+  ${seraphis_impl_sources}
+  ${seraphis_impl_headers})
 
-target_link_libraries(seraphis_mocks
+target_link_libraries(seraphis_impl
   PUBLIC
     cncrypto
     common
@@ -61,7 +56,7 @@ target_link_libraries(seraphis_mocks
   PRIVATE
     ${EXTRA_LIBRARIES})
 
-target_include_directories(seraphis_mocks
+target_include_directories(seraphis_impl
   PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}"
   PRIVATE

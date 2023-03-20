@@ -36,8 +36,6 @@
 #include "crypto/crypto.h"
 #include "cryptonote_basic/subaddress_index.h"
 #include "enote_finding_context_mocks.h"
-#include "enote_store_mock_v1.h"
-#include "enote_store_mock_validator_v1.h"
 #include "jamtis_mock_keys.h"
 #include "legacy_mock_keys.h"
 #include "mock_ledger_context.h"
@@ -45,6 +43,8 @@
 #include "seraphis_core/binned_reference_set.h"
 #include "seraphis_core/jamtis_payment_proposal.h"
 #include "seraphis_core/tx_extra.h"
+#include "seraphis_impl/enote_store.h"
+#include "seraphis_impl/enote_store_payment_validator.h"
 #include "seraphis_main/scan_machine_types.h"
 #include "seraphis_main/tx_builder_types.h"
 #include "seraphis_main/tx_fee_calculator.h"
@@ -139,22 +139,22 @@ void refresh_user_enote_store_legacy_intermediate(const rct::key &legacy_base_sp
     const LegacyScanMode legacy_scan_mode,
     const scanning::ScanMachineConfig &refresh_config,
     const MockLedgerContext &ledger_context,
-    SpEnoteStoreMockV1 &user_enote_store_inout);
+    SpEnoteStore &user_enote_store_inout);
 void refresh_user_enote_store_legacy_full(const rct::key &legacy_base_spend_pubkey,
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const crypto::secret_key &legacy_spend_privkey,
     const crypto::secret_key &legacy_view_privkey,
     const scanning::ScanMachineConfig &refresh_config,
     const MockLedgerContext &ledger_context,
-    SpEnoteStoreMockV1 &user_enote_store_inout);
+    SpEnoteStore &user_enote_store_inout);
 void refresh_user_enote_store_PV(const jamtis::mocks::jamtis_mock_keys &user_keys,
     const scanning::ScanMachineConfig &refresh_config,
     const MockLedgerContext &ledger_context,
-    SpEnoteStoreMockPaymentValidatorV1 &user_enote_store_inout);
+    SpEnoteStorePaymentValidator &user_enote_store_inout);
 void refresh_user_enote_store(const jamtis::mocks::jamtis_mock_keys &user_keys,
     const scanning::ScanMachineConfig &refresh_config,
     const MockLedgerContext &ledger_context,
-    SpEnoteStoreMockV1 &user_enote_store_inout);
+    SpEnoteStore &user_enote_store_inout);
 
 } //namespace mocks
 } //namespace sp

@@ -40,10 +40,10 @@
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
 #include "enote_finding_context_mocks.h"
-#include "enote_store_mock_v1.h"
-#include "enote_store_mock_validator_v1.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_core/jamtis_address_tag_utils.h"
+#include "seraphis_impl/enote_store.h"
+#include "seraphis_impl/enote_store_payment_validator.h"
 #include "seraphis_main/enote_record_types.h"
 #include "seraphis_main/scan_chunk_consumer.h"
 
@@ -72,7 +72,7 @@ public:
     ChunkConsumerMockLegacyIntermediate(const rct::key &legacy_base_spend_pubkey,
         const crypto::secret_key &legacy_view_privkey,
         const LegacyScanMode legacy_scan_mode,
-        SpEnoteStoreMockV1 &enote_store);
+        SpEnoteStore &enote_store);
 
 //overloaded operators
     /// disable copy/move (this is a scoped manager [reference wrapper])
@@ -106,7 +106,7 @@ private:
 
     const rct::key &m_legacy_base_spend_pubkey;
     const crypto::secret_key &m_legacy_view_privkey;
-    SpEnoteStoreMockV1 &m_enote_store;
+    SpEnoteStore &m_enote_store;
 };
 
 class ChunkConsumerMockLegacy final : public scanning::ChunkConsumer
@@ -117,7 +117,7 @@ public:
     ChunkConsumerMockLegacy(const rct::key &legacy_base_spend_pubkey,
         const crypto::secret_key &legacy_spend_privkey,
         const crypto::secret_key &legacy_view_privkey,
-        SpEnoteStoreMockV1 &enote_store);
+        SpEnoteStore &enote_store);
 
 //overloaded operators
     /// disable copy/move (this is a scoped manager [reference wrapper])
@@ -145,7 +145,7 @@ private:
     const crypto::secret_key &m_legacy_spend_privkey;
     const crypto::secret_key &m_legacy_view_privkey;
 
-    SpEnoteStoreMockV1 &m_enote_store;
+    SpEnoteStore &m_enote_store;
 };
 
 class ChunkConsumerMockSpIntermediate final : public scanning::ChunkConsumer
@@ -157,7 +157,7 @@ public:
         const crypto::x25519_secret_key &xk_unlock_amounts,
         const crypto::x25519_secret_key &xk_find_received,
         const crypto::secret_key &s_generate_address,
-        SpEnoteStoreMockPaymentValidatorV1 &enote_store);
+        SpEnoteStorePaymentValidator &enote_store);
 
 //overloaded operators
     /// disable copy/move (this is a scoped manager [reference wrapper])
@@ -185,7 +185,7 @@ private:
     const crypto::x25519_secret_key &m_xk_unlock_amounts;
     const crypto::x25519_secret_key &m_xk_find_received;
     const crypto::secret_key &m_s_generate_address;
-    SpEnoteStoreMockPaymentValidatorV1 &m_enote_store;
+    SpEnoteStorePaymentValidator &m_enote_store;
 
     crypto::secret_key m_s_cipher_tag;
     std::unique_ptr<jamtis::jamtis_address_tag_cipher_context> m_cipher_context;
@@ -198,7 +198,7 @@ public:
     /// normal constructor
     ChunkConsumerMockSp(const rct::key &jamtis_spend_pubkey,
         const crypto::secret_key &k_view_balance,
-        SpEnoteStoreMockV1 &enote_store);
+        SpEnoteStore &enote_store);
 
 //overloaded operators
     /// disable copy/move (this is a scoped manager [reference wrapper])
@@ -224,7 +224,7 @@ public:
 private:
     const rct::key &m_jamtis_spend_pubkey;
     const crypto::secret_key &m_k_view_balance;
-    SpEnoteStoreMockV1 &m_enote_store;
+    SpEnoteStore &m_enote_store;
 
     crypto::x25519_secret_key m_xk_unlock_amounts;
     crypto::x25519_secret_key m_xk_find_received;

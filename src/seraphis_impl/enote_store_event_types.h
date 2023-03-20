@@ -46,8 +46,6 @@
 
 namespace sp
 {
-namespace mocks
-{
 
 /// blocks added from a legacy-intermediate scan update
 struct LegacyIntermediateBlocksDiff final
@@ -190,7 +188,7 @@ struct NewSpRecord final
 };
 
 /// an event in a seraphis payment validator enote store
-using SpPaymentValidatorStoreEvent =
+using PaymentValidatorStoreEvent =
     tools::variant<
         SpIntermediateBlocksDiff,
         UpdatedSpIntermediateOriginContext,
@@ -219,5 +217,4 @@ using EnoteStoreEvent =
         NewSpRecord
     >;
 
-} //namespace mocks
 } //namespace sp

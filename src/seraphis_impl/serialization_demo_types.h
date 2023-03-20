@@ -40,8 +40,8 @@
 #include "serialization/containers.h"
 #include "serialization/crypto.h"
 #include "serialization/serialization.h"
-#include "txtype_coinbase_v1.h"
-#include "txtype_squashed_v1.h"
+#include "seraphis_main/txtype_coinbase_v1.h"
+#include "seraphis_main/txtype_squashed_v1.h"
 
 //third party headers
 

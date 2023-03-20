@@ -28,6 +28,17 @@
 
 // State machine for scanning a LIFO chain of blocks by incrementally processing chunks of that chain.
 
+// Core interface for balance recovery framework (works for both legacy and seraphis backends).
+// PRECONDITIONS:
+// 1. chunks must be built from an atomic view of the source cache (ledger, unconfirmed cache, offchain cache)
+// 2. chunk data: contextual_key_images must reference a tx recorded in basic_records_per_tx (even if you
+//    need to add empty map entries to achieve that)
+// 3. any call to get a chunk from a scanning context should produce a chunk that is at least as fresh as any
+//    other chunk obtained from that context (atomic ordering)
+// 4. any call to consume a chunk in a chunk consumer should resolve all side-effects observable via the consumer's
+//    interface by the time the call is complete (e.g. any changes to block ids observable by try_get_block_id() need
+//    to be completed during the 'consume chunk' call)
+
 #pragma once
 
 //local headers

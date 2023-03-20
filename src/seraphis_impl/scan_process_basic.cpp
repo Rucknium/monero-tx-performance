@@ -30,13 +30,13 @@
 #include "scan_process_basic.h"
 
 //local headers
-#include "contextual_enote_record_types.h"
-#include "scan_chunk_consumer.h"
-#include "scan_core_types.h"
-#include "scan_machine.h"
-#include "scan_machine_types.h"
-#include "scan_misc_utils.h"
-#include "scanning_context.h"
+#include "seraphis_main/contextual_enote_record_types.h"
+#include "seraphis_main/scan_chunk_consumer.h"
+#include "seraphis_main/scan_core_types.h"
+#include "seraphis_main/scan_machine.h"
+#include "seraphis_main/scan_machine_types.h"
+#include "seraphis_main/scan_misc_utils.h"
+#include "seraphis_main/scanning_context.h"
 
 //third party headers
 
@@ -44,7 +44,7 @@
 
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
-#define MONERO_DEFAULT_LOG_CATEGORY "seraphis"
+#define MONERO_DEFAULT_LOG_CATEGORY "seraphis_impl"
 
 namespace sp
 {

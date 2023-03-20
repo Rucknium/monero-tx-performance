@@ -34,8 +34,8 @@
 
 //local headers
 #include "crypto/crypto.h"
-#include "enote_store_event_types.h"
-#include "enote_store_mock_v1.h"
+#include "seraphis_impl/enote_store_event_types.h"
+#include "seraphis_impl/enote_store.h"
 #include "seraphis_main/contextual_enote_record_types.h"
 
 //third party headers
@@ -50,22 +50,20 @@
 
 namespace sp
 {
-namespace mocks
-{
 
 ////
-// SpEnoteStoreMockPaymentValidatorV1
+// SpEnoteStorePaymentValidator
 // - tracks amounts and destinations of non-selfsend seraphis owned enotes
 ///
-class SpEnoteStoreMockPaymentValidatorV1 final
+class SpEnoteStorePaymentValidator final
 {
 public:
 //constructors
     /// default constructor
-    SpEnoteStoreMockPaymentValidatorV1() = default;
+    SpEnoteStorePaymentValidator() = default;
 
     /// normal constructor
-    SpEnoteStoreMockPaymentValidatorV1(const std::uint64_t refresh_index, const std::uint64_t default_spendable_age) :
+    SpEnoteStorePaymentValidator(const std::uint64_t refresh_index, const std::uint64_t default_spendable_age) :
         m_refresh_index{refresh_index},
         m_default_spendable_age{default_spendable_age}
     {}
@@ -87,17 +85,17 @@ public:
     /// update the store with enote records, with associated context
     void update_with_sp_records_from_nonledger(const SpEnoteOriginStatus nonledger_origin_status,
         const std::unordered_map<rct::key, SpContextualIntermediateEnoteRecordV1> &found_enote_records,
-        std::list<SpPaymentValidatorStoreEvent> &events_inout);
+        std::list<PaymentValidatorStoreEvent> &events_inout);
     void update_with_sp_records_from_ledger(const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
         const std::unordered_map<rct::key, SpContextualIntermediateEnoteRecordV1> &found_enote_records,
         const std::vector<rct::key> &new_block_ids,
-        std::list<SpPaymentValidatorStoreEvent> &events_inout);
+        std::list<PaymentValidatorStoreEvent> &events_inout);
 
 private:
     /// add a record
     void add_record(const SpContextualIntermediateEnoteRecordV1 &new_record,
-        std::list<SpPaymentValidatorStoreEvent> &events_inout);
+        std::list<PaymentValidatorStoreEvent> &events_inout);
 
 //member variables
     /// seraphis enotes
@@ -113,5 +111,4 @@ private:
     std::uint64_t m_default_spendable_age{0};
 };
 
-} //namespace mocks
 } //namespace sp

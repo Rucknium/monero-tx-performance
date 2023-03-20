@@ -39,12 +39,12 @@
 #include "seraphis_crypto/bulletproofs_plus2.h"
 #include "seraphis_crypto/grootle.h"
 #include "seraphis_crypto/sp_composition_proof.h"
-#include "serialization_demo_types.h"
-#include "tx_builders_inputs.h"
-#include "tx_component_types.h"
-#include "tx_component_types_legacy.h"
-#include "txtype_coinbase_v1.h"
-#include "txtype_squashed_v1.h"
+#include "seraphis_impl/serialization_demo_types.h"
+#include "seraphis_main/tx_builders_inputs.h"
+#include "seraphis_main/tx_component_types.h"
+#include "seraphis_main/tx_component_types_legacy.h"
+#include "seraphis_main/txtype_coinbase_v1.h"
+#include "seraphis_main/txtype_squashed_v1.h"
 
 //third party headers
 
@@ -52,7 +52,7 @@
 #include <vector>
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
-#define MONERO_DEFAULT_LOG_CATEGORY "seraphis"
+#define MONERO_DEFAULT_LOG_CATEGORY "seraphis_impl"
 
 namespace sp
 {

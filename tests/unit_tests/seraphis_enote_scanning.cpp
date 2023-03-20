@@ -49,12 +49,15 @@
 #include "seraphis_core/tx_extra.h"
 #include "seraphis_crypto/sp_composition_proof.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
+#include "seraphis_impl/enote_store_utils.h"
+#include "seraphis_impl/scan_process_basic.h"
+#include "seraphis_impl/scanning_context_simple.h"
+#include "seraphis_impl/tx_fee_calculator_squashed_v1.h"
+#include "seraphis_impl/tx_input_selection_output_context_v1.h"
 #include "seraphis_main/contextual_enote_record_utils.h"
 #include "seraphis_main/enote_record_types.h"
 #include "seraphis_main/enote_record_utils.h"
 #include "seraphis_main/enote_record_utils_legacy.h"
-#include "seraphis_main/scan_process_basic.h"
-#include "seraphis_main/scanning_context_simple.h"
 #include "seraphis_main/scan_machine_types.h"
 #include "seraphis_main/tx_builder_types.h"
 #include "seraphis_main/tx_builders_inputs.h"
@@ -62,9 +65,7 @@
 #include "seraphis_main/tx_builders_mixed.h"
 #include "seraphis_main/tx_builders_outputs.h"
 #include "seraphis_main/tx_component_types.h"
-#include "seraphis_main/tx_fee_calculator_squashed_v1.h"
 #include "seraphis_main/tx_input_selection.h"
-#include "seraphis_main/tx_input_selection_output_context_v1.h"
 #include "seraphis_main/txtype_base.h"
 #include "seraphis_main/txtype_squashed_v1.h"
 #include "seraphis_mocks/seraphis_mocks.h"
@@ -285,7 +286,7 @@ TEST(seraphis_enote_scanning, trivial_ledger)
         {single_enote}));
 
     // make and refresh enote store with mock ledger context
-    SpEnoteStoreMockV1 user_enote_store{0, 0, 0};
+    SpEnoteStore user_enote_store{0, 0, 0};
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
             .max_chunk_size = 1,
@@ -344,7 +345,7 @@ TEST(seraphis_enote_scanning, simple_ledger_1)
 
     // 1. one coinbase to user
     MockLedgerContext ledger_context{0, 0};
-    SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
+    SpEnoteStore enote_store_A{0, 0, 0};
     send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);
     refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
 
@@ -382,7 +383,7 @@ TEST(seraphis_enote_scanning, simple_ledger_2)
 
     // 2. two coinbase to user (one coinbase tx)
     MockLedgerContext ledger_context{0, 0};
-    SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
+    SpEnoteStore enote_store_A{0, 0, 0};
     send_sp_coinbase_amounts_to_users({{1, 1}}, {destination_A}, ledger_context);
     refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
 
@@ -420,8 +421,8 @@ TEST(seraphis_enote_scanning, simple_ledger_3)
 
     // 3. two coinbase owned by different users (one coinbase tx)
     MockLedgerContext ledger_context{0, 0};
-    SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
-    SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
+    SpEnoteStore enote_store_A{0, 0, 0};
+    SpEnoteStore enote_store_B{0, 0, 0};
     send_sp_coinbase_amounts_to_users({{1}, {2}}, {destination_A, destination_B}, ledger_context);
     refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
     refresh_user_enote_store(user_keys_B, refresh_config, ledger_context, enote_store_B);
@@ -464,7 +465,7 @@ TEST(seraphis_enote_scanning, simple_ledger_4)
 
     // 4. two coinbase to user, search between each send (two coinbase txs i.e. two blocks)
     MockLedgerContext ledger_context{0, 0};
-    SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
+    SpEnoteStore enote_store_A{0, 0, 0};
     send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);
     refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
 
@@ -510,7 +511,7 @@ TEST(seraphis_enote_scanning, simple_ledger_5)
 
     // 5. search once, three coinbase to user, search once, pop 2, search again, 1 coinbase to user, search again
     MockLedgerContext ledger_context{0, 0};
-    SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
+    SpEnoteStore enote_store_A{0, 0, 0};
     refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
     ASSERT_TRUE(get_balance(enote_store_A, {SpEnoteOriginStatus::OFFCHAIN, SpEnoteOriginStatus::UNCONFIRMED},
         {SpEnoteSpentStatus::SPENT_OFFCHAIN, SpEnoteSpentStatus::SPENT_UNCONFIRMED}) == 0);
@@ -573,7 +574,7 @@ TEST(seraphis_enote_scanning, simple_ledger_6)
     // 6. search, three coinbase to user, search, pop 2, search, 1 coinbase to user, search, pop 3, search
     // - refresh index 1
     MockLedgerContext ledger_context{0, 0};
-    SpEnoteStoreMockV1 enote_store_A{1, 0, 0};
+    SpEnoteStore enote_store_A{1, 0, 0};
     refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
 
     ASSERT_TRUE(get_balance(enote_store_A, {SpEnoteOriginStatus::OFFCHAIN, SpEnoteOriginStatus::UNCONFIRMED},
@@ -641,8 +642,8 @@ TEST(seraphis_enote_scanning, simple_ledger_locked)
     // test locked enotes
     const std::uint64_t default_spendable_age{2};
     MockLedgerContext ledger_context{0, 0};
-    SpEnoteStoreMockV1 enote_store_A{0, 0, default_spendable_age};
-    SpEnoteStoreMockPaymentValidatorV1 enote_store_PV_A{0, default_spendable_age};
+    SpEnoteStore enote_store_A{0, 0, default_spendable_age};
+    SpEnoteStorePaymentValidator enote_store_PV_A{0, default_spendable_age};
     refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
     refresh_user_enote_store_PV(user_keys_A, refresh_config, ledger_context, enote_store_PV_A);
 
@@ -735,9 +736,9 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_1)
 
     // 1. one unconfirmed tx (no change), then commit it (include payment validator checks)
     MockLedgerContext ledger_context{0, 0};
-    SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
-    SpEnoteStoreMockPaymentValidatorV1 enote_store_PV_A{0, 0};
-    SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
+    SpEnoteStore enote_store_A{0, 0, 0};
+    SpEnoteStorePaymentValidator enote_store_PV_A{0, 0};
+    SpEnoteStore enote_store_B{0, 0, 0};
     const InputSelectorMockV1 input_selector_A{enote_store_A};
     const InputSelectorMockV1 input_selector_B{enote_store_B};
     send_sp_coinbase_amounts_to_users({{1, 1, 1, 1}}, {destination_A}, ledger_context);
@@ -835,8 +836,8 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_2)
 
     // 2. one unconfirmed tx (>0 change), then commit it
     MockLedgerContext ledger_context{0, 0};
-    SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
-    SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
+    SpEnoteStore enote_store_A{0, 0, 0};
+    SpEnoteStore enote_store_B{0, 0, 0};
     const InputSelectorMockV1 input_selector_A{enote_store_A};
     const InputSelectorMockV1 input_selector_B{enote_store_B};
     send_sp_coinbase_amounts_to_users({{0, 0, 0, 8}}, {destination_A}, ledger_context);
@@ -927,8 +928,8 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_3)
 
     // 3. one unconfirmed tx (>0 change), then commit it + coinbase to B
     MockLedgerContext ledger_context{0, 0};
-    SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
-    SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
+    SpEnoteStore enote_store_A{0, 0, 0};
+    SpEnoteStore enote_store_B{0, 0, 0};
     const InputSelectorMockV1 input_selector_A{enote_store_A};
     const InputSelectorMockV1 input_selector_B{enote_store_B};
     send_sp_coinbase_amounts_to_users({{0, 0, 0, 8}}, {destination_A}, ledger_context);
@@ -1019,8 +1020,8 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_4)
 
     // 4. pass funds around with unconfirmed cache clear
     MockLedgerContext ledger_context{0, 0};
-    SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
-    SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
+    SpEnoteStore enote_store_A{0, 0, 0};
+    SpEnoteStore enote_store_B{0, 0, 0};
     const InputSelectorMockV1 input_selector_A{enote_store_A};
     const InputSelectorMockV1 input_selector_B{enote_store_B};
     send_sp_coinbase_amounts_to_users({{10, 10, 10, 10}}, {destination_A}, ledger_context);
@@ -1199,8 +1200,8 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_5)
 
     // 5. pass funds around with non-zero refresh index and reorging
     MockLedgerContext ledger_context{0, 0};
-    SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
-    SpEnoteStoreMockV1 enote_store_B{2, 0, 0};
+    SpEnoteStore enote_store_A{0, 0, 0};
+    SpEnoteStore enote_store_B{2, 0, 0};
     const InputSelectorMockV1 input_selector_A{enote_store_A};
     const InputSelectorMockV1 input_selector_B{enote_store_B};
     send_sp_coinbase_amounts_to_users({{10, 10, 10, 10}}, {destination_A}, ledger_context);
@@ -1395,7 +1396,7 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_6)
     // NOTE: the run-time of this test varies around 10-20% since the amount of funds transfered in each loop is
     //       random so some runs will have more total tx inputs and outputs than others
     MockLedgerContext ledger_context{0, 0};
-    SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
+    SpEnoteStore enote_store_A{0, 0, 0};
     const InputSelectorMockV1 input_selector_A{enote_store_A};
     send_sp_coinbase_amounts_to_users({{16, 0, 0, 0}}, {destination_A}, ledger_context);
 
@@ -1427,7 +1428,7 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_6)
             std::vector<SpEnoteVariant>{});
 
         // full refresh of user A
-        SpEnoteStoreMockV1 enote_store_A_full_refresh{0, 0, 0};
+        SpEnoteStore enote_store_A_full_refresh{0, 0, 0};
         refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A_full_refresh);
 
         ASSERT_TRUE(get_balance(enote_store_A_full_refresh, {SpEnoteOriginStatus::ONCHAIN},
@@ -1639,8 +1640,8 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_1)
             .max_partialscan_attempts = 0
         };
     MockLedgerContext ledger_context{0, 0};
-    SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
-    SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
+    SpEnoteStore enote_store_A{0, 0, 0};
+    SpEnoteStore enote_store_B{0, 0, 0};
     const InputSelectorMockV1 input_selector_A{enote_store_A};
     const InputSelectorMockV1 input_selector_B{enote_store_B};
     send_sp_coinbase_amounts_to_users({{1, 1, 1, 1}}, {destination_A}, ledger_context);
@@ -1751,8 +1752,8 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_2)
             .max_partialscan_attempts = 0
         };
     MockLedgerContext ledger_context{0, 0};
-    SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
-    SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
+    SpEnoteStore enote_store_A{0, 0, 0};
+    SpEnoteStore enote_store_B{0, 0, 0};
     const InputSelectorMockV1 input_selector_A{enote_store_A};
     const InputSelectorMockV1 input_selector_B{enote_store_B};
     send_sp_coinbase_amounts_to_users({{1, 1, 1, 1}}, {destination_A}, ledger_context);
@@ -1879,8 +1880,8 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_3)
             .max_partialscan_attempts = 1
         };
     MockLedgerContext ledger_context{0, 0};
-    SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
-    SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
+    SpEnoteStore enote_store_A{0, 0, 0};
+    SpEnoteStore enote_store_B{0, 0, 0};
     const InputSelectorMockV1 input_selector_A{enote_store_A};
     const InputSelectorMockV1 input_selector_B{enote_store_B};
     send_sp_coinbase_amounts_to_users({{1, 1, 1, 1}}, {destination_A}, ledger_context);
@@ -2009,8 +2010,8 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_4)
             .max_partialscan_attempts = 4
         };
     MockLedgerContext ledger_context{0, 0};
-    SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
-    SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
+    SpEnoteStore enote_store_A{0, 0, 0};
+    SpEnoteStore enote_store_B{0, 0, 0};
     const InputSelectorMockV1 input_selector_A{enote_store_A};
     const InputSelectorMockV1 input_selector_B{enote_store_B};
     send_sp_coinbase_amounts_to_users({{1, 1, 1, 1}}, {destination_A}, ledger_context);
@@ -2106,8 +2107,8 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_5)
             .max_partialscan_attempts = 4
         };
     MockLedgerContext ledger_context{0, 0};
-    SpEnoteStoreMockV1 enote_store_A{0, 0, 0};
-    SpEnoteStoreMockV1 enote_store_B{0, 0, 0};
+    SpEnoteStore enote_store_A{0, 0, 0};
+    SpEnoteStore enote_store_B{0, 0, 0};
     const InputSelectorMockV1 input_selector_A{enote_store_A};
     const InputSelectorMockV1 input_selector_B{enote_store_B};
     send_sp_coinbase_amounts_to_users({{1, 1, 1, 1}}, {destination_A}, ledger_context);
@@ -2233,7 +2234,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_1)
 
     // 1. v1-v4 legacy enotes (both normal and subaddress destinations)
     MockLedgerContext ledger_context{10000, 10000};
-    SpEnoteStoreMockV1 enote_store{0, 10000, 0};
+    SpEnoteStore enote_store{0, 10000, 0};
 
     refresh_user_enote_store_legacy_full(legacy_keys.Ks,
         legacy_subaddress_map,
@@ -2438,7 +2439,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_2)
 
     // 2. manual scanning with key image imports: test 1
     MockLedgerContext ledger_context{10000, 10000};
-    SpEnoteStoreMockV1 enote_store{0, 0, 0};
+    SpEnoteStore enote_store{0, 0, 0};
 
     //make enote for test
     LegacyEnoteV5 enote_1;
@@ -2674,7 +2675,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_3)
 
     // 3. manual scanning with key image imports: test 2
     MockLedgerContext ledger_context{10000, 10000};
-    SpEnoteStoreMockV1 enote_store{0, 10000, 0};
+    SpEnoteStore enote_store{0, 10000, 0};
 
     //make enotes: 1 -> user, 1 -> rand
     LegacyEnoteV5 enote_1;
@@ -3163,7 +3164,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_4)
 
     // 3. manual scanning with key image imports: test 3 (with reorg that drops a partialscanned block)
     MockLedgerContext ledger_context{10000, 10000};
-    SpEnoteStoreMockV1 enote_store{0, 10000, 0};
+    SpEnoteStore enote_store{0, 10000, 0};
 
     //make enotes: 1 -> user
     LegacyEnoteV5 enote_1;
@@ -3358,7 +3359,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_5)
 
     // 3. manual scanning with key image imports: test 4 (with reorg that replaces a partialscanned block)
     MockLedgerContext ledger_context{10000, 10000};
-    SpEnoteStoreMockV1 enote_store{0, 10000, 0};
+    SpEnoteStore enote_store{0, 10000, 0};
 
     //make enotes: 1 -> user
     LegacyEnoteV5 enote_1;
@@ -3562,8 +3563,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_6)
 
     // 4. duplicate onetime addresses: same amounts
     MockLedgerContext ledger_context{10000, 10000};
-    SpEnoteStoreMockV1 enote_store_int{0, 10000, 0};  //for view-only scanning
-    SpEnoteStoreMockV1 enote_store_full{0, 10000, 0};  //for full scanning
+    SpEnoteStore enote_store_int{0, 10000, 0};  //for view-only scanning
+    SpEnoteStore enote_store_full{0, 10000, 0};  //for full scanning
 
     //make enote: 1 -> user (this will be reused throughout the test)
     LegacyEnoteV5 enote_1;
@@ -4003,8 +4004,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_7)
 
     // 5. duplicate onetime addresses: different amounts
     MockLedgerContext ledger_context{10000, 10000};
-    SpEnoteStoreMockV1 enote_store_int{0, 10000, 0};  //for view-only scanning
-    SpEnoteStoreMockV1 enote_store_full{0, 10000, 0};  //for full scanning
+    SpEnoteStore enote_store_int{0, 10000, 0};  //for view-only scanning
+    SpEnoteStore enote_store_full{0, 10000, 0};  //for full scanning
 
     //make enotes: 1-a (amount 3), 1-b (amount 5), 1-c (amount 1), 1-d (amount 4)
     LegacyEnoteV5 enote_1a;
@@ -4462,8 +4463,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_8)
 
     // 6. locktime test 1: basic
     MockLedgerContext ledger_context{10000, 10000};
-    SpEnoteStoreMockV1 enote_store_int{0, 10000, 2};  //for view-only scanning
-    SpEnoteStoreMockV1 enote_store_full{0, 10000, 2};  //for full scanning
+    SpEnoteStore enote_store_int{0, 10000, 2};  //for view-only scanning
+    SpEnoteStore enote_store_full{0, 10000, 2};  //for full scanning
 
     //make enotes: enote 1, 2, 3
     LegacyEnoteV5 enote_1;
@@ -4858,8 +4859,8 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_9)
 
     // 7. locktime test 2: duplicate onetime addresses
     MockLedgerContext ledger_context{10000, 10000};
-    SpEnoteStoreMockV1 enote_store_int{0, 10000, 2};  //for view-only scanning
-    SpEnoteStoreMockV1 enote_store_full{0, 10000, 2};  //for full scanning
+    SpEnoteStore enote_store_int{0, 10000, 2};  //for view-only scanning
+    SpEnoteStore enote_store_full{0, 10000, 2};  //for full scanning
 
     //make enotes: 1-a (amount 1), 1-b (amount 2), 1-c (amount 3)
     LegacyEnoteV5 enote_1a;
@@ -5243,7 +5244,7 @@ static void legacy_view_scan_recovery_cycle(const legacy_mock_keys &legacy_keys,
     const std::uint64_t expected_balance_after_importing,
     const std::uint64_t expected_balance_after_key_image_refresh,
     const std::uint64_t expected_final_legacy_fullscan_index,
-    SpEnoteStoreMockV1 &enote_store_inout)
+    SpEnoteStore &enote_store_inout)
 {
     ASSERT_TRUE(legacy_onetime_addresses_expected.size() == legacy_key_images_expected.size());
 
@@ -5402,8 +5403,8 @@ static void legacy_sp_transition_test_recovery_assertions(const legacy_mock_keys
     const std::uint64_t re_view_scan_expected_balance_after_importing_key_images,
     const std::uint64_t re_view_scan_expected_balance_after_keyimage_refresh,
 
-    SpEnoteStoreMockV1 &enote_store_full_inout,
-    SpEnoteStoreMockV1 &enote_store_view_inout)
+    SpEnoteStore &enote_store_full_inout,
+    SpEnoteStore &enote_store_view_inout)
 {
     // 1. test full-scan recovery
     refresh_user_enote_store_legacy_full(legacy_keys.Ks,
@@ -5438,8 +5439,8 @@ static void legacy_sp_transition_test_recovery_assertions(const legacy_mock_keys
 
     // 3. test re-scan from empty enote stores
     {
-        SpEnoteStoreMockV1 enote_store_full_temp{0, first_sp_allowed_block, 0};
-        SpEnoteStoreMockV1 enote_store_view_temp{0, first_sp_allowed_block, 0};
+        SpEnoteStore enote_store_full_temp{0, first_sp_allowed_block, 0};
+        SpEnoteStore enote_store_view_temp{0, first_sp_allowed_block, 0};
 
         //test full-scan recovery
         refresh_user_enote_store_legacy_full(legacy_keys.Ks,
@@ -5564,8 +5565,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
 
     // 1. mixed seraphis/legacy enotes in transition zone
     MockLedgerContext ledger_context{first_sp_allowed_block, first_sp_only_block};
-    SpEnoteStoreMockV1 enote_store_full{0, first_sp_allowed_block, 0};
-    SpEnoteStoreMockV1 enote_store_view{0, first_sp_allowed_block, 0};
+    SpEnoteStore enote_store_full{0, first_sp_allowed_block, 0};
+    SpEnoteStore enote_store_view{0, first_sp_allowed_block, 0};
     InputSelectorMockV1 input_selector{enote_store_full};
 
     //make two legacy enotes
@@ -6652,8 +6653,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
 
     // 2. legacy in pre-transition zone into mixed seraphis/legacy enotes in transition zone
     MockLedgerContext ledger_context{first_sp_allowed_block, first_sp_only_block};
-    SpEnoteStoreMockV1 enote_store_full{0, first_sp_allowed_block, 0};
-    SpEnoteStoreMockV1 enote_store_view{0, first_sp_allowed_block, 0};
+    SpEnoteStore enote_store_full{0, first_sp_allowed_block, 0};
+    SpEnoteStore enote_store_view{0, first_sp_allowed_block, 0};
     InputSelectorMockV1 input_selector{enote_store_full};
 
     //make two legacy enotes
@@ -7665,8 +7666,8 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_3)
 
     // 3. pop into the pre-transition zone
     MockLedgerContext ledger_context{first_sp_allowed_block, first_sp_only_block};
-    SpEnoteStoreMockV1 enote_store_full{0, first_sp_allowed_block, 0};
-    SpEnoteStoreMockV1 enote_store_view{0, first_sp_allowed_block, 0};
+    SpEnoteStore enote_store_full{0, first_sp_allowed_block, 0};
+    SpEnoteStore enote_store_view{0, first_sp_allowed_block, 0};
     InputSelectorMockV1 input_selector{enote_store_full};
 
     //make one legacy enote
@@ -8209,11 +8210,11 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_4)
 
     // 4. legacy spends legacy X, then pop the spender and spend legacy X again in a seraphis tx
     MockLedgerContext ledger_context{first_sp_allowed_block, first_sp_only_block};
-    SpEnoteStoreMockV1 enote_store_full{0, first_sp_allowed_block, 0};
-    SpEnoteStoreMockV1 enote_store_view{0, first_sp_allowed_block, 0};
+    SpEnoteStore enote_store_full{0, first_sp_allowed_block, 0};
+    SpEnoteStore enote_store_view{0, first_sp_allowed_block, 0};
     InputSelectorMockV1 input_selector{enote_store_full};
 
-    SpEnoteStoreMockV1 enote_store_temp{0, first_sp_allowed_block, 0};
+    SpEnoteStore enote_store_temp{0, first_sp_allowed_block, 0};
     InputSelectorMockV1 input_selector_temp{enote_store_temp};
 
     //make two legacy enotes
@@ -8828,11 +8829,11 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_5)
 
     // 5. spend legacy X, then pop, add 1 block, spend legacy X in other tx type (between legacy, seraphis tx types)
     MockLedgerContext ledger_context{first_sp_allowed_block, first_sp_only_block};
-    SpEnoteStoreMockV1 enote_store_full{0, first_sp_allowed_block, 0};
-    SpEnoteStoreMockV1 enote_store_view{0, first_sp_allowed_block, 0};
+    SpEnoteStore enote_store_full{0, first_sp_allowed_block, 0};
+    SpEnoteStore enote_store_view{0, first_sp_allowed_block, 0};
     InputSelectorMockV1 input_selector{enote_store_full};
 
-    SpEnoteStoreMockV1 enote_store_temp{0, first_sp_allowed_block, 0};
+    SpEnoteStore enote_store_temp{0, first_sp_allowed_block, 0};
     InputSelectorMockV1 input_selector_temp{enote_store_temp};
 
     //make two legacy enotes
@@ -9146,7 +9147,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_5)
         enote_store_view);
 
     //recover fresh enote store with seraphis-only scan
-    SpEnoteStoreMockV1 enote_store_fresh{0, first_sp_allowed_block, 0};
+    SpEnoteStore enote_store_fresh{0, first_sp_allowed_block, 0};
     refresh_user_enote_store(sp_keys, refresh_config, ledger_context, enote_store_fresh);
 
     ASSERT_TRUE(get_balance(enote_store_fresh, {SpEnoteOriginStatus::ONCHAIN},

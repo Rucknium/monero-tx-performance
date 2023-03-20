@@ -28,7 +28,7 @@
 
 // NOT FOR PRODUCTION
 
-// Mock enote store (with full-featured balance recovery and balance queries).
+// Enote store that supports full-featured balance recovery by managing enote-related caches.
 
 #pragma once
 
@@ -49,19 +49,17 @@
 
 namespace sp
 {
-namespace mocks
-{
 
 ////
-// SpEnoteStoreMockV1
+// SpEnoteStore
 // - tracks legacy and seraphis enotes
 ///
-class SpEnoteStoreMockV1 final
+class SpEnoteStore final
 {
 public:
 //constructors
     /// normal constructor
-    SpEnoteStoreMockV1(const std::uint64_t refresh_index,
+    SpEnoteStore(const std::uint64_t refresh_index,
         const std::uint64_t first_sp_enabled_block_in_chain,
         const std::uint64_t default_spendable_age);
 
@@ -71,6 +69,7 @@ public:
     std::uint64_t sp_refresh_index()      const { return std::max(m_refresh_index, m_first_sp_enabled_block_in_chain); }
     /// config: get default spendable age
     std::uint64_t default_spendable_age() const { return m_default_spendable_age;                                      }
+
     /// get index of heighest recorded block (refresh index - 1 if no recorded blocks)
     std::uint64_t top_block_index() const;
     /// get index of heighest block that was legacy fullscanned (view-scan + comprehensive key image checks)
@@ -286,5 +285,4 @@ private:
     std::uint64_t m_default_spendable_age{0};
 };
 
-} //namespace mocks
 } //namespace sp

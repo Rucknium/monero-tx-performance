@@ -34,8 +34,6 @@ set(seraphis_main_sources
   scan_balance_recovery_utils.cpp
   scan_machine.cpp
   scan_misc_utils.cpp
-  scan_process_basic.cpp
-  serialization_demo_utils.cpp
   sp_knowledge_proof_utils.cpp
   tx_builder_types.cpp
   tx_builder_types_legacy.cpp
@@ -47,9 +45,7 @@ set(seraphis_main_sources
   tx_builders_outputs.cpp
   tx_component_types.cpp
   tx_component_types_legacy.cpp
-  tx_fee_calculator_squashed_v1.cpp
   tx_input_selection.cpp
-  tx_input_selection_output_context_v1.cpp
   tx_validators.cpp
   txtype_base.cpp
   txtype_coinbase_v1.cpp

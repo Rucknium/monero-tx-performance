@@ -36,7 +36,7 @@
 #include "ringct/rctTypes.h"
 #include "seraphis_core/jamtis_payment_proposal.h"
 #include "seraphis_core/jamtis_support_types.h"
-#include "tx_builders_outputs.h"
+#include "seraphis_main/tx_builders_outputs.h"
 
 //third party headers
 #include "boost/multiprecision/cpp_int.hpp"
@@ -46,7 +46,7 @@
 #include <vector>
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
-#define MONERO_DEFAULT_LOG_CATEGORY "seraphis"
+#define MONERO_DEFAULT_LOG_CATEGORY "seraphis_impl"
 
 namespace sp
 {

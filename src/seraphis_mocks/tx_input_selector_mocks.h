@@ -34,7 +34,7 @@
 
 //local headers
 #include "enote_store_mock_simple_v1.h"
-#include "enote_store_mock_v1.h"
+#include "seraphis_impl/enote_store.h"
 #include "seraphis_main/contextual_enote_record_types.h"
 #include "seraphis_main/tx_input_selection.h"
 
@@ -89,7 +89,7 @@ class InputSelectorMockV1 final : public InputSelectorV1
 public:
 //constructors
     /// normal constructor
-    InputSelectorMockV1(const SpEnoteStoreMockV1 &enote_store) :
+    InputSelectorMockV1(const SpEnoteStore &enote_store) :
         m_enote_store{enote_store}
     {
         // in practice, lock the enote store with an 'input selection' mutex here for thread-safe input selection that
@@ -112,7 +112,7 @@ public:
 //member variables
 private:
     /// read-only reference to an enote storage
-    const SpEnoteStoreMockV1 &m_enote_store;
+    const SpEnoteStore &m_enote_store;
 };
 
 } //namespace mocks

@@ -66,7 +66,6 @@
 #include "tx_builders_mixed.h"
 #include "tx_builders_outputs.h"
 #include "tx_component_types.h"
-#include "tx_input_selection_output_context_v1.h"
 #include "txtype_base.h"
 
 //third party headers

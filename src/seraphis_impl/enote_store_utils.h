@@ -26,52 +26,60 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// Calculate the fee for an SpTxSquashedV1 tx.
+// NOT FOR PRODUCTION
+
+// Utilities related to enote stores.
 
 #pragma once
 
 //local headers
 #include "ringct/rctTypes.h"
-#include "seraphis_core/tx_extra.h"
-#include "tx_fee_calculator.h"
-#include "txtype_squashed_v1.h"
+#include "seraphis_main/contextual_enote_record_types.h"
 
 //third party headers
+#include "boost/multiprecision/cpp_int.hpp"
 
 //standard headers
+#include <unordered_set>
+#include <vector>
 
 //forward declarations
-
+namespace sp
+{
+    class SpEnoteStore;
+    class SpEnoteStorePaymentValidator;
+}
 
 namespace sp
 {
 
-class FeeCalculatorSpTxSquashedV1 final : public FeeCalculator
+enum class EnoteStoreBalanceExclusions
 {
-public:
-//constructors
-    FeeCalculatorSpTxSquashedV1(const std::size_t legacy_ring_size,
-        const std::size_t ref_set_decomp_n,
-        const std::size_t ref_set_decomp_m,
-        const std::size_t num_bin_members,
-        const TxExtra &tx_extra);
-
-//member functions
-    static rct::xmr_amount compute_fee(const std::size_t fee_per_weight, const std::size_t weight);
-    static rct::xmr_amount compute_fee(const std::size_t fee_per_weight, const SpTxSquashedV1 &tx);
-    rct::xmr_amount compute_fee(const std::size_t fee_per_weight,
-        const std::size_t num_legacy_inputs,
-        const std::size_t num_sp_inputs,
-        const std::size_t num_outputs) const override;
-
-private:
-//member variables
-    /// misc. info for calculating tx weight
-    std::size_t m_legacy_ring_size;
-    std::size_t m_ref_set_decomp_n;
-    std::size_t m_ref_set_decomp_m;
-    std::size_t m_num_bin_members;
-    TxExtra m_tx_extra;
+    LEGACY_FULL,
+    LEGACY_INTERMEDIATE,
+    SERAPHIS,
+    ORIGIN_LEDGER_LOCKED
 };
+
+//todo
+void update_block_ids_with_new_block_ids(const std::uint64_t first_allowed_index,
+    const std::uint64_t first_new_block_index,
+    const rct::key &alignment_block_id,
+    const std::vector<rct::key> &new_block_ids,
+    std::vector<rct::key> &block_ids_inout,
+    std::uint64_t &old_top_index_out,
+    std::uint64_t &range_start_index_out,
+    std::uint64_t &num_blocks_added_out);
+
+/// get current balance of an enote store using specified origin/spent statuses and exclusions
+boost::multiprecision::uint128_t get_balance(const SpEnoteStore &enote_store,
+    const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
+    const std::unordered_set<SpEnoteSpentStatus> &spent_statuses = {},
+    const std::unordered_set<EnoteStoreBalanceExclusions> &exclusions = {});
+
+/// get current total amount received using specified origin statuses
+boost::multiprecision::uint128_t get_received_sum(const SpEnoteStorePaymentValidator &payment_validator,
+    const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
+    const std::unordered_set<EnoteStoreBalanceExclusions> &exclusions = {});
 
 } //namespace sp

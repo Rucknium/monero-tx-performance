@@ -32,8 +32,8 @@
 #include "enote_finding_context_mocks.h"
 
 //local headers
+#include "seraphis_impl/scan_ledger_chunk_simple.h"
 #include "seraphis_main/scan_core_types.h"
-#include "seraphis_main/scan_ledger_chunk_simple.h"
 
 //third party headers
 

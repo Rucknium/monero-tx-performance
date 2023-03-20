@@ -57,12 +57,15 @@
 #include "seraphis_core/tx_extra.h"
 #include "seraphis_crypto/sp_composition_proof.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
+#include "seraphis_impl/enote_store_utils.h"
+#include "seraphis_impl/scanning_context_simple.h"
+#include "seraphis_impl/tx_builder_utils.h"
+#include "seraphis_impl/tx_input_selection_output_context_v1.h"
 #include "seraphis_main/contextual_enote_record_types.h"
 #include "seraphis_main/contextual_enote_record_utils.h"
 #include "seraphis_main/enote_record_types.h"
 #include "seraphis_main/enote_record_utils.h"
 #include "seraphis_main/scan_machine_types.h"
-#include "seraphis_main/scanning_context_simple.h"
 #include "seraphis_main/tx_builder_types.h"
 #include "seraphis_main/tx_builder_types_multisig.h"
 #include "seraphis_main/tx_builders_inputs.h"
@@ -71,7 +74,6 @@
 #include "seraphis_main/tx_builders_outputs.h"
 #include "seraphis_main/tx_component_types.h"
 #include "seraphis_main/tx_input_selection.h"
-#include "seraphis_main/tx_input_selection_output_context_v1.h"
 #include "seraphis_main/txtype_base.h"
 #include "seraphis_main/txtype_squashed_v1.h"
 #include "seraphis_mocks/seraphis_mocks.h"
@@ -110,7 +112,7 @@ static void refresh_user_enote_store_legacy_multisig(const std::vector<multisig:
     const std::unordered_map<rct::key, cryptonote::subaddress_index> &legacy_subaddress_map,
     const scanning::ScanMachineConfig &refresh_config,
     const MockLedgerContext &ledger_context,
-    SpEnoteStoreMockV1 &enote_store_inout)
+    SpEnoteStore &enote_store_inout)
 {
     ASSERT_TRUE(accounts.size() > 0);
 
@@ -173,7 +175,7 @@ static void refresh_user_enote_store_legacy_multisig(const std::vector<multisig:
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static bool legacy_multisig_input_is_ready_to_spend(const LegacyMultisigInputProposalV1 &input_proposal,
-    const SpEnoteStoreMockV1 &enote_store,
+    const SpEnoteStore &enote_store,
     const std::uint64_t top_block_index)
 {
     // 1. get the legacy enote from the enote store
@@ -202,7 +204,7 @@ static bool legacy_multisig_input_is_ready_to_spend(const LegacyMultisigInputPro
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static bool sp_multisig_input_is_ready_to_spend(const SpMultisigInputProposalV1 &multisig_input_proposal,
-    const SpEnoteStoreMockV1 &enote_store,
+    const SpEnoteStore &enote_store,
     const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
     const std::uint64_t top_block_index,
     const rct::key &jamtis_spend_pubkey,
@@ -285,7 +287,7 @@ static void validate_multisig_tx_proposal(const SpMultisigTxProposalV1 &multisig
     const crypto::secret_key &legacy_view_privkey,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
-    const SpEnoteStoreMockV1 &enote_store,
+    const SpEnoteStore &enote_store,
     const MockLedgerContext &ledger_context)
 {
     // 1. check that the multisig tx proposal is well-formed
@@ -412,7 +414,7 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
     ASSERT_NO_THROW(make_multisig_jamtis_mock_keys(seraphis_accounts[0], shared_sp_keys));
 
     // c) make an enote store for the multisig group
-    SpEnoteStoreMockV1 enote_store{0, 0, 0};
+    SpEnoteStore enote_store{0, 0, 0};
 
 
     /// 2) fund the multisig address
