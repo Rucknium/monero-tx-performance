@@ -55,7 +55,7 @@ namespace mocks
 
 ////
 // SpEnoteStoreMockPaymentValidatorV1
-// - tracks amounts and destinations non-selfsend seraphis enotes
+// - tracks amounts and destinations of non-selfsend seraphis owned enotes
 ///
 class SpEnoteStoreMockPaymentValidatorV1 final
 {
@@ -71,15 +71,18 @@ public:
     {}
 
 //member functions
-    /// get current total amount received using specified origin statuses
-    boost::multiprecision::uint128_t get_received_sum(const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
-        const std::unordered_set<EnoteStoreBalanceUpdateExclusions> &exclusions = {}) const;
     /// get index of first block the enote store cares about
     std::uint64_t refresh_index() const { return m_refresh_index; }
     /// get index of heighest recorded block (refresh index - 1 if no recorded blocks) (heighest block PayVal-scanned)
     std::uint64_t top_block_index() const { return m_refresh_index + m_block_ids.size() - 1; }
+    /// config: get default spendable age
+    std::uint64_t default_spendable_age() const { return m_default_spendable_age; }
     /// try to get the recorded block id for a given index
     bool try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const;
+
+    /// get the seraphis intermediate records: [ Ko, sp intermediate records ]
+    const std::unordered_map<rct::key, SpContextualIntermediateEnoteRecordV1>& sp_intermediate_records() const
+    { return m_sp_contextual_enote_records; }
 
     /// update the store with enote records, with associated context
     void update_with_sp_records_from_nonledger(const SpEnoteOriginStatus nonledger_origin_status,

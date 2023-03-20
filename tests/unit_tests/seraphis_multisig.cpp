@@ -479,7 +479,7 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
         total_input_amount += sp_in_amount;
 
     // g) balance check
-    ASSERT_TRUE(enote_store.get_balance({SpEnoteOriginStatus::ONCHAIN},
+    ASSERT_TRUE(get_balance(enote_store, {SpEnoteOriginStatus::ONCHAIN},
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) == total_input_amount);
 
 
@@ -820,7 +820,7 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
         total_spent_amount += out_amount;
 
     // c) balance check
-    ASSERT_TRUE(enote_store.get_balance({SpEnoteOriginStatus::ONCHAIN},
+    ASSERT_TRUE(get_balance(enote_store, {SpEnoteOriginStatus::ONCHAIN},
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) == total_input_amount - total_spent_amount - specified_fee);
 }
 //-------------------------------------------------------------------------------------------------------------------

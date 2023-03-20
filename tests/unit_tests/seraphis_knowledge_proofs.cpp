@@ -467,7 +467,7 @@ TEST(seraphis_knowledge_proofs, reserve_proof)
 
     // A -> B: 30 (fee: 1)
     refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
-    ASSERT_TRUE(enote_store_A.get_balance({SpEnoteOriginStatus::ONCHAIN},
+    ASSERT_TRUE(get_balance(enote_store_A, {SpEnoteOriginStatus::ONCHAIN},
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) == 40);
     transfer_funds_single_mock_v1(legacy_mock_keys{},
         user_keys_A,
@@ -484,7 +484,7 @@ TEST(seraphis_knowledge_proofs, reserve_proof)
 
     // B -> A: 20 (fee: 1)
     refresh_user_enote_store(user_keys_B, refresh_config, ledger_context, enote_store_B);
-    ASSERT_TRUE(enote_store_B.get_balance({SpEnoteOriginStatus::ONCHAIN},
+    ASSERT_TRUE(get_balance(enote_store_B, {SpEnoteOriginStatus::ONCHAIN},
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) == 30);
     transfer_funds_single_mock_v1(legacy_mock_keys{},
         user_keys_B,
@@ -502,9 +502,9 @@ TEST(seraphis_knowledge_proofs, reserve_proof)
     // refresh user stores
     refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
     refresh_user_enote_store(user_keys_B, refresh_config, ledger_context, enote_store_B);
-    ASSERT_TRUE(enote_store_A.get_balance({SpEnoteOriginStatus::ONCHAIN},
+    ASSERT_TRUE(get_balance(enote_store_A, {SpEnoteOriginStatus::ONCHAIN},
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) == 29);
-    ASSERT_TRUE(enote_store_B.get_balance({SpEnoteOriginStatus::ONCHAIN},
+    ASSERT_TRUE(get_balance(enote_store_B, {SpEnoteOriginStatus::ONCHAIN},
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) == 9);
 
     // make and validate their reserve proofs
@@ -610,14 +610,14 @@ TEST(seraphis_knowledge_proofs, sp_all_knowledge_proofs)
         ledger_context,
         enote_store_A);
     refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
-    ASSERT_TRUE(enote_store_A.get_balance({SpEnoteOriginStatus::ONCHAIN},
+    ASSERT_TRUE(get_balance(enote_store_A, {SpEnoteOriginStatus::ONCHAIN},
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) >= 30);
     
 
-    std::cout << "A Balance before tx 1: "<< enote_store_A.get_balance({SpEnoteOriginStatus::ONCHAIN},
+    std::cout << "A Balance before tx 1: "<< get_balance(enote_store_A, {SpEnoteOriginStatus::ONCHAIN},
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) << std::endl ;
 
-    std::cout << "B Balance before tx 1: "<< enote_store_B.get_balance({SpEnoteOriginStatus::ONCHAIN},
+    std::cout << "B Balance before tx 1: "<< get_balance(enote_store_B, {SpEnoteOriginStatus::ONCHAIN},
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) << std::endl ;
 
     // make tx1
@@ -651,9 +651,9 @@ TEST(seraphis_knowledge_proofs, sp_all_knowledge_proofs)
     refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
     refresh_user_enote_store(user_keys_B, refresh_config, ledger_context, enote_store_B);
     
-    std::cout << "A Balance after tx 1: "<< enote_store_A.get_balance({SpEnoteOriginStatus::ONCHAIN},
+    std::cout << "A Balance after tx 1: "<< get_balance(enote_store_A, {SpEnoteOriginStatus::ONCHAIN},
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) << std::endl ;
-    std::cout << "B Balance after tx 1: "<< enote_store_B.get_balance({SpEnoteOriginStatus::ONCHAIN},
+    std::cout << "B Balance after tx 1: "<< get_balance(enote_store_B, {SpEnoteOriginStatus::ONCHAIN},
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) << std::endl ;
 
     // make tx2
@@ -684,9 +684,9 @@ TEST(seraphis_knowledge_proofs, sp_all_knowledge_proofs)
     refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
     refresh_user_enote_store(user_keys_B, refresh_config, ledger_context, enote_store_B);
     
-    std::cout << "A Balance after tx 2: "<< enote_store_A.get_balance({SpEnoteOriginStatus::ONCHAIN},
+    std::cout << "A Balance after tx 2: "<< get_balance(enote_store_A, {SpEnoteOriginStatus::ONCHAIN},
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) << std::endl ;
-    std::cout << "B Balance after tx 2: "<< enote_store_B.get_balance({SpEnoteOriginStatus::ONCHAIN},
+    std::cout << "B Balance after tx 2: "<< get_balance(enote_store_B, {SpEnoteOriginStatus::ONCHAIN},
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) << std::endl ;
 
 

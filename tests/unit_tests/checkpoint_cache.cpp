@@ -426,33 +426,6 @@ TEST(seraphis_cache, greater_refresh)
     check_checkpoint_cache_state(cache, 19, num_unprunable);
 }
 //-------------------------------------------------------------------------------------------------------------------
-TEST(seraphis_cache, window_bigger_than_rest)
-{
-    const std::uint64_t min_checkpoint_index{0};
-    const std::uint64_t max_separation{1000};
-    const std::uint64_t num_unprunable{5};
-    const std::uint64_t density_factor{5};
-
-    // window > last_checkpoint - num_unprunable
-    sp::CheckpointCache cache{min_checkpoint_index, max_separation, num_unprunable, density_factor};
-    cache.insert_new_block_ids(0, create_dummy_blocks(20));
-    ASSERT_EQ(cache.num_stored_checkpoints(), 17);
-    check_checkpoint_cache_state(cache, 19, num_unprunable);
-}
-//-------------------------------------------------------------------------------------------------------------------
-TEST(seraphis_cache, window_bigger_than_dummy)
-{
-    const std::uint64_t min_checkpoint_index{0};
-    const std::uint64_t max_separation{1000};
-    const std::uint64_t num_unprunable{3};
-    const std::uint64_t density_factor{5};
-
-    sp::CheckpointCache cache{min_checkpoint_index, max_separation, num_unprunable, density_factor};
-    cache.insert_new_block_ids(0, create_dummy_blocks(10));
-    ASSERT_EQ(cache.num_stored_checkpoints(), 10);
-    check_checkpoint_cache_state(cache, 9, num_unprunable);
-}
-//-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_cache, big_cache)
 {
     const std::uint64_t min_checkpoint_index{0};

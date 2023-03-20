@@ -35,10 +35,10 @@
 //local headers
 #include "crypto/crypto.h"
 #include "enote_store_event_types.h"
+#include "ringct/rctTypes.h"
 #include "seraphis_main/contextual_enote_record_types.h"
 
 //third party headers
-#include "boost/multiprecision/cpp_int.hpp"
 
 //standard headers
 #include <unordered_map>
@@ -51,14 +51,6 @@ namespace sp
 {
 namespace mocks
 {
-
-enum class EnoteStoreBalanceUpdateExclusions
-{
-    LEGACY_FULL,
-    LEGACY_INTERMEDIATE,
-    SERAPHIS,
-    ORIGIN_LEDGER_LOCKED
-};
 
 ////
 // SpEnoteStoreMockV1
@@ -74,14 +66,11 @@ public:
         const std::uint64_t default_spendable_age);
 
 //member functions
-    /// get current balance using specified origin/spent statuses and exclusions
-    boost::multiprecision::uint128_t get_balance(
-        const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
-        const std::unordered_set<SpEnoteSpentStatus> &spent_statuses = {},
-        const std::unordered_set<EnoteStoreBalanceUpdateExclusions> &exclusions = {}) const;
-    /// get index of first block the enote store cares about
-    std::uint64_t legacy_refresh_index() const { return m_refresh_index;                                              }
-    std::uint64_t sp_refresh_index()     const { return std::max(m_refresh_index, m_first_sp_enabled_block_in_chain); }
+    /// config: get index of first block the enote store cares about
+    std::uint64_t legacy_refresh_index()  const { return m_refresh_index;                                              }
+    std::uint64_t sp_refresh_index()      const { return std::max(m_refresh_index, m_first_sp_enabled_block_in_chain); }
+    /// config: get default spendable age
+    std::uint64_t default_spendable_age() const { return m_default_spendable_age;                                      }
     /// get index of heighest recorded block (refresh index - 1 if no recorded blocks)
     std::uint64_t top_block_index() const;
     /// get index of heighest block that was legacy fullscanned (view-scan + comprehensive key image checks)
@@ -185,20 +174,6 @@ public:
         std::list<EnoteStoreEvent> &events_inout);
 
 private:
-    /// balance helpers
-    boost::multiprecision::uint128_t get_balance_intermediate_legacy(
-        const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
-        const std::unordered_set<SpEnoteSpentStatus> &spent_statuses,
-        const std::unordered_set<EnoteStoreBalanceUpdateExclusions> &exclusions) const;
-    boost::multiprecision::uint128_t get_balance_full_legacy(
-        const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
-        const std::unordered_set<SpEnoteSpentStatus> &spent_statuses,
-        const std::unordered_set<EnoteStoreBalanceUpdateExclusions> &exclusions) const;
-    boost::multiprecision::uint128_t get_balance_seraphis(
-        const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
-        const std::unordered_set<SpEnoteSpentStatus> &spent_statuses,
-        const std::unordered_set<EnoteStoreBalanceUpdateExclusions> &exclusions) const;
-
     /// update the store with a set of new block ids from the ledger
     void update_with_new_blocks_from_ledger_legacy_intermediate(const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
@@ -266,23 +241,26 @@ private:
         std::list<EnoteStoreEvent> &events_inout);
 
 //member variables
-    /// intermediate legacy enotes (unknown key images): mapped to H32(Ko, a)
+    /// legacy intermediate enotes: [ H32(Ko, a) : legacy intermediate record ]
     std::unordered_map<rct::key, LegacyContextualIntermediateEnoteRecordV1>
         m_legacy_intermediate_contextual_enote_records;
-    /// legacy enotes: mapped to H32(Ko, a)
+    /// legacy enotes: [ H32(Ko, a) : legacy record ]
     std::unordered_map<rct::key, LegacyContextualEnoteRecordV1> m_legacy_contextual_enote_records;
-    /// seraphis enotes
+    /// seraphis enotes: [ seraphis KI : seraphis record ]
     std::unordered_map<crypto::key_image, SpContextualEnoteRecordV1> m_sp_contextual_enote_records;
 
     /// saved legacy key images from txs with seraphis selfsends (i.e. txs we created)
+    /// [ legacy KI : seraphis selfsend spent context ]
     std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> m_legacy_key_images_in_sp_selfsends;
-    /// legacy H32(Ko, a) identifiers mapped to onetime addresses, for dealing with enotes that have duplicated key images
+    /// legacy duplicate tracker for dealing with enotes that have duplicated key images
     /// note: the user can receive multiple legacy enotes with the same identifier, but those are treated as equivalent,
     ///       which should only cause problems for users if the associated tx memos are different (very unlikely scenario)
+    /// [ Ko : [ H32(Ko, a) ] ]
     std::unordered_map<rct::key, std::unordered_set<rct::key>> m_tracked_legacy_onetime_address_duplicates;
-    /// all legacy onetime addresses attached to known legacy enotes, mapped to key images
+    /// all legacy onetime addresses attached to known legacy enotes
     /// note: might not include all entries in 'm_legacy_key_images_in_sp_selfsends' if some corresponding enotes are
     //        unknown
+    /// [ legacy KI : legacy Ko ]
     std::unordered_map<crypto::key_image, rct::key> m_legacy_key_images;
 
     /// refresh index

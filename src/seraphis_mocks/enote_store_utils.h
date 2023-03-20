@@ -28,27 +28,52 @@
 
 // NOT FOR PRODUCTION
 
-// Aggregate header for seraphis mockups.
-
+// Utilities for interacting with an enote store.
 
 #pragma once
 
-#include "enote_finding_context_mocks.h"
-#include "enote_store_mock_simple_v1.h"
-#include "enote_store_mock_v1.h"
-#include "enote_store_mock_validator_v1.h"
-#include "enote_store_utils.h"
-#include "jamtis_mock_keys.h"
-#include "legacy_mock_keys.h"
-#include "make_mock_tx.h"
-#include "mock_ledger_context.h"
-#include "mock_offchain_context.h"
-#include "mock_send_receive.h"
-#include "mock_tx_builders_inputs.h"
-#include "mock_tx_builders_legacy_inputs.h"
-#include "mock_tx_builders_outputs.h"
-#include "scan_chunk_consumer_mocks.h"
-#include "tx_fee_calculator_mocks.h"
-#include "tx_input_selection_output_context_mocks.h"
-#include "tx_input_selector_mocks.h"
-#include "tx_validation_context_mock.h"
+//local headers
+#include "seraphis_main/contextual_enote_record_types.h"
+
+//third party headers
+#include "boost/multiprecision/cpp_int.hpp"
+
+//standard headers
+#include <unordered_set>
+
+//forward declarations
+namespace sp
+{
+namespace mocks
+{
+    class SpEnoteStoreMockV1;
+    class SpEnoteStoreMockPaymentValidatorV1;
+}
+}
+
+namespace sp
+{
+namespace mocks
+{
+
+enum class EnoteStoreBalanceExclusions
+{
+    LEGACY_FULL,
+    LEGACY_INTERMEDIATE,
+    SERAPHIS,
+    ORIGIN_LEDGER_LOCKED
+};
+
+/// get current balance of an enote store using specified origin/spent statuses and exclusions
+boost::multiprecision::uint128_t get_balance(const SpEnoteStoreMockV1 &enote_store,
+    const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
+    const std::unordered_set<SpEnoteSpentStatus> &spent_statuses = {},
+    const std::unordered_set<EnoteStoreBalanceExclusions> &exclusions = {});
+
+/// get current total amount received using specified origin statuses
+boost::multiprecision::uint128_t get_received_sum(const SpEnoteStoreMockPaymentValidatorV1 &payment_validator,
+    const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
+    const std::unordered_set<EnoteStoreBalanceExclusions> &exclusions = {});
+
+} //namespace mocks
+} //namespace sp

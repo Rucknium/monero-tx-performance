@@ -189,7 +189,7 @@ TEST(seraphis_integration, txtype_squashed_v1)
         ledger_context,
         enote_store_A);
     refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
-    ASSERT_TRUE(enote_store_A.get_balance({SpEnoteOriginStatus::ONCHAIN},
+    ASSERT_TRUE(get_balance(enote_store_A, {SpEnoteOriginStatus::ONCHAIN},
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) >= 8000000);
     transfer_funds_single_mock_v1(legacy_user_keys_A,
         user_keys_A,
@@ -206,7 +206,7 @@ TEST(seraphis_integration, txtype_squashed_v1)
 
     // B -> A: 3000000
     refresh_user_enote_store(user_keys_B, refresh_config, ledger_context, enote_store_B);
-    ASSERT_TRUE(enote_store_B.get_balance({SpEnoteOriginStatus::ONCHAIN},
+    ASSERT_TRUE(get_balance(enote_store_B, {SpEnoteOriginStatus::ONCHAIN},
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) >= 6000000);
     transfer_funds_single_mock_v1(legacy_mock_keys{},
         user_keys_B,
@@ -223,7 +223,7 @@ TEST(seraphis_integration, txtype_squashed_v1)
 
     // A -> B: 4000000
     refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
-    ASSERT_TRUE(enote_store_A.get_balance({SpEnoteOriginStatus::ONCHAIN},
+    ASSERT_TRUE(get_balance(enote_store_A, {SpEnoteOriginStatus::ONCHAIN},
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) >= 4000000);
     transfer_funds_single_mock_v1(legacy_user_keys_A,
         user_keys_A,

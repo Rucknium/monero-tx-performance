@@ -31,6 +31,7 @@ set(seraphis_mocks_sources
   enote_store_mock_simple_v1.cpp
   enote_store_mock_v1.cpp
   enote_store_mock_validator_v1.cpp
+  enote_store_utils.cpp
   jamtis_mock_keys.cpp
   legacy_mock_keys.cpp
   make_mock_tx.cpp

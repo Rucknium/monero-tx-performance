@@ -94,37 +94,6 @@ static void update_block_ids_with_new_block_ids(const std::uint64_t first_allowe
 //-------------------------------------------------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------------------------------------------------
-boost::multiprecision::uint128_t SpEnoteStoreMockPaymentValidatorV1::get_received_sum(
-    const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
-    const std::unordered_set<EnoteStoreBalanceUpdateExclusions> &exclusions) const
-{
-    boost::multiprecision::uint128_t received_sum{0};
-
-    for (const auto &mapped_contextual_record : m_sp_contextual_enote_records)
-    {
-        const SpContextualIntermediateEnoteRecordV1 &contextual_record{mapped_contextual_record.second};
-
-        // ignore enotes with unrequested origins
-        if (origin_statuses.find(contextual_record.origin_context.origin_status) == origin_statuses.end())
-            continue;
-
-        // ignore onchain enotes that are locked
-        if (exclusions.find(EnoteStoreBalanceUpdateExclusions::ORIGIN_LEDGER_LOCKED) != exclusions.end() &&
-            contextual_record.origin_context.origin_status == SpEnoteOriginStatus::ONCHAIN &&
-            onchain_sp_enote_is_locked(
-                    contextual_record.origin_context.block_index,
-                    this->top_block_index(),
-                    m_default_spendable_age
-                ))
-            continue;
-
-        // update received sum
-        received_sum += contextual_record.record.amount;
-    }
-
-    return received_sum;
-}
-//-------------------------------------------------------------------------------------------------------------------
 bool SpEnoteStoreMockPaymentValidatorV1::try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const
 {
     if (block_index < m_refresh_index ||
