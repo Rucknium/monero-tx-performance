@@ -27,6 +27,7 @@
 # THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 set(seraphis_impl_sources
+  checkpoint_cache.cpp
   enote_store.cpp
   enote_store_payment_validator.cpp
   enote_store_utils.cpp
