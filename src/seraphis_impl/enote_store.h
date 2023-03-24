@@ -36,6 +36,7 @@
 #include "crypto/crypto.h"
 #include "enote_store_event_types.h"
 #include "ringct/rctTypes.h"
+#include "seraphis_impl/checkpoint_cache.h"
 #include "seraphis_main/contextual_enote_record_types.h"
 
 //third party headers
@@ -70,22 +71,26 @@ public:
     /// config: get default spendable age
     std::uint64_t default_spendable_age() const { return m_default_spendable_age;                                      }
 
-    /// get index of heighest recorded block (refresh index - 1 if no recorded blocks)
+    /// get index of highest recorded block (refresh index - 1 if no recorded blocks)
     std::uint64_t top_block_index() const;
-    /// get index of heighest block that was legacy fullscanned (view-scan + comprehensive key image checks)
+    /// get index of highest block that was legacy fullscanned (view-scan + comprehensive key image checks)
     std::uint64_t top_legacy_fullscanned_block_index()    const { return m_legacy_fullscan_index;    }
-    /// get index of heighest block that was legacy partialscanned (view-scan only)
+    /// get index of highest block that was legacy partialscanned (view-scan only)
     std::uint64_t top_legacy_partialscanned_block_index() const { return m_legacy_partialscan_index; }
-    /// get index of heighest block that was seraphis view-balance scanned
+    /// get index of highest block that was seraphis view-balance scanned
     std::uint64_t top_sp_scanned_block_index()            const { return m_sp_scanned_index;         }
 
-    /// try to get the recorded block id for a given index and specified scan mode
+    /// get the nearest cached block index >= the requested index (-1 on failure)
+    std::uint64_t nearest_legacy_fullscanned_block_index   (const std::uint64_t block_index) const;
+    std::uint64_t nearest_legacy_partialscanned_block_index(const std::uint64_t block_index) const;
+    std::uint64_t nearest_sp_scanned_block_index           (const std::uint64_t block_index) const;
+    /// try to get the cached block id for a given index and specified scan mode
     /// note: during scanning, different scan modes are assumed to 'not see' block ids obtained by a different scan mode;
     ///       this is necessary to reliably recover from reorgs involving multiple scan modes
     bool try_get_block_id_for_legacy_partialscan(const std::uint64_t block_index, rct::key &block_id_out) const;
     bool try_get_block_id_for_legacy_fullscan   (const std::uint64_t block_index, rct::key &block_id_out) const;
     bool try_get_block_id_for_sp                (const std::uint64_t block_index, rct::key &block_id_out) const;
-    /// try to get the recorded block id for a given index (checks legacy block ids then seraphis block ids)
+    /// try to get the cached block id for a given index (checks legacy block ids then seraphis block ids)
     bool try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const;
     /// check if any stored enote has a given key image
     bool has_enote_with_key_image(const crypto::key_image &key_image) const;
@@ -264,17 +269,18 @@ private:
 
     /// refresh index
     std::uint64_t m_refresh_index{0};
-    /// stored block ids in range: [refresh index, end of known legacy-supporting chain]
-    std::vector<rct::key> m_legacy_block_ids;
-    /// stored block ids in range:
+    /// cached block ids in range: [refresh index, end of known legacy-supporting chain]
+    CheckpointCache m_legacy_block_id_cache;
+    /// cached block ids in range:
     ///   [max(refresh index, first seraphis-enabled block), end of known seraphis-supporting chain]
-    std::vector<rct::key> m_sp_block_ids;
+    CheckpointCache m_sp_block_id_cache;
 
-    /// heighest block that was legacy fullscanned (view-scan + comprehensive key image checks)
+    /// highest block that was legacy fullscanned (view-scan + comprehensive key image checks)
     std::uint64_t m_legacy_fullscan_index{static_cast<std::uint64_t>(-1)};
-    /// heighest block that was legacy partialscanned (view-scan only)
+    /// highest block that was legacy partialscanned (view-scan only)
     std::uint64_t m_legacy_partialscan_index{static_cast<std::uint64_t>(-1)};
-    /// heighest block that was seraphis view-balance scanned
+    /// highest block that was seraphis view-balance scanned
+    /// note: manually reduced this then re-scan to fix issues with seraphis scanning (e.g. due to data corruption)
     std::uint64_t m_sp_scanned_index{static_cast<std::uint64_t>(-1)};
 
     /// configuration value: the first ledger block that can contain seraphis txs

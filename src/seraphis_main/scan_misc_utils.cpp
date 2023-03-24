@@ -81,7 +81,7 @@ void check_chunk_data_semantics_v1(const ChunkData &chunk_data,
     const SpEnoteOriginStatus expected_origin_status,
     const SpEnoteSpentStatus expected_spent_status,
     const std::uint64_t allowed_lowest_index,
-    const std::uint64_t allowed_heighest_index)
+    const std::uint64_t allowed_highest_index)
 {
     // 1. check contextual basic records
     for (const auto &tx_basic_records : chunk_data.basic_records_per_tx)
@@ -100,7 +100,7 @@ void check_chunk_data_semantics_v1(const ChunkData &chunk_data,
 
             CHECK_AND_ASSERT_THROW_MES(
                     origin_context_ref(contextual_basic_record).block_index >= allowed_lowest_index &&
-                    origin_context_ref(contextual_basic_record).block_index <= allowed_heighest_index,
+                    origin_context_ref(contextual_basic_record).block_index <= allowed_highest_index,
                 "scan chunk data semantics check: contextual record block index is out of the expected range.");
         }
     }
@@ -129,7 +129,7 @@ void check_chunk_data_semantics_v1(const ChunkData &chunk_data,
 
         CHECK_AND_ASSERT_THROW_MES(
                 contextual_key_image_set.spent_context.block_index >= allowed_lowest_index &&
-                contextual_key_image_set.spent_context.block_index <= allowed_heighest_index,
+                contextual_key_image_set.spent_context.block_index <= allowed_highest_index,
             "scan chunk data semantics check: contextual key image block index is out of the expected range.");
     }
 }
@@ -148,7 +148,7 @@ void check_ledger_chunk_semantics_v1(const LedgerChunk &ledger_chunk, const std:
     // - start block = prefix block + 1
     const std::uint64_t allowed_lowest_index{ledger_chunk.get_context().start_index};
     // - end block
-    const std::uint64_t allowed_heighest_index{allowed_lowest_index + num_blocks_in_chunk - 1};
+    const std::uint64_t allowed_highest_index{allowed_lowest_index + num_blocks_in_chunk - 1};
 
     // 3. check the chunk data semantics for each subconsumer
     for (const rct::key &subconsumer_id : ledger_chunk.subconsumer_ids())
@@ -163,7 +163,7 @@ void check_ledger_chunk_semantics_v1(const LedgerChunk &ledger_chunk, const std:
             SpEnoteOriginStatus::ONCHAIN,
             SpEnoteSpentStatus::SPENT_ONCHAIN,
             allowed_lowest_index,
-            allowed_heighest_index);
+            allowed_highest_index);
     }
 }
 //-------------------------------------------------------------------------------------------------------------------

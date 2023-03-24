@@ -67,83 +67,119 @@ SpEnoteStore::SpEnoteStore(const std::uint64_t refresh_index,
         m_legacy_partialscan_index{refresh_index - 1},
         m_sp_scanned_index{refresh_index - 1},
         m_first_sp_enabled_block_in_chain{first_sp_enabled_block_in_chain},
-        m_default_spendable_age{default_spendable_age}
+        m_default_spendable_age{default_spendable_age},
+        m_legacy_block_id_cache{refresh_index, 100000, 50, 20},
+        m_sp_block_id_cache{std::max(refresh_index, first_sp_enabled_block_in_chain), 100000, 50, 20}
 {}
 //-------------------------------------------------------------------------------------------------------------------
 std::uint64_t SpEnoteStore::top_block_index() const
 {
     // 1. no blocks
-    if (m_legacy_block_ids.size() == 0 &&
-        m_sp_block_ids.size() == 0)
+    if (m_legacy_block_id_cache.num_checkpoints() == 0 &&
+        m_sp_block_id_cache.num_checkpoints() == 0)
         return m_refresh_index - 1;
 
     // 2. only have legacy blocks
-    if (m_sp_block_ids.size() == 0)
-        return m_refresh_index + m_legacy_block_ids.size() - 1;
+    if (m_sp_block_id_cache.num_checkpoints() == 0)
+        return m_legacy_block_id_cache.top_block_index();
 
     // 3. only have seraphis blocks
-    if (m_legacy_block_ids.size() == 0)
-        return this->sp_refresh_index() + m_sp_block_ids.size() - 1;
+    if (m_legacy_block_id_cache.num_checkpoints() == 0)
+        return m_sp_block_id_cache.top_block_index();
 
     // 4. have legacy and seraphis blocks
     return std::max(
-            m_refresh_index + m_legacy_block_ids.size() - 1,
-            this->sp_refresh_index() + m_sp_block_ids.size() - 1
+            m_legacy_block_id_cache.top_block_index(),
+            m_sp_block_id_cache.top_block_index()
         );
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteStore::try_get_block_id_for_legacy_partialscan(const std::uint64_t block_index,
-    rct::key &block_id_out) const
+std::uint64_t SpEnoteStore::nearest_legacy_partialscanned_block_index(const std::uint64_t block_index) const
 {
-    // 1. check error states
-    if (block_index < m_refresh_index ||
-        block_index > m_refresh_index + m_legacy_block_ids.size() - 1 ||
-        m_legacy_block_ids.size() == 0)
-        return false;
+    // 1. get the cached legacy block index >= the requested index
+    const std::uint64_t nearest_index{m_legacy_block_id_cache.get_next_block_index(block_index - 1)};
 
-    // 2. assume a block id is 'unknown' if its index is above the last legacy partial-scanned block index
-    if (block_index + 1 > m_legacy_partialscan_index + 1)
+    // 2. assume a block is 'unknown' if its index is above the last legacy partial-scanned block index
+    if (nearest_index + 1 > m_legacy_partialscan_index + 1)
+        return -1;
+
+    return nearest_index;
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t SpEnoteStore::nearest_legacy_fullscanned_block_index(const std::uint64_t block_index) const
+{
+    // 1. get the cached legacy block index >= the requested index
+    const std::uint64_t nearest_index{m_legacy_block_id_cache.get_next_block_index(block_index - 1)};
+
+    // 2. assume a block is 'unknown' if its index is above the last legacy full-scanned block index
+    if (block_index + 1 > m_legacy_fullscan_index + 1)
+        return -1;
+
+    return nearest_index;
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t SpEnoteStore::nearest_sp_scanned_block_index(const std::uint64_t block_index) const
+{
+    // 1. get the cached seraphis block index >= the requested index
+    const std::uint64_t nearest_index{m_sp_block_id_cache.get_next_block_index(block_index - 1)};
+
+    // 2. assume a block is 'unknown' if its index is above the last seraphis block index
+    if (block_index + 1 > m_sp_scanned_index + 1)
+        return -1;
+
+    return nearest_index;
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool SpEnoteStore::try_get_block_id_for_legacy_partialscan(const std::uint64_t block_index, rct::key &block_id_out) const
+{
+    // 1. get the nearest cached legacy block index
+    // - we use this indirection to validate edge conditions
+    const std::uint64_t nearest_cached_index{this->nearest_legacy_partialscanned_block_index(block_index)};
+
+    // 2. check error states
+    if (nearest_cached_index == static_cast<std::uint64_t>(-1) ||
+        nearest_cached_index != block_index)
         return false;
 
     // 3. get the block id
-    block_id_out = m_legacy_block_ids[block_index - m_refresh_index];
+    CHECK_AND_ASSERT_THROW_MES(m_legacy_block_id_cache.try_get_block_id(block_index, block_id_out),
+        "sp enote store (try get block id legacy partialscan): failed to get cached block id for index that is known.");
 
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteStore::try_get_block_id_for_legacy_fullscan(const std::uint64_t block_index,
-    rct::key &block_id_out) const
+bool SpEnoteStore::try_get_block_id_for_legacy_fullscan(const std::uint64_t block_index, rct::key &block_id_out) const
 {
-    // 1. check error states
-    if (block_index < m_refresh_index ||
-        block_index > m_refresh_index + m_legacy_block_ids.size() - 1 ||
-        m_legacy_block_ids.size() == 0)
-        return false;
+    // 1. get the nearest cached legacy block index
+    // - we use this indirection to validate edge conditions
+    const std::uint64_t nearest_cached_index{this->nearest_legacy_fullscanned_block_index(block_index)};
 
-    // 2. assume a block id is 'unknown' if its index is above the last legacy full-scanned block index
-    if (block_index + 1 > m_legacy_fullscan_index + 1)
+    // 2. check error states
+    if (nearest_cached_index == static_cast<std::uint64_t>(-1) ||
+        nearest_cached_index != block_index)
         return false;
 
     // 3. get the block id
-    block_id_out = m_legacy_block_ids[block_index - m_refresh_index];
+    CHECK_AND_ASSERT_THROW_MES(m_legacy_block_id_cache.try_get_block_id(block_index, block_id_out),
+        "sp enote store (try get block id legacy fullscan): failed to get cached block id for index that is known.");
 
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool SpEnoteStore::try_get_block_id_for_sp(const std::uint64_t block_index, rct::key &block_id_out) const
 {
-    // 1. check error states
-    if (block_index < this->sp_refresh_index() ||
-        block_index > this->sp_refresh_index() + m_sp_block_ids.size() - 1 ||
-        m_sp_block_ids.size() == 0)
-        return false;
+    // 1. get the nearest cached legacy block index
+    // - we use this indirection to validate edge conditions
+    const std::uint64_t nearest_cached_index{this->nearest_sp_scanned_block_index(block_index)};
 
-    // 2. assume a block id is 'unknown' if its index is above the last seraphis scanned block index
-    if (block_index + 1 > m_sp_scanned_index + 1)
+    // 2. check error states
+    if (nearest_cached_index == static_cast<std::uint64_t>(-1) ||
+        nearest_cached_index != block_index)
         return false;
 
     // 3. get the block id
-    block_id_out = m_sp_block_ids[block_index - this->sp_refresh_index()];
+    CHECK_AND_ASSERT_THROW_MES(m_sp_block_id_cache.try_get_block_id(block_index, block_id_out),
+        "sp enote store (try get block id sp scan): failed to get cached block id for index that is known.");
 
     return true;
 }
@@ -151,9 +187,9 @@ bool SpEnoteStore::try_get_block_id_for_sp(const std::uint64_t block_index, rct:
 bool SpEnoteStore::try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const
 {
     // try to get the block id from each of the scan types
-    return try_get_block_id_for_legacy_partialscan(block_index, block_id_out) ||
-        try_get_block_id_for_legacy_fullscan(block_index, block_id_out) ||
-        try_get_block_id_for_sp(block_index, block_id_out);
+    return this->try_get_block_id_for_legacy_partialscan(block_index, block_id_out) ||
+        this->try_get_block_id_for_legacy_fullscan(block_index, block_id_out) ||
+        this->try_get_block_id_for_sp(block_index, block_id_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool SpEnoteStore::has_enote_with_key_image(const crypto::key_image &key_image) const
@@ -300,7 +336,7 @@ void SpEnoteStore::update_legacy_fullscan_index_for_import_cycle(const std::uint
 {
     // clamp the imported index to the top known block index in case blocks were popped in the middle of an import
     //   cycle and the enote store was refreshed before this function call
-    this->set_last_legacy_fullscan_index(std::min(saved_index + 1, m_refresh_index + m_legacy_block_ids.size()) - 1);
+    this->set_last_legacy_fullscan_index(std::min(saved_index + 1, m_legacy_block_id_cache.top_block_index() + 1) - 1);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void SpEnoteStore::set_last_legacy_fullscan_index(const std::uint64_t new_index)
@@ -308,7 +344,7 @@ void SpEnoteStore::set_last_legacy_fullscan_index(const std::uint64_t new_index)
     // 1. set this scan index (+1 because if no scanning has been done then we are below the refresh index)
     CHECK_AND_ASSERT_THROW_MES(new_index + 1 >= m_refresh_index,
         "enote store (set legacy fullscan index): new index is below refresh index.");
-    CHECK_AND_ASSERT_THROW_MES(new_index + 1 <= m_refresh_index + m_legacy_block_ids.size(),
+    CHECK_AND_ASSERT_THROW_MES(new_index + 1 <= m_legacy_block_id_cache.top_block_index() + 1,
         "enote store (set legacy fullscan index): new index is above known block range.");
 
     m_legacy_fullscan_index = new_index;
@@ -327,7 +363,7 @@ void SpEnoteStore::set_last_legacy_partialscan_index(const std::uint64_t new_ind
     // 1. set this scan index
     CHECK_AND_ASSERT_THROW_MES(new_index + 1 >= m_refresh_index,
         "enote store (set legacy partialscan index): new index is below refresh index.");
-    CHECK_AND_ASSERT_THROW_MES(new_index + 1 <= m_refresh_index + m_legacy_block_ids.size(),
+    CHECK_AND_ASSERT_THROW_MES(new_index + 1 <= m_legacy_block_id_cache.top_block_index() + 1,
         "enote store (set legacy partialscan index): new index is above known block range.");
 
     m_legacy_partialscan_index = new_index;
@@ -342,7 +378,7 @@ void SpEnoteStore::set_last_sp_scanned_index(const std::uint64_t new_index)
     // set this scan index
     CHECK_AND_ASSERT_THROW_MES(new_index + 1 >= this->sp_refresh_index(),
         "enote store (set seraphis scan index): new index is below refresh index.");
-    CHECK_AND_ASSERT_THROW_MES(new_index + 1 <= this->sp_refresh_index() + m_sp_block_ids.size(),
+    CHECK_AND_ASSERT_THROW_MES(new_index + 1 <= m_sp_block_id_cache.top_block_index() + 1,
         "enote store (set seraphis scan index): new index is above known block range.");
 
     m_sp_scanned_index = new_index;
@@ -494,11 +530,10 @@ void SpEnoteStore::update_with_new_blocks_from_ledger_legacy_intermediate(const 
 {
     // 1. set new block ids in range [first_new_block, end of chain]
     LegacyIntermediateBlocksDiff diff{};
-    update_block_ids_with_new_block_ids(m_refresh_index,
-        first_new_block,
+    update_block_ids_with_new_block_ids(first_new_block,
         alignment_block_id,
         new_block_ids,
-        m_legacy_block_ids,
+        m_legacy_block_id_cache,
         diff.old_top_index,
         diff.range_start_index,
         diff.num_blocks_added);
@@ -517,11 +552,10 @@ void SpEnoteStore::update_with_new_blocks_from_ledger_legacy_full(const std::uin
 {
     // 1. set new block ids in range [first_new_block, end of chain]
     LegacyBlocksDiff diff{};
-    update_block_ids_with_new_block_ids(m_refresh_index,
-        first_new_block,
+    update_block_ids_with_new_block_ids(first_new_block,
         alignment_block_id,
         new_block_ids,
-        m_legacy_block_ids,
+        m_legacy_block_id_cache,
         diff.old_top_index,
         diff.range_start_index,
         diff.num_blocks_added);
@@ -544,11 +578,10 @@ void SpEnoteStore::update_with_new_blocks_from_ledger_sp(const std::uint64_t fir
 {
     // 1. set new block ids in range [first_new_block, end of chain]
     SpBlocksDiff diff{};
-    update_block_ids_with_new_block_ids(this->sp_refresh_index(),
-        first_new_block,
+    update_block_ids_with_new_block_ids(first_new_block,
         alignment_block_id,
         new_block_ids,
-        m_sp_block_ids,
+        m_sp_block_id_cache,
         diff.old_top_index,
         diff.range_start_index,
         diff.num_blocks_added);

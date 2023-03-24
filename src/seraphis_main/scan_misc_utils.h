@@ -75,13 +75,13 @@ bool chunk_is_empty(const LedgerChunk &chunk);
 * param: expected_origin_status -
 * param: expected_spent_status -
 * param: allowed_lowest_index - lowest block index allowed in chunk data (e.g. origin block, spent block)
-* param: allowed_heighest_index - highest block index allowed in chunk data (e.g. origin block, spent block)
+* param: allowed_highest_index - highest block index allowed in chunk data (e.g. origin block, spent block)
 */
 void check_chunk_data_semantics_v1(const ChunkData &chunk_data,
     const SpEnoteOriginStatus expected_origin_status,
     const SpEnoteSpentStatus expected_spent_status,
     const std::uint64_t allowed_lowest_index,
-    const std::uint64_t allowed_heighest_index);
+    const std::uint64_t allowed_highest_index);
 /**
 * brief: check_ledger_chunk_semantics_v1 - check semantics of an on-chain chunk
 *   - throws on failure

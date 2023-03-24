@@ -41,6 +41,7 @@
 #include "seraphis_main/enote_record_types.h"
 #include "seraphis_main/scan_balance_recovery_utils.h"
 #include "seraphis_main/scan_core_types.h"
+#include "seraphis_main/scan_machine_types.h"
 
 //third party headers
 
@@ -84,13 +85,27 @@ std::uint64_t ChunkConsumerMockLegacyIntermediate::desired_first_block() const
         return m_enote_store.top_legacy_partialscanned_block_index() + 1;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool ChunkConsumerMockLegacyIntermediate::try_get_block_id(const std::uint64_t block_index,
-    rct::key &block_id_out) const
+scanning::ContiguityMarker ChunkConsumerMockLegacyIntermediate::get_nearest_block(const std::uint64_t block_index) const
 {
+    std::uint64_t nearest_index;
+    rct::key temp_block_id;
+
     if (m_legacy_scan_mode == LegacyScanMode::KEY_IMAGES_ONLY)
-        return m_enote_store.try_get_block_id_for_legacy_fullscan(block_index, block_id_out);
+    {
+        nearest_index = m_enote_store.nearest_legacy_fullscanned_block_index(block_index);
+        
+        if (!m_enote_store.try_get_block_id_for_legacy_fullscan(nearest_index, temp_block_id))
+            return scanning::ContiguityMarker{ .block_index = static_cast<std::uint64_t>(-1) };
+    }
     else
-        return m_enote_store.try_get_block_id_for_legacy_partialscan(block_index, block_id_out);
+    {
+        nearest_index = m_enote_store.nearest_legacy_partialscanned_block_index(block_index);
+        
+        if (!m_enote_store.try_get_block_id_for_legacy_partialscan(nearest_index, temp_block_id))
+            return scanning::ContiguityMarker{ .block_index = static_cast<std::uint64_t>(-1) };
+    }
+
+    return scanning::ContiguityMarker{ .block_index = nearest_index, .block_id = temp_block_id };
 }
 //-------------------------------------------------------------------------------------------------------------------
 void ChunkConsumerMockLegacyIntermediate::consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
@@ -187,9 +202,15 @@ std::uint64_t ChunkConsumerMockLegacy::desired_first_block() const
     return m_enote_store.top_legacy_fullscanned_block_index() + 1;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool ChunkConsumerMockLegacy::try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const
+scanning::ContiguityMarker ChunkConsumerMockLegacy::get_nearest_block(const std::uint64_t block_index) const
 {
-    return m_enote_store.try_get_block_id_for_legacy_fullscan(block_index, block_id_out);
+    const std::uint64_t nearest_index{m_enote_store.nearest_legacy_fullscanned_block_index(block_index)};
+
+    rct::key temp_block_id;
+    if (!m_enote_store.try_get_block_id_for_legacy_fullscan(nearest_index, temp_block_id))
+        return scanning::ContiguityMarker{ .block_index = static_cast<std::uint64_t>(-1) };
+
+    return scanning::ContiguityMarker{ .block_index = nearest_index, .block_id = temp_block_id };
 }
 //-------------------------------------------------------------------------------------------------------------------
 void ChunkConsumerMockLegacy::consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
@@ -284,10 +305,15 @@ std::uint64_t ChunkConsumerMockSpIntermediate::desired_first_block() const
     return m_enote_store.top_block_index() + 1;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool ChunkConsumerMockSpIntermediate::try_get_block_id(const std::uint64_t block_index,
-    rct::key &block_id_out) const
+scanning::ContiguityMarker ChunkConsumerMockSpIntermediate::get_nearest_block(const std::uint64_t block_index) const
 {
-    return m_enote_store.try_get_block_id(block_index, block_id_out);
+    const std::uint64_t nearest_index{m_enote_store.nearest_sp_scanned_block_index(block_index)};
+
+    rct::key temp_block_id;
+    if (!m_enote_store.try_get_block_id_for_sp(nearest_index, temp_block_id))
+        return scanning::ContiguityMarker{ .block_index = static_cast<std::uint64_t>(-1) };
+
+    return scanning::ContiguityMarker{ .block_index = nearest_index, .block_id = temp_block_id };
 }
 //-------------------------------------------------------------------------------------------------------------------
 void ChunkConsumerMockSpIntermediate::consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
@@ -365,9 +391,15 @@ std::uint64_t ChunkConsumerMockSp::desired_first_block() const
     return m_enote_store.top_sp_scanned_block_index() + 1;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool ChunkConsumerMockSp::try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const
+scanning::ContiguityMarker ChunkConsumerMockSp::get_nearest_block(const std::uint64_t block_index) const
 {
-    return m_enote_store.try_get_block_id_for_sp(block_index, block_id_out);
+    const std::uint64_t nearest_index{m_enote_store.nearest_sp_scanned_block_index(block_index)};
+
+    rct::key temp_block_id;
+    if (!m_enote_store.try_get_block_id_for_sp(nearest_index, temp_block_id))
+        return scanning::ContiguityMarker{ .block_index = static_cast<std::uint64_t>(-1) };
+
+    return scanning::ContiguityMarker{ .block_index = nearest_index, .block_id = temp_block_id };
 }
 //-------------------------------------------------------------------------------------------------------------------
 void ChunkConsumerMockSp::consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,

@@ -40,22 +40,19 @@ static std::vector<rct::key> create_dummy_blocks(const std::uint64_t num_blocks)
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
 static void check_checkpoint_cache_state(const sp::CheckpointCache &cache,
     const std::uint64_t expected_top_index,
     const std::uint64_t expected_num_unpruned)
 {
     ASSERT_GE(cache.bottom_block_index(), cache.min_checkpoint_index());
     ASSERT_LE(cache.bottom_block_index(), cache.top_block_index());
-    if (cache.num_stored_checkpoints() > 0)
+    if (cache.num_checkpoints() > 0)
     {
         ASSERT_NE(cache.bottom_block_index(), -1);
         ASSERT_EQ(cache.top_block_index(), expected_top_index);
 
         for (std::uint64_t i{
-                    cache.top_block_index() - std::min(expected_num_unpruned, cache.num_stored_checkpoints()) + 1
+                    cache.top_block_index() - std::min(expected_num_unpruned, cache.num_checkpoints()) + 1
                 };
             i <= cache.top_block_index();
             ++i)
@@ -125,7 +122,7 @@ TEST(checkpoint_cache, big_cache)
 
     sp::CheckpointCache cache{min_checkpoint_index, max_separation, num_unprunable, density_factor};
     cache.insert_new_block_ids(0, create_dummy_blocks(1000000));
-    ASSERT_EQ(cache.num_stored_checkpoints(), 173);
+    ASSERT_EQ(cache.num_checkpoints(), 173);
     check_checkpoint_cache_state(cache, 1000000 - 1, num_unprunable);
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -143,6 +140,6 @@ TEST(checkpoint_cache, big_cache_incremental)
         cache.insert_new_block_ids(cache.top_block_index() + 1, create_dummy_blocks(10000));
         check_checkpoint_cache_state(cache, 10000*(i+1) - 1, num_unprunable);
     }
-    ASSERT_EQ(cache.num_stored_checkpoints(), 194);
+    ASSERT_EQ(cache.num_checkpoints(), 194);
 }
 //-------------------------------------------------------------------------------------------------------------------

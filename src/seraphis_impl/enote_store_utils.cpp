@@ -33,6 +33,7 @@
 
 //local headers
 #include "misc_log_ex.h"
+#include "seraphis_impl/checkpoint_cache.h"
 #include "seraphis_impl/enote_store.h"
 #include "seraphis_impl/enote_store_payment_validator.h"
 #include "seraphis_main/contextual_enote_record_types.h"
@@ -263,35 +264,36 @@ static boost::multiprecision::uint128_t get_balance_seraphis(
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-void update_block_ids_with_new_block_ids(const std::uint64_t first_allowed_index,
-    const std::uint64_t first_new_block_index,
+void update_block_ids_with_new_block_ids(const std::uint64_t first_new_block_index,
     const rct::key &alignment_block_id,
     const std::vector<rct::key> &new_block_ids,
-    std::vector<rct::key> &block_ids_inout,
+    CheckpointCache &cache_inout,
     std::uint64_t &old_top_index_out,
     std::uint64_t &range_start_index_out,
     std::uint64_t &num_blocks_added_out)
 {
     // 1. check inputs
+    const std::uint64_t first_allowed_index{cache_inout.min_checkpoint_index()};
+
     CHECK_AND_ASSERT_THROW_MES(first_new_block_index >= first_allowed_index,
         "update block ids with new block ids: first new block is below the refresh index.");
-    CHECK_AND_ASSERT_THROW_MES(first_new_block_index - first_allowed_index <= block_ids_inout.size(),
+    CHECK_AND_ASSERT_THROW_MES(first_new_block_index - first_allowed_index <= cache_inout.top_block_index() + 1,
         "update block ids with new block ids: new blocks don't line up with existing blocks.");
     if (first_new_block_index > first_allowed_index)
     {
-        CHECK_AND_ASSERT_THROW_MES(alignment_block_id ==
-                block_ids_inout[first_new_block_index - first_allowed_index - 1],
-            "update block ids with new block ids: alignment block id doesn't align with recorded block ids.");
+        rct::key cached_alignment_block_id;
+        CHECK_AND_ASSERT_THROW_MES(cache_inout.try_get_block_id(first_new_block_index - 1, cached_alignment_block_id) &&
+                alignment_block_id == cached_alignment_block_id,
+            "update block ids with new block ids: alignment block id doesn't align with cached block ids.");
     }
 
     // 2. save the diff
-    old_top_index_out     = first_allowed_index + block_ids_inout.size();
+    old_top_index_out     = cache_inout.top_block_index();
     range_start_index_out = first_new_block_index;
     num_blocks_added_out  = new_block_ids.size();
 
     // 3. update the block ids
-    block_ids_inout.resize(first_new_block_index - first_allowed_index);  //crop old blocks
-    block_ids_inout.insert(block_ids_inout.end(), new_block_ids.begin(), new_block_ids.end());
+    cache_inout.insert_new_block_ids(first_new_block_index, new_block_ids);
 }
 //-------------------------------------------------------------------------------------------------------------------
 boost::multiprecision::uint128_t get_balance(const SpEnoteStore &enote_store,

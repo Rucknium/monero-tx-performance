@@ -46,9 +46,9 @@ namespace sp
 namespace scanning
 {
     struct ChunkData;
+    struct ContiguityMarker;
 }
 }
-
 
 namespace sp
 {
@@ -74,8 +74,9 @@ public:
     virtual std::uint64_t refresh_index() const = 0;
     /// get index of first block the updater wants to have scanned
     virtual std::uint64_t desired_first_block() const = 0;
-    /// try to get the recorded block id for a given index
-    virtual bool try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const = 0;
+    /// get a marker for the nearest block >= the specified index
+    /// ERROR: return { -1, boost::none } if there is no such block
+    virtual ContiguityMarker get_nearest_block(const std::uint64_t block_index) const = 0;
 
     /// consume a chunk of basic enote records and save the results
     virtual void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status, const ChunkData &data) = 0;

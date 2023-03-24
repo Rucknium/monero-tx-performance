@@ -81,7 +81,7 @@ static std::uint64_t get_reorg_avoidance_depth(const std::uint64_t reorg_avoidan
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static std::uint64_t get_start_scan_index(const std::uint64_t reorg_avoidance_increment,
+static std::uint64_t get_estimated_start_scan_index(const std::uint64_t reorg_avoidance_increment,
     const std::uint64_t completed_fullscan_attempts,
     const std::uint64_t lowest_scannable_index,
     const std::uint64_t desired_start_index)
@@ -108,22 +108,19 @@ static std::uint64_t get_start_scan_index(const std::uint64_t reorg_avoidance_in
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static void set_initial_contiguity_marker(const ChunkConsumer &chunk_consumer,
-    const std::uint64_t initial_refresh_index,
+    const std::uint64_t estimated_start_scan_index,
     ContiguityMarker &contiguity_marker_inout)
 {
-    // 1. set the block index
-    contiguity_marker_inout.block_index = initial_refresh_index - 1;
-
-    // 2. set the block id if we aren't at the updater's prefix block
-    if (contiguity_marker_inout.block_index != chunk_consumer.refresh_index() - 1)
+    // start at the consumer's block closest to the block below our estimated start index, or the consumer's prefix block
+    if (estimated_start_scan_index + 1 <= chunk_consumer.refresh_index() + 1)
     {
-        // getting a block id should always succeed if we are starting past the prefix block of the updater
-        contiguity_marker_inout.block_id = rct::zero();
-        CHECK_AND_ASSERT_THROW_MES(chunk_consumer.try_get_block_id(initial_refresh_index - 1,
-                *(contiguity_marker_inout.block_id)),
-            "seraphis scan state machine (set initial contiguity marker): could not get block id for start of "
-            "scanning but a block id was expected (bug).");
+        contiguity_marker_inout = ContiguityMarker{
+                .block_index = chunk_consumer.refresh_index() - 1,
+                .block_id    = boost::none
+            };
     }
+    else
+        contiguity_marker_inout = chunk_consumer.get_nearest_block(estimated_start_scan_index - 1);
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -167,7 +164,9 @@ static ScanMachineStatus new_chunk_scan_status(const ContiguityMarker &contiguit
             contiguity_marker,
             ContiguityMarker{
                 chunk_context.start_index - 1,
-                chunk_context.prefix_block_id
+                chunk_context.start_index > 0
+                ? boost::optional<rct::key>{chunk_context.prefix_block_id}
+                : boost::none
             }
         ))
         return ScanMachineStatus::SUCCESS;
@@ -190,18 +189,40 @@ static void update_alignment_marker(const ChunkConsumer &chunk_consumer,
     const std::vector<rct::key> &block_ids,
     ContiguityMarker &alignment_marker_inout)
 {
-    // trace through the block ids to find the heighest one that matches with the chunk consumer's recorded block ids
-    rct::key next_block_id;
-    for (std::size_t block_index{0}; block_index < block_ids.size(); ++block_index)
+    // trace through the block ids to find the highest one that aligns with the chunk consumer's cached block ids
+    for (auto ids_it{block_ids.begin()}; ids_it != block_ids.end(); ++ids_it)
     {
-        if (!chunk_consumer.try_get_block_id(start_index + block_index, next_block_id))
+        // a. get the chunk consumer's block index nearest to this block in the input set
+        const std::uint64_t block_index{
+                start_index + std::distance(block_ids.begin(), ids_it)
+            };
+        const ContiguityMarker consumer_nearest_block{chunk_consumer.get_nearest_block(block_index)};
+
+        // b. fail if the consumer's block is not within the input block range
+        if (consumer_nearest_block.block_index + 1 < start_index + 1 ||
+            consumer_nearest_block.block_index + 1 >= start_index + block_ids.size() + 1)
             return;
 
-        if (!(next_block_id == block_ids[block_index]))
+        // c, sanity check
+        // - this is after range check in case the consumer has no blocks and returns a null marker
+        CHECK_AND_ASSERT_THROW_MES(consumer_nearest_block.block_index + 1 >= block_index + 1,
+            "scan machine (update alignment marker): consumer's nearest block index is below the specified block index.");
+
+        // d. fail if we did not got a block id from the consumer
+        // - can fail if the consumer's prefix block is within the input block range
+        if (!consumer_nearest_block.block_id)
             return;
 
-        alignment_marker_inout.block_index = start_index + block_index;
-        alignment_marker_inout.block_id    = next_block_id;
+        // e. move to the consumer's nearest block's index
+        std::advance(ids_it, consumer_nearest_block.block_index - block_index);
+
+        // f. fail if the consumer is not aligned with this block
+        if (!(*ids_it == *consumer_nearest_block.block_id))
+            return;
+
+        // g. update the alignment marker
+        alignment_marker_inout.block_index = block_index;
+        alignment_marker_inout.block_id    = *ids_it;
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -386,9 +407,9 @@ static bool try_handle_need_fullscan(const ChunkConsumer &chunk_consumer,
     if (metadata_inout.status != ScanMachineStatus::NEED_FULLSCAN)
         return false;
 
-    // 1. get index of the first block to scan
-    const std::uint64_t start_scan_index{
-            get_start_scan_index(metadata_inout.config.reorg_avoidance_increment,
+    // 1. get index of the first block we want to scan
+    const std::uint64_t estimated_start_scan_index{
+            get_estimated_start_scan_index(metadata_inout.config.reorg_avoidance_increment,
                 metadata_inout.fullscan_attempts,
                 chunk_consumer.refresh_index(),
                 chunk_consumer.desired_first_block())
@@ -398,7 +419,7 @@ static bool try_handle_need_fullscan(const ChunkConsumer &chunk_consumer,
     // - this starts as the prefix of the first block to scan, and should either be known to the data
     //   updater or have an unspecified block id
     metadata_inout.contiguity_marker = ContiguityMarker{};
-    set_initial_contiguity_marker(chunk_consumer, start_scan_index, metadata_inout.contiguity_marker);
+    set_initial_contiguity_marker(chunk_consumer, estimated_start_scan_index, metadata_inout.contiguity_marker);
 
     // 3. record the scan attempt
     metadata_inout.fullscan_attempts += 1;
@@ -423,9 +444,9 @@ static bool try_handle_need_partialscan(const ChunkConsumer &chunk_consumer,
     if (metadata_inout.status != ScanMachineStatus::NEED_PARTIALSCAN)
         return false;
 
-    // 1. get index of the first block to scan
-    const std::uint64_t start_scan_index{
-            get_start_scan_index(metadata_inout.config.reorg_avoidance_increment,
+    // 1. get index of the first block we want to scan
+    const std::uint64_t estimated_start_scan_index{
+            get_estimated_start_scan_index(metadata_inout.config.reorg_avoidance_increment,
                 1,  //in partial scans always back off by just one reorg avoidance increment
                 chunk_consumer.refresh_index(),
                 chunk_consumer.desired_first_block())
@@ -435,7 +456,7 @@ static bool try_handle_need_partialscan(const ChunkConsumer &chunk_consumer,
     // - this starts as the prefix of the first block to scan, and should either be known to the data
     //   updater or have an unspecified block id
     metadata_inout.contiguity_marker = ContiguityMarker{};
-    set_initial_contiguity_marker(chunk_consumer, start_scan_index, metadata_inout.contiguity_marker);
+    set_initial_contiguity_marker(chunk_consumer, estimated_start_scan_index, metadata_inout.contiguity_marker);
 
     // 3. record the scan attempt
     metadata_inout.partialscan_attempts += 1;

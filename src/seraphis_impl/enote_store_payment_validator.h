@@ -34,6 +34,7 @@
 
 //local headers
 #include "crypto/crypto.h"
+#include "seraphis_impl/checkpoint_cache.h"
 #include "seraphis_impl/enote_store_event_types.h"
 #include "seraphis_main/contextual_enote_record_types.h"
 
@@ -58,24 +59,24 @@ class SpEnoteStorePaymentValidator final
 {
 public:
 //constructors
-    /// default constructor
-    SpEnoteStorePaymentValidator() = default;
-
     /// normal constructor
     SpEnoteStorePaymentValidator(const std::uint64_t refresh_index, const std::uint64_t default_spendable_age) :
         m_refresh_index{refresh_index},
-        m_default_spendable_age{default_spendable_age}
+        m_default_spendable_age{default_spendable_age},
+        m_sp_block_id_cache{refresh_index, 100000, 50, 20}
     {}
 
 //member functions
     /// get index of first block the enote store cares about
     std::uint64_t refresh_index() const { return m_refresh_index; }
-    /// get index of heighest recorded block (refresh index - 1 if no recorded blocks) (heighest block PayVal-scanned)
-    std::uint64_t top_block_index() const { return m_refresh_index + m_block_ids.size() - 1; }
+    /// get index of highest recorded block (refresh index - 1 if no recorded blocks) (highest block PayVal-scanned)
+    std::uint64_t top_block_index() const { return m_sp_block_id_cache.top_block_index(); }
     /// config: get default spendable age
     std::uint64_t default_spendable_age() const { return m_default_spendable_age; }
+    /// get the nearest cached block index >= the requested index (-1 on failure)
+    std::uint64_t nearest_sp_scanned_block_index(const std::uint64_t block_index) const;
     /// try to get the recorded block id for a given index
-    bool try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const;
+    bool try_get_block_id_for_sp(const std::uint64_t block_index, rct::key &block_id_out) const;
 
     /// get the seraphis intermediate records: [ Ko, sp intermediate records ]
     const std::unordered_map<rct::key, SpContextualIntermediateEnoteRecordV1>& sp_intermediate_records() const
@@ -102,8 +103,8 @@ private:
 
     /// refresh index
     std::uint64_t m_refresh_index{0};
-    /// stored block ids in range [refresh index, end of known chain]
-    std::vector<rct::key> m_block_ids;
+    /// cached block ids in range [refresh index, end of known chain]
+    CheckpointCache m_sp_block_id_cache;
 
     /// configuration value: default spendable age; an enote is considered 'spendable' in the next block if it's on-chain
     //      and the hext index is >= 'origin index + max(1, default_spendable_age)'

@@ -58,14 +58,26 @@
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
-bool SpEnoteStorePaymentValidator::try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const
+std::uint64_t SpEnoteStorePaymentValidator::nearest_sp_scanned_block_index(const std::uint64_t block_index) const
 {
-    if (block_index < m_refresh_index ||
-        block_index > m_refresh_index + m_block_ids.size() - 1 ||
-        m_block_ids.size() == 0)
+    // get the cached seraphis block index >= the requested index
+    return m_sp_block_id_cache.get_next_block_index(block_index - 1);
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool SpEnoteStorePaymentValidator::try_get_block_id_for_sp(const std::uint64_t block_index, rct::key &block_id_out) const
+{
+    // 1. get the nearest cached legacy block index
+    // - we use this indirection to validate edge conditions
+    const std::uint64_t nearest_cached_index{this->nearest_sp_scanned_block_index(block_index)};
+
+    // 2. check error states
+    if (nearest_cached_index == static_cast<std::uint64_t>(-1) ||
+        nearest_cached_index != block_index)
         return false;
 
-    block_id_out = m_block_ids[block_index - m_refresh_index];
+    // 3. get the block id
+    CHECK_AND_ASSERT_THROW_MES(m_sp_block_id_cache.try_get_block_id(block_index, block_id_out),
+        "sp enote store (try get block id sp scan): failed to get cached block id for index that is known.");
 
     return true;
 }
@@ -106,11 +118,10 @@ void SpEnoteStorePaymentValidator::update_with_sp_records_from_ledger(const std:
 {
     // 1. set new block ids in range [first_new_block, end of chain]
     SpIntermediateBlocksDiff diff{};
-    update_block_ids_with_new_block_ids(m_refresh_index,
-        first_new_block,
+    update_block_ids_with_new_block_ids(first_new_block,
         alignment_block_id,
         new_block_ids,
-        m_block_ids,
+        m_sp_block_id_cache,
         diff.old_top_index,
         diff.range_start_index,
         diff.num_blocks_added);

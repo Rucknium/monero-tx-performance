@@ -65,30 +65,35 @@ CheckpointCache::CheckpointCache(const std::uint64_t min_checkpoint_index,
 //-------------------------------------------------------------------------------------------------------------------
 std::uint64_t CheckpointCache::top_block_index() const
 {
-    if (num_stored_checkpoints() == 0)
-        return -1;
+    if (num_checkpoints() == 0)
+        return m_min_checkpoint_index - 1;
 
     return m_checkpoints.crbegin()->first;
 }
 //-------------------------------------------------------------------------------------------------------------------
 std::uint64_t CheckpointCache::bottom_block_index() const
 {
-    if (num_stored_checkpoints() == 0)
-        return -1;
+    if (num_checkpoints() == 0)
+        return m_min_checkpoint_index - 1;
 
     return m_checkpoints.cbegin()->first;
 }
 //-------------------------------------------------------------------------------------------------------------------
 std::uint64_t CheckpointCache::get_next_block_index(const std::uint64_t test_index) const
 {
-    // 1. get closest checkpoint > test index
+    // 1. special case: test index = -1 and we have a checkpoint at index 0
+    if (test_index == static_cast<std::uint64_t>(-1) &&
+        m_checkpoints.find(0) != m_checkpoints.end())
+        return 0;
+
+    // 2. get closest checkpoint > test index
     auto test_checkpoint = m_checkpoints.upper_bound(test_index);
 
-    // 2. edge condition: no checkpoints above test index
+    // 3. edge condition: no checkpoints above test index
     if (test_checkpoint == m_checkpoints.cend())
         return -1;
 
-    // 3. return next block index
+    // 4. return next block index
     return test_checkpoint->first;
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -97,8 +102,8 @@ std::uint64_t CheckpointCache::get_nearest_block_index_clampdown(const std::uint
     // get the block index of the closest checkpoint <= the test index
 
     // 1. early return if no checkpoints
-    if (this->num_stored_checkpoints() == 0)
-        return -1;
+    if (this->num_checkpoints() == 0)
+        return m_min_checkpoint_index - 1;
 
     // 2. get closest checkpoint > test index
     auto test_checkpoint = m_checkpoints.upper_bound(test_index);
@@ -109,7 +114,7 @@ std::uint64_t CheckpointCache::get_nearest_block_index_clampdown(const std::uint
 
     // 4. edge condition: if test index < lowest checkpoint, return failure
     if (test_checkpoint == m_checkpoints.cbegin())
-        return -1;
+        return m_min_checkpoint_index - 1;
 
     // 5. normal case: there is a checkpoint <= the test index
     return (--test_checkpoint)->first;
@@ -161,9 +166,7 @@ std::deque<std::uint64_t>::const_iterator CheckpointCache::get_window_prune_cand
     // return the lowest element
     CHECK_AND_ASSERT_THROW_MES(window.size() > 0,
         "checkpoint cache (get window prune candidate): window size is zero.");
-    auto it = window.begin();
-    std::advance(it, window.size() / 2);
-    return it;
+    return std::next(window.begin(), window.size() / 2);
 }
 //-------------------------------------------------------------------------------------------------------------------
 // CHECKPOINT CACHE INTERNAL
@@ -230,7 +233,7 @@ bool CheckpointCache::window_is_prunable(const std::deque<std::uint64_t> &window
 void CheckpointCache::prune_checkpoints()
 {
     // 1. sanity checks
-    if (this->num_stored_checkpoints() < m_num_unprunable)
+    if (this->num_checkpoints() < m_num_unprunable)
         return;
 
     // 2. highest checkpoint index

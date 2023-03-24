@@ -46,6 +46,7 @@
 #include "seraphis_impl/enote_store_payment_validator.h"
 #include "seraphis_main/enote_record_types.h"
 #include "seraphis_main/scan_chunk_consumer.h"
+#include "seraphis_main/scan_machine_types.h"
 
 //third party headers
 
@@ -83,8 +84,8 @@ public:
     std::uint64_t refresh_index() const override;
     /// get index of first block the updater wants to have scanned
     std::uint64_t desired_first_block() const override;
-    /// try to get the recorded block id for a given index
-    bool try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const override;
+    /// get a marker for the nearest block >= the specified index
+    scanning::ContiguityMarker get_nearest_block(const std::uint64_t block_index) const override;
 
     /// consume a chunk of basic enote records and save the results
     void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
@@ -128,8 +129,8 @@ public:
     std::uint64_t refresh_index() const override;
     /// get index of first block the updater wants to have scanned
     std::uint64_t desired_first_block() const override;
-    /// try to get the recorded block id for a given index
-    bool try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const override;
+    /// get a marker for the nearest block >= the specified index
+    scanning::ContiguityMarker get_nearest_block(const std::uint64_t block_index) const override;
 
     /// consume a chunk of basic enote records and save the results
     void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
@@ -168,8 +169,8 @@ public:
     std::uint64_t refresh_index() const override;
     /// get index of first block the updater wants to have scanned
     std::uint64_t desired_first_block() const override;
-    /// try to get the recorded block id for a given index
-    bool try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const override;
+    /// get a marker for the nearest block >= the specified index
+    scanning::ContiguityMarker get_nearest_block(const std::uint64_t block_index) const override;
 
     /// consume a chunk of basic enote records and save the results
     void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
@@ -209,8 +210,8 @@ public:
     std::uint64_t refresh_index() const override;
     /// get index of first block the updater wants to have scanned
     std::uint64_t desired_first_block() const override;
-    /// try to get the recorded block id for a given index
-    bool try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const override;
+    /// get a marker for the nearest block >= the specified index
+    scanning::ContiguityMarker get_nearest_block(const std::uint64_t block_index) const override;
 
     /// consume a chunk of basic enote records and save the results
     void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,

@@ -70,14 +70,15 @@ public:
     /// get cached minimum index
     std::uint64_t min_checkpoint_index() const { return m_min_checkpoint_index; }
     /// get the number of stored checkpoints
-    std::uint64_t num_stored_checkpoints() const { return m_checkpoints.size(); }
-    /// get the highest stored index or -1 if cache is empty
+    std::uint64_t num_checkpoints() const { return m_checkpoints.size(); }
+    /// get the highest stored index or 'min index - 1' if cache is empty
     std::uint64_t top_block_index() const;
-    /// get the lowest stored index or -1 if cache is empty
+    /// get the lowest stored index or 'min index - 1' if cache is empty
     std::uint64_t bottom_block_index() const;
     /// get the block index of the nearest checkpoint > the test index, or -1 on failure
+    /// note: it is allowed to test index -1 in case the cache has an entry for index 0
     std::uint64_t get_next_block_index(const std::uint64_t test_index) const;
-    /// get the block index of the nearest checkpoint <= the test index, or -1 on failure
+    /// get the block index of the nearest checkpoint <= the test index, or 'min index - 1' on failure
     std::uint64_t get_nearest_block_index_clampdown(const std::uint64_t test_index) const;
     /// try to get the block id with the given index (fails if index is unknown)
     bool try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const;
