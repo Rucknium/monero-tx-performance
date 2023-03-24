@@ -277,7 +277,8 @@ void update_checkpoint_cache_with_new_block_ids(const std::uint64_t first_new_bl
 
     CHECK_AND_ASSERT_THROW_MES(first_new_block_index >= first_allowed_index,
         "update block ids with new block ids: first new block is below the refresh index.");
-    CHECK_AND_ASSERT_THROW_MES(first_new_block_index - first_allowed_index <= cache_inout.top_block_index() + 1,
+    CHECK_AND_ASSERT_THROW_MES(first_new_block_index - first_allowed_index <=
+            cache_inout.top_block_index() - cache_inout.min_checkpoint_index() + 1,
         "update block ids with new block ids: new blocks don't line up with existing blocks.");
     if (first_new_block_index > first_allowed_index)
     {

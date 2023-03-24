@@ -44,7 +44,7 @@ static void check_checkpoint_cache_state(const sp::CheckpointCache &cache,
     const std::uint64_t expected_top_index,
     const std::uint64_t expected_num_unpruned)
 {
-    ASSERT_GE(cache.bottom_block_index(), cache.min_checkpoint_index());
+    ASSERT_GE(cache.bottom_block_index() + 1, (cache.min_checkpoint_index() - 1) + 1);
     ASSERT_LE(cache.bottom_block_index(), cache.top_block_index());
     if (cache.num_checkpoints() > 0)
     {

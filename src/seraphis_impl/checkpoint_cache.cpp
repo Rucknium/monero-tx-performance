@@ -54,6 +54,8 @@ CheckpointCache::CheckpointCache(const CheckpointCacheConfig &config, const std:
 {
     CHECK_AND_ASSERT_THROW_MES(m_config.max_separation < math::uint_pow(2, 32),
         "checkpoint cache (constructor): max_separation must be < 2^32.");  //heuristic to avoid overflow issues
+    CHECK_AND_ASSERT_THROW_MES(m_config.num_unprunable >= 1,
+        "checkpoint cache (constructor): num unprunable must be >= 1.");
     CHECK_AND_ASSERT_THROW_MES(m_config.density_factor >= 1,
         "checkpoint cache (constructor): density_factor must be >= 1.");
 }
@@ -230,7 +232,8 @@ bool CheckpointCache::window_is_prunable(const std::deque<std::uint64_t> &window
 void CheckpointCache::prune_checkpoints()
 {
     // 1. sanity checks
-    if (this->num_checkpoints() < m_config.num_unprunable)
+    if (this->num_checkpoints() == 0 ||
+        this->num_checkpoints() < m_config.num_unprunable)
         return;
 
     // 2. highest checkpoint index
@@ -241,7 +244,7 @@ void CheckpointCache::prune_checkpoints()
     std::deque<std::uint64_t> window;
 
     for (std::uint64_t window_index{0}; window_index < m_window_size; ++window_index)
-        window.push_front(highest_checkpoint_index + window_index);
+        window.push_front(highest_checkpoint_index + window_index + 1);
 
     // 4. slide the window from our highest checkpoint to our lowest checkpoint, pruning elements as we go
     for (auto checkpoint_it = m_checkpoints.rbegin(); checkpoint_it != m_checkpoints.rend();)

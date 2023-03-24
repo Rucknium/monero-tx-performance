@@ -330,15 +330,11 @@ TEST(seraphis_enote_scanning, simple_ledger_1)
 
     // 2. user keys
     jamtis_mock_keys user_keys_A;
-    jamtis_mock_keys user_keys_B;
     make_jamtis_mock_keys(user_keys_A);
-    make_jamtis_mock_keys(user_keys_B);
 
     // 3. user addresses
     JamtisDestinationV1 destination_A;
-    JamtisDestinationV1 destination_B;
     make_random_address_for_user(user_keys_A, destination_A);
-    make_random_address_for_user(user_keys_B, destination_B);
 
 
     /// test
@@ -368,15 +364,11 @@ TEST(seraphis_enote_scanning, simple_ledger_2)
 
     // 2. user keys
     jamtis_mock_keys user_keys_A;
-    jamtis_mock_keys user_keys_B;
     make_jamtis_mock_keys(user_keys_A);
-    make_jamtis_mock_keys(user_keys_B);
 
     // 3. user addresses
     JamtisDestinationV1 destination_A;
-    JamtisDestinationV1 destination_B;
     make_random_address_for_user(user_keys_A, destination_A);
-    make_random_address_for_user(user_keys_B, destination_B);
 
 
     /// test
@@ -450,15 +442,11 @@ TEST(seraphis_enote_scanning, simple_ledger_4)
 
     // 2. user keys
     jamtis_mock_keys user_keys_A;
-    jamtis_mock_keys user_keys_B;
     make_jamtis_mock_keys(user_keys_A);
-    make_jamtis_mock_keys(user_keys_B);
 
     // 3. user addresses
     JamtisDestinationV1 destination_A;
-    JamtisDestinationV1 destination_B;
     make_random_address_for_user(user_keys_A, destination_A);
-    make_random_address_for_user(user_keys_B, destination_B);
 
 
     /// test
@@ -496,15 +484,11 @@ TEST(seraphis_enote_scanning, simple_ledger_5)
 
     // 2. user keys
     jamtis_mock_keys user_keys_A;
-    jamtis_mock_keys user_keys_B;
     make_jamtis_mock_keys(user_keys_A);
-    make_jamtis_mock_keys(user_keys_B);
 
     // 3. user addresses
     JamtisDestinationV1 destination_A;
-    JamtisDestinationV1 destination_B;
     make_random_address_for_user(user_keys_A, destination_A);
-    make_random_address_for_user(user_keys_B, destination_B);
 
 
     /// test
@@ -558,15 +542,11 @@ TEST(seraphis_enote_scanning, simple_ledger_6)
 
     // 2. user keys
     jamtis_mock_keys user_keys_A;
-    jamtis_mock_keys user_keys_B;
     make_jamtis_mock_keys(user_keys_A);
-    make_jamtis_mock_keys(user_keys_B);
 
     // 3. user addresses
     JamtisDestinationV1 destination_A;
-    JamtisDestinationV1 destination_B;
     make_random_address_for_user(user_keys_A, destination_A);
-    make_random_address_for_user(user_keys_B, destination_B);
 
 
     /// test
@@ -615,6 +595,109 @@ TEST(seraphis_enote_scanning, simple_ledger_6)
         {SpEnoteSpentStatus::SPENT_OFFCHAIN, SpEnoteSpentStatus::SPENT_UNCONFIRMED}) == 0);
     ASSERT_TRUE(get_balance(enote_store_A, {SpEnoteOriginStatus::ONCHAIN},
         {SpEnoteSpentStatus::SPENT_ONCHAIN}) == 0);
+}
+//-------------------------------------------------------------------------------------------------------------------
+TEST(seraphis_enote_scanning, simple_ledger_7)
+{
+    // test: reorgs that affect pruned blocks in the enote store's checkpoint cache
+
+    /// setup
+
+    // 1. config
+    const scanning::ScanMachineConfig refresh_config{
+            .reorg_avoidance_increment = 1,
+            .max_chunk_size = 1,
+            .max_partialscan_attempts = 0
+        };
+    const CheckpointCacheConfig checkpoint_cache_config{
+            .max_separation = 100,
+            .num_unprunable = 1,
+            .density_factor = 1
+        };
+
+    // 2. user keys
+    jamtis_mock_keys user_keys_A;
+    make_jamtis_mock_keys(user_keys_A);
+
+    // 3. user addresses
+    JamtisDestinationV1 destination_A;
+    make_random_address_for_user(user_keys_A, destination_A);
+
+
+    /// test
+    MockLedgerContext ledger_context{0, 0};
+    SpEnoteStore enote_store_A{4, 0, 0, checkpoint_cache_config};
+    refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
+
+    ASSERT_TRUE(get_balance(enote_store_A, {SpEnoteOriginStatus::OFFCHAIN, SpEnoteOriginStatus::UNCONFIRMED},
+        {SpEnoteSpentStatus::SPENT_OFFCHAIN, SpEnoteSpentStatus::SPENT_UNCONFIRMED}) == 0);
+    ASSERT_TRUE(get_balance(enote_store_A, {SpEnoteOriginStatus::ONCHAIN},
+        {SpEnoteSpentStatus::SPENT_ONCHAIN}) == 0);
+
+    // send funds: blocks 0 - 12, refresh
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 0
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 1
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 2
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 3
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 4
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 5
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 6
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 7
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 8
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 9
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 10
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 11
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 12
+    refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
+
+    ASSERT_TRUE(get_balance(enote_store_A, {SpEnoteOriginStatus::OFFCHAIN, SpEnoteOriginStatus::UNCONFIRMED},
+        {SpEnoteSpentStatus::SPENT_OFFCHAIN, SpEnoteSpentStatus::SPENT_UNCONFIRMED}) == 0);
+    ASSERT_TRUE(get_balance(enote_store_A, {SpEnoteOriginStatus::ONCHAIN},
+        {SpEnoteSpentStatus::SPENT_ONCHAIN}) == 9);
+
+    // pop blocks 8 - 12, refresh
+    ledger_context.pop_blocks(5);
+    refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
+
+    ASSERT_TRUE(get_balance(enote_store_A, {SpEnoteOriginStatus::OFFCHAIN, SpEnoteOriginStatus::UNCONFIRMED},
+        {SpEnoteSpentStatus::SPENT_OFFCHAIN, SpEnoteSpentStatus::SPENT_UNCONFIRMED}) == 0);
+    ASSERT_TRUE(get_balance(enote_store_A, {SpEnoteOriginStatus::ONCHAIN},
+        {SpEnoteSpentStatus::SPENT_ONCHAIN}) == 4);
+
+    // send funds: blocks 8 - 12, refresh
+    send_sp_coinbase_amounts_to_users({{2}}, {destination_A}, ledger_context);  //block 8
+    send_sp_coinbase_amounts_to_users({{2}}, {destination_A}, ledger_context);  //block 9
+    send_sp_coinbase_amounts_to_users({{2}}, {destination_A}, ledger_context);  //block 10
+    send_sp_coinbase_amounts_to_users({{2}}, {destination_A}, ledger_context);  //block 11
+    send_sp_coinbase_amounts_to_users({{2}}, {destination_A}, ledger_context);  //block 12
+    refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
+
+    ASSERT_TRUE(get_balance(enote_store_A, {SpEnoteOriginStatus::OFFCHAIN, SpEnoteOriginStatus::UNCONFIRMED},
+        {SpEnoteSpentStatus::SPENT_OFFCHAIN, SpEnoteSpentStatus::SPENT_UNCONFIRMED}) == 0);
+    ASSERT_TRUE(get_balance(enote_store_A, {SpEnoteOriginStatus::ONCHAIN},
+        {SpEnoteSpentStatus::SPENT_ONCHAIN}) == 14);
+
+    // pop blocks 2 - 12
+    ledger_context.pop_blocks(11);
+
+    // send funds: blocks 2 - 12, refresh
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 2
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 3
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 4
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 5
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 6
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 7
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 8
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 9
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 10
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 11
+    send_sp_coinbase_amounts_to_users({{1}}, {destination_A}, ledger_context);  //block 12
+    refresh_user_enote_store(user_keys_A, refresh_config, ledger_context, enote_store_A);
+
+    ASSERT_TRUE(get_balance(enote_store_A, {SpEnoteOriginStatus::OFFCHAIN, SpEnoteOriginStatus::UNCONFIRMED},
+        {SpEnoteSpentStatus::SPENT_OFFCHAIN, SpEnoteSpentStatus::SPENT_UNCONFIRMED}) == 0);
+    ASSERT_TRUE(get_balance(enote_store_A, {SpEnoteOriginStatus::ONCHAIN},
+        {SpEnoteSpentStatus::SPENT_ONCHAIN}) == 9);
 }
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_enote_scanning, simple_ledger_locked)
