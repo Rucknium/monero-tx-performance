@@ -60,11 +60,15 @@ class SpEnoteStorePaymentValidator final
 public:
 //constructors
     /// normal constructor
-    SpEnoteStorePaymentValidator(const std::uint64_t refresh_index, const std::uint64_t default_spendable_age) :
-        m_refresh_index{refresh_index},
-        m_default_spendable_age{default_spendable_age},
-        m_sp_block_id_cache{refresh_index, 100000, 50, 20}
-    {}
+    SpEnoteStorePaymentValidator(const std::uint64_t refresh_index,
+        const std::uint64_t default_spendable_age,
+        const CheckpointCacheConfig &checkpoint_cache_config =
+                CheckpointCacheConfig{
+                        .max_separation = 100000,
+                        .num_unprunable = 50,
+                        .density_factor = 20
+                    }
+            );
 
 //member functions
     /// get index of first block the enote store cares about

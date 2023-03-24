@@ -48,18 +48,13 @@
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
-CheckpointCache::CheckpointCache(const std::uint64_t min_checkpoint_index,
-    const std::uint64_t max_separation,
-    const std::uint64_t num_unprunable,
-    const std::uint64_t density_factor) :
-        m_min_checkpoint_index{min_checkpoint_index},
-        m_max_separation{max_separation},
-        m_num_unprunable{num_unprunable},
-        m_density_factor{density_factor}
+CheckpointCache::CheckpointCache(const CheckpointCacheConfig &config, const std::uint64_t min_checkpoint_index) :
+    m_config{config},
+    m_min_checkpoint_index{min_checkpoint_index}
 {
-    CHECK_AND_ASSERT_THROW_MES(m_max_separation < math::uint_pow(2, 32),
+    CHECK_AND_ASSERT_THROW_MES(m_config.max_separation < math::uint_pow(2, 32),
         "checkpoint cache (constructor): max_separation must be < 2^32.");  //heuristic to avoid overflow issues
-    CHECK_AND_ASSERT_THROW_MES(m_density_factor >= 1,
+    CHECK_AND_ASSERT_THROW_MES(m_config.density_factor >= 1,
         "checkpoint cache (constructor): density_factor must be >= 1.");
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -175,10 +170,10 @@ std::uint64_t CheckpointCache::expected_checkpoint_density_inv(const std::uint64
 {
     // expected density = density_factor/distance -[invert]-> distance/density_factor
     // - we return the inverted density in order to only deal in integers
-    if ((m_density_factor == 0) ||
-        (distance_from_highest_prunable < m_density_factor))
+    if ((m_config.density_factor == 0) ||
+        (distance_from_highest_prunable < m_config.density_factor))
         return 1;
-    return distance_from_highest_prunable/m_density_factor;
+    return distance_from_highest_prunable/m_config.density_factor;
 };
 //-------------------------------------------------------------------------------------------------------------------
 // CHECKPOINT CACHE INTERNAL
@@ -205,17 +200,19 @@ bool CheckpointCache::window_is_prunable(const std::deque<std::uint64_t> &window
         "checkpoint cache (should prune window): prune candidate outside window range.");
 
     // 4. don't prune if our prune candidate is in the 'don't prune' range
-    if (prune_candidate + m_num_unprunable > max_candidate_index)
+    if (prune_candidate + m_config.num_unprunable > max_candidate_index)
         return false;
 
     // 5. don't prune if our density is <= 1/max_separation
     // - subtract 1 to account for the number of deltas in the window range
     const std::uint64_t window_range{window.front() - window.back()};
-    if (window_range >= (window.size() - 1) * m_max_separation)
+    if (window_range >= (window.size() - 1) * m_config.max_separation)
         return false;
 
     // 6. prune candidate's distance from the highest prunable element
-    const std::uint64_t distance_from_highest_prunable{(max_candidate_index - m_num_unprunable) - prune_candidate};
+    const std::uint64_t distance_from_highest_prunable{
+            (max_candidate_index - m_config.num_unprunable) - prune_candidate
+        };
 
     // 7. expected density at this distance from the top (inverted)
     const std::uint64_t expected_density_inv{this->expected_checkpoint_density_inv(distance_from_highest_prunable)};
@@ -233,7 +230,7 @@ bool CheckpointCache::window_is_prunable(const std::deque<std::uint64_t> &window
 void CheckpointCache::prune_checkpoints()
 {
     // 1. sanity checks
-    if (this->num_checkpoints() < m_num_unprunable)
+    if (this->num_checkpoints() < m_config.num_unprunable)
         return;
 
     // 2. highest checkpoint index

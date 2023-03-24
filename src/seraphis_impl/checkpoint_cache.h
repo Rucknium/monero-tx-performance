@@ -47,6 +47,14 @@
 namespace sp
 {
 
+/// Configuration details for a checkpoint cache.
+struct CheckpointCacheConfig final
+{
+    std::uint64_t max_separation;
+    std::uint64_t num_unprunable;
+    std::uint64_t density_factor;
+};
+
 ////
 // CheckpointCache
 // - stores a sequence of checkpoints in the range of block ids [refresh index, highest known block index]
@@ -61,10 +69,7 @@ class CheckpointCache
 {
 public:
 //constructors
-    CheckpointCache(const std::uint64_t min_checkpoint_index,
-        const std::uint64_t max_separation,
-        const std::uint64_t num_unprunable,
-        const std::uint64_t density_factor);
+    CheckpointCache(const CheckpointCacheConfig &config, const std::uint64_t min_checkpoint_index);
 
 //member functions
     /// get cached minimum index
@@ -97,12 +102,11 @@ private:
     void prune_checkpoints();
 
 //member variables
-    /// config
+    /// minimum checkpoint index
     const std::uint64_t m_min_checkpoint_index;
-    const std::uint64_t m_max_separation;
-    const std::uint64_t m_num_unprunable;
-    const std::uint64_t m_density_factor;
 
+    /// config
+    const CheckpointCacheConfig m_config;
     static const std::uint64_t m_window_size{3};
 
     /// stored checkpoints

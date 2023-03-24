@@ -58,6 +58,14 @@
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
+SpEnoteStorePaymentValidator::SpEnoteStorePaymentValidator(const std::uint64_t refresh_index,
+    const std::uint64_t default_spendable_age,
+    const CheckpointCacheConfig &checkpoint_cache_config) :
+        m_refresh_index{refresh_index},
+        m_default_spendable_age{default_spendable_age},
+        m_sp_block_id_cache{checkpoint_cache_config, refresh_index}
+{}
+//-------------------------------------------------------------------------------------------------------------------
 std::uint64_t SpEnoteStorePaymentValidator::nearest_sp_scanned_block_index(const std::uint64_t block_index) const
 {
     // get the cached seraphis block index >= the requested index
@@ -118,7 +126,7 @@ void SpEnoteStorePaymentValidator::update_with_sp_records_from_ledger(const std:
 {
     // 1. set new block ids in range [first_new_block, end of chain]
     SpIntermediateBlocksDiff diff{};
-    update_block_ids_with_new_block_ids(first_new_block,
+    update_checkpoint_cache_with_new_block_ids(first_new_block,
         alignment_block_id,
         new_block_ids,
         m_sp_block_id_cache,

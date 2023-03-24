@@ -264,7 +264,7 @@ static boost::multiprecision::uint128_t get_balance_seraphis(
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-void update_block_ids_with_new_block_ids(const std::uint64_t first_new_block_index,
+void update_checkpoint_cache_with_new_block_ids(const std::uint64_t first_new_block_index,
     const rct::key &alignment_block_id,
     const std::vector<rct::key> &new_block_ids,
     CheckpointCache &cache_inout,

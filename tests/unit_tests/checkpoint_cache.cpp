@@ -74,71 +74,81 @@ static void check_checkpoint_cache_state(const sp::CheckpointCache &cache,
 TEST(checkpoint_cache, unprunable_only)
 {
     // prepare cache
+    const sp::CheckpointCacheConfig config{
+            .max_separation = 1,
+            .num_unprunable = 20,
+            .density_factor = 1
+        };
     const std::uint64_t min_checkpoint_index{0};
-    const std::uint64_t max_separation{1};
-    const std::uint64_t num_unprunable{20};
-    const std::uint64_t density_factor{1};
 
-    sp::CheckpointCache cache{min_checkpoint_index, max_separation, num_unprunable, density_factor};
+    sp::CheckpointCache cache{config, min_checkpoint_index};
     ASSERT_TRUE(cache.min_checkpoint_index() == min_checkpoint_index);
 
     // add some blocks
-    ASSERT_NO_THROW(cache.insert_new_block_ids(0, create_dummy_blocks(num_unprunable)));
-    check_checkpoint_cache_state(cache, num_unprunable - 1, num_unprunable);
+    ASSERT_NO_THROW(cache.insert_new_block_ids(0, create_dummy_blocks(config.num_unprunable)));
+    check_checkpoint_cache_state(cache, config.num_unprunable - 1, config.num_unprunable);
 
     // add some more blocks to the end
     // - this is past the prunable section, but using max separation 1
-    ASSERT_NO_THROW(cache.insert_new_block_ids(cache.top_block_index() + 1, create_dummy_blocks(num_unprunable)));
-    check_checkpoint_cache_state(cache, 2*num_unprunable - 1, 2*num_unprunable);
+    ASSERT_NO_THROW(cache.insert_new_block_ids(cache.top_block_index() + 1, create_dummy_blocks(config.num_unprunable)));
+    check_checkpoint_cache_state(cache, 2*config.num_unprunable - 1, 2*config.num_unprunable);
 
     // replace all the blocks
-    ASSERT_NO_THROW(cache.insert_new_block_ids(0, create_dummy_blocks(num_unprunable)));
-    check_checkpoint_cache_state(cache, num_unprunable - 1, num_unprunable);
+    ASSERT_NO_THROW(cache.insert_new_block_ids(0, create_dummy_blocks(config.num_unprunable)));
+    check_checkpoint_cache_state(cache, config.num_unprunable - 1, config.num_unprunable);
 
     // replace half the blocks
-    ASSERT_NO_THROW(cache.insert_new_block_ids(num_unprunable/2, create_dummy_blocks(num_unprunable)));
-    check_checkpoint_cache_state(cache, num_unprunable - 1 + num_unprunable/2, num_unprunable + num_unprunable/2);
+    ASSERT_NO_THROW(cache.insert_new_block_ids(config.num_unprunable/2, create_dummy_blocks(config.num_unprunable)));
+    check_checkpoint_cache_state(cache,
+        config.num_unprunable - 1 + config.num_unprunable/2,
+        config.num_unprunable + config.num_unprunable/2);
 }
 //-------------------------------------------------------------------------------------------------------------------
 TEST(checkpoint_cache, greater_refresh)
 {
+    const sp::CheckpointCacheConfig config{
+            .max_separation = 100,
+            .num_unprunable = 10,
+            .density_factor = 5
+        };
     const std::uint64_t min_checkpoint_index{20};
-    const std::uint64_t max_separation{100};
-    const std::uint64_t num_unprunable{10};
-    const std::uint64_t density_factor{5};
 
-    // refresh index > latest_index - num_unprunable?
-    sp::CheckpointCache cache{min_checkpoint_index, max_separation, num_unprunable, density_factor};
+    // refresh index > latest_index - config.num_unprunable?
+    sp::CheckpointCache cache{config, min_checkpoint_index};
     ASSERT_NO_THROW(cache.insert_new_block_ids(0, create_dummy_blocks(20)));
-    check_checkpoint_cache_state(cache, 19, num_unprunable);
+    check_checkpoint_cache_state(cache, 19, config.num_unprunable);
 }
 //-------------------------------------------------------------------------------------------------------------------
 TEST(checkpoint_cache, big_cache)
 {
+    const sp::CheckpointCacheConfig config{
+            .max_separation = 100000,
+            .num_unprunable = 30,
+            .density_factor = 20
+        };
     const std::uint64_t min_checkpoint_index{0};
-    const std::uint64_t max_separation{100000};
-    const std::uint64_t num_unprunable{30};
-    const std::uint64_t density_factor{20};
 
-    sp::CheckpointCache cache{min_checkpoint_index, max_separation, num_unprunable, density_factor};
+    sp::CheckpointCache cache{config, min_checkpoint_index};
     cache.insert_new_block_ids(0, create_dummy_blocks(1000000));
     ASSERT_EQ(cache.num_checkpoints(), 173);
-    check_checkpoint_cache_state(cache, 1000000 - 1, num_unprunable);
+    check_checkpoint_cache_state(cache, 1000000 - 1, config.num_unprunable);
 }
 //-------------------------------------------------------------------------------------------------------------------
 TEST(checkpoint_cache, big_cache_incremental)
 {
+    const sp::CheckpointCacheConfig config{
+            .max_separation = 100000,
+            .num_unprunable = 30,
+            .density_factor = 20
+        };
     const std::uint64_t min_checkpoint_index{0};
-    const std::uint64_t max_separation{100000};
-    const std::uint64_t num_unprunable{30};
-    const std::uint64_t density_factor{20};
 
-    sp::CheckpointCache cache{min_checkpoint_index, max_separation, num_unprunable, density_factor};
+    sp::CheckpointCache cache{config, min_checkpoint_index};
 
     for (std::size_t i{0}; i < 100; ++i)
     {
         cache.insert_new_block_ids(cache.top_block_index() + 1, create_dummy_blocks(10000));
-        check_checkpoint_cache_state(cache, 10000*(i+1) - 1, num_unprunable);
+        check_checkpoint_cache_state(cache, 10000*(i+1) - 1, config.num_unprunable);
     }
     ASSERT_EQ(cache.num_checkpoints(), 194);
 }

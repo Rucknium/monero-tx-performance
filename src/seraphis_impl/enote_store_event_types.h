@@ -35,6 +35,7 @@
 //local headers
 #include "common/variant.h"
 #include "crypto/crypto.h"
+#include "ringct/rctTypes.h"
 #include "seraphis_main/contextual_enote_record_types.h"
 
 //third party headers

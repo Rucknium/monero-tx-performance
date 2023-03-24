@@ -63,15 +63,7 @@ enum class EnoteStoreBalanceExclusions
 };
 
 //todo
-void update_block_ids_with_new_block_ids(const std::uint64_t first_allowed_index,
-    const std::uint64_t first_new_block_index,
-    const rct::key &alignment_block_id,
-    const std::vector<rct::key> &new_block_ids,
-    std::vector<rct::key> &block_ids_inout,
-    std::uint64_t &old_top_index_out,
-    std::uint64_t &range_start_index_out,
-    std::uint64_t &num_blocks_added_out);
-void update_block_ids_with_new_block_ids(const std::uint64_t first_new_block_index,
+void update_checkpoint_cache_with_new_block_ids(const std::uint64_t first_new_block_index,
     const rct::key &alignment_block_id,
     const std::vector<rct::key> &new_block_ids,
     CheckpointCache &cache_inout,

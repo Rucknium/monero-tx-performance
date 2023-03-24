@@ -62,7 +62,14 @@ public:
     /// normal constructor
     SpEnoteStore(const std::uint64_t refresh_index,
         const std::uint64_t first_sp_enabled_block_in_chain,
-        const std::uint64_t default_spendable_age);
+        const std::uint64_t default_spendable_age,
+        const CheckpointCacheConfig &checkpoint_cache_config =
+                CheckpointCacheConfig{
+                        .max_separation = 100000,
+                        .num_unprunable = 50,
+                        .density_factor = 20
+                    }
+            );
 
 //member functions
     /// config: get index of first block the enote store cares about

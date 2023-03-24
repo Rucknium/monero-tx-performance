@@ -61,15 +61,16 @@ namespace sp
 //-------------------------------------------------------------------------------------------------------------------
 SpEnoteStore::SpEnoteStore(const std::uint64_t refresh_index,
     const std::uint64_t first_sp_enabled_block_in_chain,
-    const std::uint64_t default_spendable_age) :
+    const std::uint64_t default_spendable_age,
+    const CheckpointCacheConfig &checkpoint_cache_config) :
         m_refresh_index{refresh_index},
         m_legacy_fullscan_index{refresh_index - 1},
         m_legacy_partialscan_index{refresh_index - 1},
         m_sp_scanned_index{refresh_index - 1},
         m_first_sp_enabled_block_in_chain{first_sp_enabled_block_in_chain},
         m_default_spendable_age{default_spendable_age},
-        m_legacy_block_id_cache{refresh_index, 100000, 50, 20},
-        m_sp_block_id_cache{std::max(refresh_index, first_sp_enabled_block_in_chain), 100000, 50, 20}
+        m_legacy_block_id_cache{checkpoint_cache_config, refresh_index},
+        m_sp_block_id_cache{checkpoint_cache_config, std::max(refresh_index, first_sp_enabled_block_in_chain)}
 {}
 //-------------------------------------------------------------------------------------------------------------------
 std::uint64_t SpEnoteStore::top_block_index() const
@@ -530,7 +531,7 @@ void SpEnoteStore::update_with_new_blocks_from_ledger_legacy_intermediate(const 
 {
     // 1. set new block ids in range [first_new_block, end of chain]
     LegacyIntermediateBlocksDiff diff{};
-    update_block_ids_with_new_block_ids(first_new_block,
+    update_checkpoint_cache_with_new_block_ids(first_new_block,
         alignment_block_id,
         new_block_ids,
         m_legacy_block_id_cache,
@@ -552,7 +553,7 @@ void SpEnoteStore::update_with_new_blocks_from_ledger_legacy_full(const std::uin
 {
     // 1. set new block ids in range [first_new_block, end of chain]
     LegacyBlocksDiff diff{};
-    update_block_ids_with_new_block_ids(first_new_block,
+    update_checkpoint_cache_with_new_block_ids(first_new_block,
         alignment_block_id,
         new_block_ids,
         m_legacy_block_id_cache,
@@ -578,7 +579,7 @@ void SpEnoteStore::update_with_new_blocks_from_ledger_sp(const std::uint64_t fir
 {
     // 1. set new block ids in range [first_new_block, end of chain]
     SpBlocksDiff diff{};
-    update_block_ids_with_new_block_ids(first_new_block,
+    update_checkpoint_cache_with_new_block_ids(first_new_block,
         alignment_block_id,
         new_block_ids,
         m_sp_block_id_cache,
