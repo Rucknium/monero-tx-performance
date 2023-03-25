@@ -26,9 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
-//todo
+// Basic API for the seraphis balance recovery framework.
 
 #pragma once
 
@@ -55,7 +53,7 @@ namespace sp
 {
 
 /**
-* brief: refresh_enote_store_offchain - perform an off-chain balance recovery process
+* brief: refresh_enote_store_nonledger - perform a non-ledger balance recovery process (e.g. tx pool)
 * param: expected_origin_status -
 * param: expected_spent_status -
 * inoutparam: scanning_context_inout -

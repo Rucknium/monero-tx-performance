@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "scan_process_basic.h"
 
@@ -65,9 +63,9 @@ bool refresh_enote_store_nonledger(const SpEnoteOriginStatus expected_origin_sta
         scanning::check_chunk_data_semantics_v1(nonledger_chunk, expected_origin_status, expected_spent_status, 0, -1);
 
         // 2. check if the scan context was aborted
-        // - don't consume empty chunks when aborted because they may not represent the real state of the nonledger
-        //   cache
-        // - don't fail if aborted and chunk is non-empty (it's possible for a scan context to be aborted after
+        // - don't consume chunk if aborted and chunk is empty (it may not represent the real state of the nonledger
+        //   cache)
+        // - consume chunk if aborted and chunk is non-empty (it's possible for a scan context to be aborted after
         //   acquiring a chunk)
         if (scanning::chunk_is_empty(nonledger_chunk) &&
             scanning_context_inout.is_aborted())
@@ -93,7 +91,7 @@ bool refresh_enote_store_ledger(const scanning::ScanMachineConfig &scan_machine_
     scanning::ScanMachineMetadata metadata;
     scanning::initialize_scan_machine_metadata(scan_machine_config, metadata);
 
-    // 2. advance state machine until it terminates or encounters a failure
+    // 2. advance the state machine until it terminates or encounters a failure
     while (scanning::try_advance_state_machine(metadata, ledger_scanning_context_inout, chunk_consumer_inout) &&
         !scanning::is_terminal_state(metadata.status))
     {}
@@ -114,7 +112,7 @@ bool refresh_enote_store(const scanning::ScanMachineConfig &scan_machine_config,
     if (!refresh_enote_store_ledger(scan_machine_config, ledger_scanning_context_inout, chunk_consumer_inout))
         return false;
 
-    // 2. try to perform an unconfirmed scan
+    // 2. perform an unconfirmed scan
     if (!refresh_enote_store_nonledger(SpEnoteOriginStatus::UNCONFIRMED,
             SpEnoteSpentStatus::SPENT_UNCONFIRMED,
             nonledger_scanning_context_inout,
