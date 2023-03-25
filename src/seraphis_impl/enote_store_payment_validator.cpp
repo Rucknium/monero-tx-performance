@@ -118,16 +118,16 @@ void SpEnoteStorePaymentValidator::update_with_sp_records_from_nonledger(
         this->add_record(found_enote_record.second, events_inout);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStorePaymentValidator::update_with_sp_records_from_ledger(const std::uint64_t first_new_block,
-    const rct::key &alignment_block_id,
-    const std::unordered_map<rct::key, SpContextualIntermediateEnoteRecordV1> &found_enote_records,
+void SpEnoteStorePaymentValidator::update_with_sp_records_from_ledger(const rct::key &alignment_block_id,
+    const std::uint64_t first_new_block,
     const std::vector<rct::key> &new_block_ids,
+    const std::unordered_map<rct::key, SpContextualIntermediateEnoteRecordV1> &found_enote_records,
     std::list<PaymentValidatorStoreEvent> &events_inout)
 {
     // 1. set new block ids in range [first_new_block, end of chain]
     SpIntermediateBlocksDiff diff{};
-    update_checkpoint_cache_with_new_block_ids(first_new_block,
-        alignment_block_id,
+    update_checkpoint_cache_with_new_block_ids(alignment_block_id,
+        first_new_block,
         new_block_ids,
         m_sp_block_id_cache,
         diff.old_top_index,

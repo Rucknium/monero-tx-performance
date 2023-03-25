@@ -402,16 +402,16 @@ void SpEnoteStore::update_with_intermediate_legacy_records_from_nonledger(
     this->update_legacy_with_fresh_found_spent_key_images(found_spent_key_images, events_inout);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStore::update_with_intermediate_legacy_records_from_ledger(const std::uint64_t first_new_block,
-    const rct::key &alignment_block_id,
+void SpEnoteStore::update_with_intermediate_legacy_records_from_ledger(const rct::key &alignment_block_id,
+    const std::uint64_t first_new_block,
     const std::vector<rct::key> &new_block_ids,
     const std::unordered_map<rct::key, LegacyContextualIntermediateEnoteRecordV1> &found_enote_records,
     const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
     std::list<EnoteStoreEvent> &events_inout)
 {
     // 1. update block tracking info
-    this->update_with_new_blocks_from_ledger_legacy_intermediate(first_new_block,
-        alignment_block_id,
+    this->update_with_new_blocks_from_ledger_legacy_intermediate(alignment_block_id,
+        first_new_block,
         new_block_ids,
         events_inout);
 
@@ -453,16 +453,16 @@ void SpEnoteStore::update_with_legacy_records_from_nonledger(const SpEnoteOrigin
     this->update_legacy_with_fresh_found_spent_key_images(found_spent_key_images, events_inout);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStore::update_with_legacy_records_from_ledger(const std::uint64_t first_new_block,
-    const rct::key &alignment_block_id,
+void SpEnoteStore::update_with_legacy_records_from_ledger(const rct::key &alignment_block_id,
+    const std::uint64_t first_new_block,
     const std::vector<rct::key> &new_block_ids,
     const std::unordered_map<rct::key, LegacyContextualEnoteRecordV1> &found_enote_records,
     const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
     std::list<EnoteStoreEvent> &events_inout)
 {
     // 1. update block tracking info
-    this->update_with_new_blocks_from_ledger_legacy_full(first_new_block,
-        alignment_block_id,
+    this->update_with_new_blocks_from_ledger_legacy_full(alignment_block_id,
+        first_new_block,
         new_block_ids,
         events_inout);
 
@@ -497,8 +497,8 @@ void SpEnoteStore::update_with_sp_records_from_nonledger(const SpEnoteOriginStat
     this->handle_legacy_key_images_from_sp_selfsends(legacy_key_images_in_sp_selfsends, events_inout);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStore::update_with_sp_records_from_ledger(const std::uint64_t first_new_block,
-    const rct::key &alignment_block_id,
+void SpEnoteStore::update_with_sp_records_from_ledger(const rct::key &alignment_block_id,
+    const std::uint64_t first_new_block,
     const std::vector<rct::key> &new_block_ids,
     const std::unordered_map<crypto::key_image, SpContextualEnoteRecordV1> &found_enote_records,
     const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
@@ -506,7 +506,7 @@ void SpEnoteStore::update_with_sp_records_from_ledger(const std::uint64_t first_
     std::list<EnoteStoreEvent> &events_inout)
 {
     // 1. update block tracking info
-    this->update_with_new_blocks_from_ledger_sp(first_new_block, alignment_block_id, new_block_ids, events_inout);
+    this->update_with_new_blocks_from_ledger_sp(alignment_block_id, first_new_block, new_block_ids, events_inout);
 
     // 2. remove records that will be replaced
     this->clean_maps_for_sp_ledger_update(first_new_block, events_inout);
@@ -524,15 +524,15 @@ void SpEnoteStore::update_with_sp_records_from_ledger(const std::uint64_t first_
 //-------------------------------------------------------------------------------------------------------------------
 // ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStore::update_with_new_blocks_from_ledger_legacy_intermediate(const std::uint64_t first_new_block,
-    const rct::key &alignment_block_id,
+void SpEnoteStore::update_with_new_blocks_from_ledger_legacy_intermediate(const rct::key &alignment_block_id,
+    const std::uint64_t first_new_block,
     const std::vector<rct::key> &new_block_ids,
     std::list<EnoteStoreEvent> &events_inout)
 {
     // 1. set new block ids in range [first_new_block, end of chain]
     LegacyIntermediateBlocksDiff diff{};
-    update_checkpoint_cache_with_new_block_ids(first_new_block,
-        alignment_block_id,
+    update_checkpoint_cache_with_new_block_ids(alignment_block_id,
+        first_new_block,
         new_block_ids,
         m_legacy_block_id_cache,
         diff.old_top_index,
@@ -546,15 +546,15 @@ void SpEnoteStore::update_with_new_blocks_from_ledger_legacy_intermediate(const 
 //-------------------------------------------------------------------------------------------------------------------
 // ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStore::update_with_new_blocks_from_ledger_legacy_full(const std::uint64_t first_new_block,
-    const rct::key &alignment_block_id,
+void SpEnoteStore::update_with_new_blocks_from_ledger_legacy_full(const rct::key &alignment_block_id,
+    const std::uint64_t first_new_block,
     const std::vector<rct::key> &new_block_ids,
     std::list<EnoteStoreEvent> &events_inout)
 {
     // 1. set new block ids in range [first_new_block, end of chain]
     LegacyBlocksDiff diff{};
-    update_checkpoint_cache_with_new_block_ids(first_new_block,
-        alignment_block_id,
+    update_checkpoint_cache_with_new_block_ids(alignment_block_id,
+        first_new_block,
         new_block_ids,
         m_legacy_block_id_cache,
         diff.old_top_index,
@@ -572,15 +572,15 @@ void SpEnoteStore::update_with_new_blocks_from_ledger_legacy_full(const std::uin
 //-------------------------------------------------------------------------------------------------------------------
 // ENOTE STORE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-void SpEnoteStore::update_with_new_blocks_from_ledger_sp(const std::uint64_t first_new_block,
-    const rct::key &alignment_block_id,
+void SpEnoteStore::update_with_new_blocks_from_ledger_sp(const rct::key &alignment_block_id,
+    const std::uint64_t first_new_block,
     const std::vector<rct::key> &new_block_ids,
     std::list<EnoteStoreEvent> &events_inout)
 {
     // 1. set new block ids in range [first_new_block, end of chain]
     SpBlocksDiff diff{};
-    update_checkpoint_cache_with_new_block_ids(first_new_block,
-        alignment_block_id,
+    update_checkpoint_cache_with_new_block_ids(alignment_block_id,
+        first_new_block,
         new_block_ids,
         m_sp_block_id_cache,
         diff.old_top_index,

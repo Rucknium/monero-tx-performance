@@ -150,8 +150,8 @@ public:
         const std::unordered_map<rct::key, LegacyContextualIntermediateEnoteRecordV1> &found_enote_records,
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
         std::list<EnoteStoreEvent> &events_inout);
-    void update_with_intermediate_legacy_records_from_ledger(const std::uint64_t first_new_block,
-        const rct::key &alignment_block_id,
+    void update_with_intermediate_legacy_records_from_ledger(const rct::key &alignment_block_id,
+        const std::uint64_t first_new_block,
         const std::vector<rct::key> &new_block_ids,
         const std::unordered_map<rct::key, LegacyContextualIntermediateEnoteRecordV1> &found_enote_records,
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
@@ -163,8 +163,8 @@ public:
         const std::unordered_map<rct::key, LegacyContextualEnoteRecordV1> &found_enote_records,
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
         std::list<EnoteStoreEvent> &events_inout);
-    void update_with_legacy_records_from_ledger(const std::uint64_t first_new_block,
-        const rct::key &alignment_block_id,
+    void update_with_legacy_records_from_ledger(const rct::key &alignment_block_id,
+        const std::uint64_t first_new_block,
         const std::vector<rct::key> &new_block_ids,
         const std::unordered_map<rct::key, LegacyContextualEnoteRecordV1> &found_enote_records,
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
@@ -176,8 +176,8 @@ public:
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &legacy_key_images_in_sp_selfsends,
         std::list<EnoteStoreEvent> &events_inout);
-    void update_with_sp_records_from_ledger(const std::uint64_t first_new_block,
-        const rct::key &alignment_block_id,
+    void update_with_sp_records_from_ledger(const rct::key &alignment_block_id,
+        const std::uint64_t first_new_block,
         const std::vector<rct::key> &new_block_ids,
         const std::unordered_map<crypto::key_image, SpContextualEnoteRecordV1> &found_enote_records,
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
@@ -186,16 +186,16 @@ public:
 
 private:
     /// update the store with a set of new block ids from the ledger
-    void update_with_new_blocks_from_ledger_legacy_intermediate(const std::uint64_t first_new_block,
-        const rct::key &alignment_block_id,
+    void update_with_new_blocks_from_ledger_legacy_intermediate(const rct::key &alignment_block_id,
+        const std::uint64_t first_new_block,
         const std::vector<rct::key> &new_block_ids,
         std::list<EnoteStoreEvent> &events_inout);
-    void update_with_new_blocks_from_ledger_legacy_full(const std::uint64_t first_new_block,
-        const rct::key &alignment_block_id,
+    void update_with_new_blocks_from_ledger_legacy_full(const rct::key &alignment_block_id,
+        const std::uint64_t first_new_block,
         const std::vector<rct::key> &new_block_ids,
         std::list<EnoteStoreEvent> &events_inout);
-    void update_with_new_blocks_from_ledger_sp(const std::uint64_t first_new_block,
-        const rct::key &alignment_block_id,
+    void update_with_new_blocks_from_ledger_sp(const rct::key &alignment_block_id,
+        const std::uint64_t first_new_block,
         const std::vector<rct::key> &new_block_ids,
         std::list<EnoteStoreEvent> &events_inout);
 

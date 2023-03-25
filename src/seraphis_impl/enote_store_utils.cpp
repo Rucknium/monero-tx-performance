@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "enote_store_utils.h"
 
@@ -62,13 +60,12 @@ static boost::multiprecision::uint128_t get_balance_intermediate_legacy(
     const std::uint64_t top_block_index,
     const std::uint64_t default_spendable_age,
     const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
-    const std::unordered_set<SpEnoteSpentStatus> &spent_statuses,
-    const std::unordered_set<EnoteStoreBalanceExclusions> &exclusions)
+    const std::unordered_set<BalanceExclusions> &exclusions)
 {
     boost::multiprecision::uint128_t balance{0};
 
     // 1. ignore if excluded
-    if (exclusions.find(EnoteStoreBalanceExclusions::LEGACY_INTERMEDIATE) != exclusions.end())
+    if (exclusions.find(BalanceExclusions::LEGACY_INTERMEDIATE) != exclusions.end())
         return 0;
 
     // 2. accumulate balance
@@ -77,27 +74,27 @@ static boost::multiprecision::uint128_t get_balance_intermediate_legacy(
     {
         const LegacyContextualIntermediateEnoteRecordV1 &current_contextual_record{mapped_contextual_record.second};
 
-        // a. only include this enote if its origin status is requested
+        // a. ignore this enote if its origin status is not requested
         if (origin_statuses.find(current_contextual_record.origin_context.origin_status) == origin_statuses.end())
             continue;
 
-        // b. ignore onchain enotes that are locked
-        if (exclusions.find(EnoteStoreBalanceExclusions::ORIGIN_LEDGER_LOCKED) != exclusions.end() &&
+        // b. ignore locked onchain enotes if they should be excluded
+        if (exclusions.find(BalanceExclusions::ORIGIN_LEDGER_LOCKED) != exclusions.end() &&
             current_contextual_record.origin_context.origin_status == SpEnoteOriginStatus::ONCHAIN &&
             onchain_legacy_enote_is_locked(
                     current_contextual_record.origin_context.block_index,
                     current_contextual_record.record.unlock_time,
                     top_block_index,
                     default_spendable_age,
-                    static_cast<std::uint64_t>(std::time(nullptr)))
-                )
+                    static_cast<std::uint64_t>(std::time(nullptr))
+                ))
             continue;
 
         // c. ignore enotes that share onetime addresses with other enotes but don't have the highest amount among them
         CHECK_AND_ASSERT_THROW_MES(legacy_onetime_address_identifier_map
                     .find(onetime_address_ref(current_contextual_record.record.enote)) !=
                 legacy_onetime_address_identifier_map.end(),
-            "enote store get balance (intermediate legacy): tracked legacy duplicates is missing a onetime address (bug).");
+            "get balance intermediate legacy: tracked legacy duplicates is missing a onetime address (bug).");
 
         if (!legacy_enote_has_highest_amount_in_set(mapped_contextual_record.first,
                 current_contextual_record.record.amount,
@@ -105,11 +102,11 @@ static boost::multiprecision::uint128_t get_balance_intermediate_legacy(
                 legacy_onetime_address_identifier_map.at(
                     onetime_address_ref(current_contextual_record.record.enote)
                 ),
-                [&](const rct::key &identifier) -> const SpEnoteOriginStatus&
+                [&legacy_intermediate_records](const rct::key &identifier) -> const SpEnoteOriginStatus&
                 {
                     CHECK_AND_ASSERT_THROW_MES(legacy_intermediate_records.find(identifier) !=
                             legacy_intermediate_records.end(),
-                        "enote store get balance (intermediate legacy): tracked legacy duplicates has an entry that "
+                        "get balance intermediate legacy: tracked legacy duplicates has an entry that "
                         "doesn't line up 1:1 with the legacy intermediate map even though it should (bug).");
 
                     return legacy_intermediate_records
@@ -117,11 +114,11 @@ static boost::multiprecision::uint128_t get_balance_intermediate_legacy(
                         .origin_context
                         .origin_status;
                 },
-                [&](const rct::key &identifier) -> rct::xmr_amount
+                [&legacy_intermediate_records](const rct::key &identifier) -> rct::xmr_amount
                 {
                     CHECK_AND_ASSERT_THROW_MES(legacy_intermediate_records.find(identifier) !=
                             legacy_intermediate_records.end(),
-                        "enote store get balance (intermediate legacy): tracked legacy duplicates has an entry that "
+                        "get balance intermediate legacy: tracked legacy duplicates has an entry that "
                         "doesn't line up 1:1 with the legacy intermediate map even though it should (bug).");
 
                     return legacy_intermediate_records.at(identifier).record.amount;
@@ -145,12 +142,12 @@ static boost::multiprecision::uint128_t get_balance_full_legacy(
     const std::uint64_t default_spendable_age,
     const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
     const std::unordered_set<SpEnoteSpentStatus> &spent_statuses,
-    const std::unordered_set<EnoteStoreBalanceExclusions> &exclusions)
+    const std::unordered_set<BalanceExclusions> &exclusions)
 {
     boost::multiprecision::uint128_t balance{0};
 
     // 1. ignore if excluded
-    if (exclusions.find(EnoteStoreBalanceExclusions::LEGACY_FULL) != exclusions.end())
+    if (exclusions.find(BalanceExclusions::LEGACY_FULL) != exclusions.end())
         return 0;
 
     // 2. accumulate balance
@@ -158,16 +155,16 @@ static boost::multiprecision::uint128_t get_balance_full_legacy(
     {
         const LegacyContextualEnoteRecordV1 &current_contextual_record{mapped_contextual_record.second};
 
-        // a. only include this enote if its origin status is requested
+        // a. ignore this enote if its origin status is not requested
         if (origin_statuses.find(current_contextual_record.origin_context.origin_status) == origin_statuses.end())
             continue;
 
-        // b. if the enote's spent status is requested, then DON'T include this enote
+        // b. ignore this enote if its spent status is requested
         if (spent_statuses.find(current_contextual_record.spent_context.spent_status) != spent_statuses.end())
             continue;
 
-        // c. ignore onchain enotes that are locked
-        if (exclusions.find(EnoteStoreBalanceExclusions::ORIGIN_LEDGER_LOCKED) != exclusions.end() &&
+        // c. ignore locked onchain enotes if they should be excluded
+        if (exclusions.find(BalanceExclusions::ORIGIN_LEDGER_LOCKED) != exclusions.end() &&
             current_contextual_record.origin_context.origin_status == SpEnoteOriginStatus::ONCHAIN &&
             onchain_legacy_enote_is_locked(
                     current_contextual_record.origin_context.block_index,
@@ -182,7 +179,7 @@ static boost::multiprecision::uint128_t get_balance_full_legacy(
         CHECK_AND_ASSERT_THROW_MES(legacy_onetime_address_identifier_map
                     .find(onetime_address_ref(current_contextual_record.record.enote)) !=
                 legacy_onetime_address_identifier_map.end(),
-            "enote store get balance (legacy): tracked legacy duplicates is missing a onetime address (bug).");
+            "get balance full legacy: tracked legacy duplicates is missing a onetime address (bug).");
 
         if (!legacy_enote_has_highest_amount_in_set(mapped_contextual_record.first,
                 current_contextual_record.record.amount,
@@ -190,10 +187,10 @@ static boost::multiprecision::uint128_t get_balance_full_legacy(
                 legacy_onetime_address_identifier_map.at(
                     onetime_address_ref(current_contextual_record.record.enote)
                 ),
-                [&](const rct::key &identifier) -> const SpEnoteOriginStatus&
+                [&legacy_records](const rct::key &identifier) -> const SpEnoteOriginStatus&
                 {
                     CHECK_AND_ASSERT_THROW_MES(legacy_records.find(identifier) != legacy_records.end(),
-                        "enote store get balance (legacy): tracked legacy duplicates has an entry that doesn't line up "
+                        "get balance full legacy: tracked legacy duplicates has an entry that doesn't line up "
                         "1:1 with the legacy map even though it should (bug).");
 
                     return legacy_records
@@ -201,10 +198,10 @@ static boost::multiprecision::uint128_t get_balance_full_legacy(
                         .origin_context
                         .origin_status;
                 },
-                [&](const rct::key &identifier) -> rct::xmr_amount
+                [&legacy_records](const rct::key &identifier) -> rct::xmr_amount
                 {
                     CHECK_AND_ASSERT_THROW_MES(legacy_records.find(identifier) !=  legacy_records.end(),
-                        "enote store get balance (legacy): tracked legacy duplicates has an entry that doesn't line up "
+                        "get balance full legacy: tracked legacy duplicates has an entry that doesn't line up "
                         "1:1 with the legacy map even though it should (bug).");
 
                     return legacy_records.at(identifier).record.amount;
@@ -219,18 +216,59 @@ static boost::multiprecision::uint128_t get_balance_full_legacy(
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static boost::multiprecision::uint128_t get_balance_seraphis(
+static boost::multiprecision::uint128_t get_balance_intermediate_seraphis(
+    const std::unordered_map<rct::key, SpContextualIntermediateEnoteRecordV1> &sp_intermediate_records,
+    const std::uint64_t top_block_index,
+    const std::uint64_t default_spendable_age,
+    const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
+    const std::unordered_set<BalanceExclusions> &exclusions)
+{
+    boost::multiprecision::uint128_t received_sum{0};
+
+    // 1. ignore if excluded
+    if (exclusions.find(BalanceExclusions::SERAPHIS_INTERMEDIATE) != exclusions.end())
+        return 0;
+
+    // 2. accumulate received sum
+    // note: it is unknown if enotes in intermediate records are spent
+    for (const auto &mapped_contextual_record : sp_intermediate_records)
+    {
+        const SpContextualIntermediateEnoteRecordV1 &current_contextual_record{mapped_contextual_record.second};
+
+        // a. ignore this enote if its origin status is not requested
+        if (origin_statuses.find(current_contextual_record.origin_context.origin_status) == origin_statuses.end())
+            continue;
+
+        // b. ignore locked onchain enotes if they should be excluded
+        if (exclusions.find(BalanceExclusions::ORIGIN_LEDGER_LOCKED) != exclusions.end() &&
+            current_contextual_record.origin_context.origin_status == SpEnoteOriginStatus::ONCHAIN &&
+            onchain_sp_enote_is_locked(
+                    current_contextual_record.origin_context.block_index,
+                    top_block_index,
+                    default_spendable_age
+                ))
+            continue;
+
+        // c. update received sum
+        received_sum += current_contextual_record.record.amount;
+    }
+
+    return received_sum;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+static boost::multiprecision::uint128_t get_balance_full_seraphis(
     const std::unordered_map<crypto::key_image, SpContextualEnoteRecordV1> &sp_records,
     const std::uint64_t top_block_index,
     const std::uint64_t default_spendable_age,
     const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
     const std::unordered_set<SpEnoteSpentStatus> &spent_statuses,
-    const std::unordered_set<EnoteStoreBalanceExclusions> &exclusions)
+    const std::unordered_set<BalanceExclusions> &exclusions)
 {
     boost::multiprecision::uint128_t balance{0};
 
     // 1. ignore if excluded
-    if (exclusions.find(EnoteStoreBalanceExclusions::SERAPHIS) != exclusions.end())
+    if (exclusions.find(BalanceExclusions::SERAPHIS_FULL) != exclusions.end())
         return 0;
 
     // 2. accumulate balance
@@ -238,16 +276,16 @@ static boost::multiprecision::uint128_t get_balance_seraphis(
     {
         const SpContextualEnoteRecordV1 &current_contextual_record{mapped_contextual_record.second};
 
-        // a. only include this enote if its origin status is requested
+        // a. ignore this enote if its origin status is not requested
         if (origin_statuses.find(current_contextual_record.origin_context.origin_status) == origin_statuses.end())
             continue;
 
-        // b. if the enote's spent status is requested, then DON'T include this enote
+        // b. ignore this enote if its spent status is requested
         if (spent_statuses.find(current_contextual_record.spent_context.spent_status) != spent_statuses.end())
             continue;
 
-        // c. ignore onchain enotes that are locked
-        if (exclusions.find(EnoteStoreBalanceExclusions::ORIGIN_LEDGER_LOCKED) != exclusions.end() &&
+        // c. ignore locked onchain enotes if they should be excluded
+        if (exclusions.find(BalanceExclusions::ORIGIN_LEDGER_LOCKED) != exclusions.end() &&
             current_contextual_record.origin_context.origin_status == SpEnoteOriginStatus::ONCHAIN &&
             onchain_sp_enote_is_locked(
                     current_contextual_record.origin_context.block_index,
@@ -264,8 +302,8 @@ static boost::multiprecision::uint128_t get_balance_seraphis(
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-void update_checkpoint_cache_with_new_block_ids(const std::uint64_t first_new_block_index,
-    const rct::key &alignment_block_id,
+void update_checkpoint_cache_with_new_block_ids(const rct::key &alignment_block_id,
+    const std::uint64_t first_new_block_index,
     const std::vector<rct::key> &new_block_ids,
     CheckpointCache &cache_inout,
     std::uint64_t &old_top_index_out,
@@ -276,16 +314,16 @@ void update_checkpoint_cache_with_new_block_ids(const std::uint64_t first_new_bl
     const std::uint64_t first_allowed_index{cache_inout.min_checkpoint_index()};
 
     CHECK_AND_ASSERT_THROW_MES(first_new_block_index >= first_allowed_index,
-        "update block ids with new block ids: first new block is below the refresh index.");
+        "update checkpoint cache with new block ids: first new block is below the refresh index.");
     CHECK_AND_ASSERT_THROW_MES(first_new_block_index - first_allowed_index <=
             cache_inout.top_block_index() - cache_inout.min_checkpoint_index() + 1,
-        "update block ids with new block ids: new blocks don't line up with existing blocks.");
+        "update checkpoint cache with new block ids: new blocks don't line up with existing blocks.");
     if (first_new_block_index > first_allowed_index)
     {
         rct::key cached_alignment_block_id;
         CHECK_AND_ASSERT_THROW_MES(cache_inout.try_get_block_id(first_new_block_index - 1, cached_alignment_block_id) &&
                 alignment_block_id == cached_alignment_block_id,
-            "update block ids with new block ids: alignment block id doesn't align with cached block ids.");
+            "update checkpoint cache with new block ids: alignment block id doesn't align with cached block ids.");
     }
 
     // 2. save the diff
@@ -293,14 +331,14 @@ void update_checkpoint_cache_with_new_block_ids(const std::uint64_t first_new_bl
     range_start_index_out = first_new_block_index;
     num_blocks_added_out  = new_block_ids.size();
 
-    // 3. update the block ids
+    // 3. insert the new block ids
     cache_inout.insert_new_block_ids(first_new_block_index, new_block_ids);
 }
 //-------------------------------------------------------------------------------------------------------------------
 boost::multiprecision::uint128_t get_balance(const SpEnoteStore &enote_store,
     const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
     const std::unordered_set<SpEnoteSpentStatus> &spent_statuses,
-    const std::unordered_set<EnoteStoreBalanceExclusions> &exclusions)
+    const std::unordered_set<BalanceExclusions> &exclusions)
 {
     boost::multiprecision::uint128_t balance{0};
 
@@ -310,7 +348,6 @@ boost::multiprecision::uint128_t get_balance(const SpEnoteStore &enote_store,
         enote_store.top_block_index(),
         enote_store.default_spendable_age(),
         origin_statuses,
-        spent_statuses,
         exclusions);
 
     // 2. full legacy enotes
@@ -323,7 +360,7 @@ boost::multiprecision::uint128_t get_balance(const SpEnoteStore &enote_store,
         exclusions);
 
     // 3. seraphis enotes
-    balance += get_balance_seraphis(enote_store.sp_records(),
+    balance += get_balance_full_seraphis(enote_store.sp_records(),
         enote_store.top_block_index(),
         enote_store.default_spendable_age(),
         origin_statuses,
@@ -335,31 +372,16 @@ boost::multiprecision::uint128_t get_balance(const SpEnoteStore &enote_store,
 //-------------------------------------------------------------------------------------------------------------------
 boost::multiprecision::uint128_t get_received_sum(const SpEnoteStorePaymentValidator &payment_validator,
     const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
-    const std::unordered_set<EnoteStoreBalanceExclusions> &exclusions)
+    const std::unordered_set<BalanceExclusions> &exclusions)
 {
     boost::multiprecision::uint128_t received_sum{0};
 
-    for (const auto &mapped_contextual_record : payment_validator.sp_intermediate_records())
-    {
-        const SpContextualIntermediateEnoteRecordV1 &contextual_record{mapped_contextual_record.second};
-
-        // ignore enotes with unrequested origins
-        if (origin_statuses.find(contextual_record.origin_context.origin_status) == origin_statuses.end())
-            continue;
-
-        // ignore onchain enotes that are locked
-        if (exclusions.find(EnoteStoreBalanceExclusions::ORIGIN_LEDGER_LOCKED) != exclusions.end() &&
-            contextual_record.origin_context.origin_status == SpEnoteOriginStatus::ONCHAIN &&
-            onchain_sp_enote_is_locked(
-                    contextual_record.origin_context.block_index,
-                    payment_validator.top_block_index(),
-                    payment_validator.default_spendable_age()
-                ))
-            continue;
-
-        // update received sum
-        received_sum += contextual_record.record.amount;
-    }
+    // 1. intermediate seraphis enotes (received normal enotes only; it is unknown if they are spent)
+    received_sum += get_balance_intermediate_seraphis(payment_validator.sp_intermediate_records(),
+        payment_validator.top_block_index(),
+        payment_validator.default_spendable_age(),
+        origin_statuses,
+        exclusions);
 
     return received_sum;
 }

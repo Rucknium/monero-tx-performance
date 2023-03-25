@@ -26,9 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
-// Utilities related to enote stores.
+// Utilities for interacting with enote stores.
 
 #pragma once
 
@@ -54,32 +52,57 @@ namespace sp
 namespace sp
 {
 
-enum class EnoteStoreBalanceExclusions
+////
+// BalanceExclusions
+// - Enotes that match with a balance exclusion will not be included in a balance calculation.
+///
+enum class BalanceExclusions
 {
     LEGACY_FULL,
     LEGACY_INTERMEDIATE,
-    SERAPHIS,
+    SERAPHIS_INTERMEDIATE,
+    SERAPHIS_FULL,
     ORIGIN_LEDGER_LOCKED
 };
 
-//todo
-void update_checkpoint_cache_with_new_block_ids(const std::uint64_t first_new_block_index,
-    const rct::key &alignment_block_id,
+/**
+* brief: update_checkpoint_cache_with_new_block_ids - insert new block ids into a checkpoint cache
+* param: alignment_block_id -
+* param: first_new_block_index -
+* param: new_block_ids -
+* inoutparam: cache_inout -
+* outparam: old_top_index_out -
+* outparam: range_start_index_out -
+* outparam: num_blocks_added_out -
+*/
+void update_checkpoint_cache_with_new_block_ids(const rct::key &alignment_block_id,
+    const std::uint64_t first_new_block_index,
     const std::vector<rct::key> &new_block_ids,
     CheckpointCache &cache_inout,
     std::uint64_t &old_top_index_out,
     std::uint64_t &range_start_index_out,
     std::uint64_t &num_blocks_added_out);
-
-/// get current balance of an enote store using specified origin/spent statuses and exclusions
+/**
+* brief: get_balance - get current balance of an enote store using specified origin/spent statuses and exclusions
+* param: enote_store -
+* param: origin_statuses -
+* param: spent_statuses -
+* param: exclusions -
+* return: the total balance
+*/
 boost::multiprecision::uint128_t get_balance(const SpEnoteStore &enote_store,
     const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
     const std::unordered_set<SpEnoteSpentStatus> &spent_statuses = {},
-    const std::unordered_set<EnoteStoreBalanceExclusions> &exclusions = {});
-
-/// get current total amount received using specified origin statuses
+    const std::unordered_set<BalanceExclusions> &exclusions = {});
+/**
+* brief: get_balance - get current total amount received using specified origin statuses and exclusions
+* param: payment_validator -
+* param: origin_statuses -
+* param: exclusions -
+* return: the total amount received
+*/
 boost::multiprecision::uint128_t get_received_sum(const SpEnoteStorePaymentValidator &payment_validator,
     const std::unordered_set<SpEnoteOriginStatus> &origin_statuses,
-    const std::unordered_set<EnoteStoreBalanceExclusions> &exclusions = {});
+    const std::unordered_set<BalanceExclusions> &exclusions = {});
 
 } //namespace sp

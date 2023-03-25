@@ -171,8 +171,8 @@ void ChunkConsumerMockLegacyIntermediate::consume_onchain_chunk(const scanning::
         m_enote_store.update_with_intermediate_legacy_found_spent_key_images(found_spent_key_images, events);
     else
     {
-        m_enote_store.update_with_intermediate_legacy_records_from_ledger(first_new_block,
-            alignment_block_id,
+        m_enote_store.update_with_intermediate_legacy_records_from_ledger(alignment_block_id,
+            first_new_block,
             new_block_ids,
             found_enote_records,
             found_spent_key_images,
@@ -269,8 +269,8 @@ void ChunkConsumerMockLegacy::consume_onchain_chunk(const scanning::LedgerChunk 
 
     // 3. save the results
     std::list<EnoteStoreEvent> events;
-    m_enote_store.update_with_legacy_records_from_ledger(first_new_block,
-        alignment_block_id,
+    m_enote_store.update_with_legacy_records_from_ledger(alignment_block_id,
+        first_new_block,
         new_block_ids,
         found_enote_records,
         found_spent_key_images,
@@ -357,10 +357,10 @@ void ChunkConsumerMockSpIntermediate::consume_onchain_chunk(const scanning::Ledg
 
     // 3. save the results
     std::list<PaymentValidatorStoreEvent> events;
-    m_enote_store.update_with_sp_records_from_ledger(first_new_block,
-        alignment_block_id,
-        found_enote_records,
+    m_enote_store.update_with_sp_records_from_ledger(alignment_block_id,
+        first_new_block,
         new_block_ids,
+        found_enote_records,
         events);
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -467,8 +467,8 @@ void ChunkConsumerMockSp::consume_onchain_chunk(const scanning::LedgerChunk &chu
 
     // 2. save the results
     std::list<EnoteStoreEvent> events;
-    m_enote_store.update_with_sp_records_from_ledger(first_new_block,
-        alignment_block_id,
+    m_enote_store.update_with_sp_records_from_ledger(alignment_block_id,
+        first_new_block,
         new_block_ids,
         found_enote_records,
         found_spent_key_images,

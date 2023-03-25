@@ -90,10 +90,10 @@ public:
     void update_with_sp_records_from_nonledger(const SpEnoteOriginStatus nonledger_origin_status,
         const std::unordered_map<rct::key, SpContextualIntermediateEnoteRecordV1> &found_enote_records,
         std::list<PaymentValidatorStoreEvent> &events_inout);
-    void update_with_sp_records_from_ledger(const std::uint64_t first_new_block,
-        const rct::key &alignment_block_id,
-        const std::unordered_map<rct::key, SpContextualIntermediateEnoteRecordV1> &found_enote_records,
+    void update_with_sp_records_from_ledger(const rct::key &alignment_block_id,
+        const std::uint64_t first_new_block,
         const std::vector<rct::key> &new_block_ids,
+        const std::unordered_map<rct::key, SpContextualIntermediateEnoteRecordV1> &found_enote_records,
         std::list<PaymentValidatorStoreEvent> &events_inout);
 
 private:
