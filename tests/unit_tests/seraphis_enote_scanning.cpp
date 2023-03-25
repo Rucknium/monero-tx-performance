@@ -610,8 +610,8 @@ TEST(seraphis_enote_scanning, simple_ledger_7)
             .max_partialscan_attempts = 0
         };
     const CheckpointCacheConfig checkpoint_cache_config{
-            .max_separation = 100,
             .num_unprunable = 1,
+            .max_separation = 100,
             .density_factor = 1
         };
 

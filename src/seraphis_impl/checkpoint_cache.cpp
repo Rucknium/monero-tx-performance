@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "checkpoint_cache.h"
 
@@ -62,7 +60,7 @@ CheckpointCache::CheckpointCache(const CheckpointCacheConfig &config, const std:
 //-------------------------------------------------------------------------------------------------------------------
 std::uint64_t CheckpointCache::top_block_index() const
 {
-    if (num_checkpoints() == 0)
+    if (this->num_checkpoints() == 0)
         return m_min_checkpoint_index - 1;
 
     return m_checkpoints.crbegin()->first;
@@ -70,7 +68,7 @@ std::uint64_t CheckpointCache::top_block_index() const
 //-------------------------------------------------------------------------------------------------------------------
 std::uint64_t CheckpointCache::bottom_block_index() const
 {
-    if (num_checkpoints() == 0)
+    if (this->num_checkpoints() == 0)
         return m_min_checkpoint_index - 1;
 
     return m_checkpoints.cbegin()->first;
@@ -78,10 +76,10 @@ std::uint64_t CheckpointCache::bottom_block_index() const
 //-------------------------------------------------------------------------------------------------------------------
 std::uint64_t CheckpointCache::get_next_block_index(const std::uint64_t test_index) const
 {
-    // 1. special case: test index = -1 and we have a checkpoint at index 0
+    // 1. special case: test index == -1
     if (test_index == static_cast<std::uint64_t>(-1) &&
-        m_checkpoints.find(0) != m_checkpoints.end())
-        return 0;
+        m_checkpoints.size() > 0)
+        return m_checkpoints.cbegin()->first;
 
     // 2. get closest checkpoint > test index
     auto test_checkpoint = m_checkpoints.upper_bound(test_index);
@@ -132,9 +130,9 @@ bool CheckpointCache::try_get_block_id(const std::uint64_t block_index, rct::key
 void CheckpointCache::insert_new_block_ids(const std::uint64_t first_block_index,
     const std::vector<rct::key> &new_block_ids)
 {
-    // 1. get index into new_block_ids at first block that overlaps with [min index, +inf)
-    // - we will ignore block ids below our min index
-    const std::uint64_t ids_index_offset{
+    // 1. get number of new block ids to ignore
+    // - we ignore all block ids below our min index
+    const std::uint64_t num_new_to_ignore{
             first_block_index < m_min_checkpoint_index
             ? m_min_checkpoint_index - first_block_index
             : 0
@@ -143,12 +141,12 @@ void CheckpointCache::insert_new_block_ids(const std::uint64_t first_block_index
     // 2. remove checkpoints in range [start of blocks to insert, end)
     // - we always crop checkpoints even if the new block ids are all below our min index
     m_checkpoints.erase(
-            m_checkpoints.lower_bound(first_block_index + ids_index_offset),
+            m_checkpoints.lower_bound(first_block_index + num_new_to_ignore),
             m_checkpoints.end()
         );
 
     // 3. insert new ids
-    for (std::uint64_t i{ids_index_offset}; i < new_block_ids.size(); ++i)
+    for (std::uint64_t i{num_new_to_ignore}; i < new_block_ids.size(); ++i)
         m_checkpoints[first_block_index + i] = new_block_ids[i];
 
     // 4. prune excess checkpoints
@@ -160,7 +158,7 @@ void CheckpointCache::insert_new_block_ids(const std::uint64_t first_block_index
 std::deque<std::uint64_t>::const_iterator CheckpointCache::get_window_prune_candidate(
     const std::deque<std::uint64_t> &window) const
 {
-    // return the lowest element
+    // return the middle element
     CHECK_AND_ASSERT_THROW_MES(window.size() > 0,
         "checkpoint cache (get window prune candidate): window size is zero.");
     return std::next(window.begin(), window.size() / 2);
@@ -168,10 +166,9 @@ std::deque<std::uint64_t>::const_iterator CheckpointCache::get_window_prune_cand
 //-------------------------------------------------------------------------------------------------------------------
 // CHECKPOINT CACHE INTERNAL
 //-------------------------------------------------------------------------------------------------------------------
-std::uint64_t CheckpointCache::expected_checkpoint_density_inv(const std::uint64_t distance_from_highest_prunable) const
+std::uint64_t CheckpointCache::expected_checkpoint_separation(const std::uint64_t distance_from_highest_prunable) const
 {
-    // expected density = density_factor/distance -[invert]-> distance/density_factor
-    // - we return the inverted density in order to only deal in integers
+    // expected separation = distance/density_factor
     if ((m_config.density_factor == 0) ||
         (distance_from_highest_prunable < m_config.density_factor))
         return 1;
@@ -192,17 +189,17 @@ bool CheckpointCache::window_is_prunable(const std::deque<std::uint64_t> &window
     CHECK_AND_ASSERT_THROW_MES(prune_candidate_it != window.end(),
         "checkpoint cache (should prune window): could not get prune candidate.");
 
-    // 3. window is not prunable if its candidate is above the max candidate index
-    const std::uint64_t prune_candidate{*prune_candidate_it};
-    if (prune_candidate > max_candidate_index)
+    // 3. window is not prunable if its candidate's index is above the max candidate index
+    const std::uint64_t prune_candidate_index{*prune_candidate_it};
+    if (prune_candidate_index > max_candidate_index)
         return false;
 
-    CHECK_AND_ASSERT_THROW_MES(prune_candidate <= window.front() &&
-            prune_candidate >= window.back(),
+    CHECK_AND_ASSERT_THROW_MES(prune_candidate_index <= window.front() &&
+            prune_candidate_index >= window.back(),
         "checkpoint cache (should prune window): prune candidate outside window range.");
 
     // 4. don't prune if our prune candidate is in the 'don't prune' range
-    if (prune_candidate + m_config.num_unprunable > max_candidate_index)
+    if (prune_candidate_index + m_config.num_unprunable > max_candidate_index)
         return false;
 
     // 5. don't prune if our density is <= 1/max_separation
@@ -212,16 +209,17 @@ bool CheckpointCache::window_is_prunable(const std::deque<std::uint64_t> &window
         return false;
 
     // 6. prune candidate's distance from the highest prunable element
+    // note: this should never overflow thanks to the 'is unprunable' check
     const std::uint64_t distance_from_highest_prunable{
-            (max_candidate_index - m_config.num_unprunable) - prune_candidate
+            (max_candidate_index - m_config.num_unprunable) - prune_candidate_index
         };
 
-    // 7. expected density at this distance from the top (inverted)
-    const std::uint64_t expected_density_inv{this->expected_checkpoint_density_inv(distance_from_highest_prunable)};
+    // 7. expected separation at this distance from the top
+    const std::uint64_t expected_separation{this->expected_checkpoint_separation(distance_from_highest_prunable)};
 
-    // 8. test the expected density
+    // 8. test the expected separation
     // - subtract 1 to account for the number of deltas in the window range
-    if (window_range >= (window.size() - 1) * expected_density_inv)
+    if (window_range >= (window.size() - 1) * expected_separation)
         return false;
 
     return true;
@@ -233,11 +231,11 @@ void CheckpointCache::prune_checkpoints()
 {
     // 1. sanity checks
     if (this->num_checkpoints() == 0 ||
-        this->num_checkpoints() < m_config.num_unprunable)
+        this->num_checkpoints() <= m_config.num_unprunable)
         return;
 
     // 2. highest checkpoint index
-    const std::uint64_t highest_checkpoint_index{m_checkpoints.rbegin()->first};
+    const std::uint64_t highest_checkpoint_index{this->top_block_index()};
 
     // 3. initialize window with simulated elements above our highest checkpoint
     // - window is sorted from highest to lowest
@@ -249,7 +247,7 @@ void CheckpointCache::prune_checkpoints()
     // 4. slide the window from our highest checkpoint to our lowest checkpoint, pruning elements as we go
     for (auto checkpoint_it = m_checkpoints.rbegin(); checkpoint_it != m_checkpoints.rend();)
     {
-        // a. insert this checkpoint to our window (it is the lowest index in our window)
+        // a. insert this checkpoint to our window (it is the lowest element in our window)
         window.push_back(checkpoint_it->first);
 
         // b. early-increment the iterator so it is ready for whatever happens next
@@ -276,11 +274,11 @@ void CheckpointCache::prune_checkpoints()
         // - reverse iterators store the next element's iterator, so we need to do a little dance to avoid iterator
         //   invalidation
         if (checkpoint_it != m_checkpoints.rend() &&
-            checkpoint_it.base()->first == *window_prune_element)
+            checkpoint_it.base()->first == *window_prune_element)  //this test works because elements are unique in a map
         {
-            ++checkpoint_it;
+            ++checkpoint_it;  //increment off the element to be pruned
             m_checkpoints.erase(*window_prune_element);
-            --checkpoint_it;
+            --checkpoint_it;  //decrement back onto the element we need
         }
         else if (checkpoint_it == m_checkpoints.rend())
         {

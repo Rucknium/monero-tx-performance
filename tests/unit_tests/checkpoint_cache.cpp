@@ -75,8 +75,8 @@ TEST(checkpoint_cache, unprunable_only)
 {
     // prepare cache
     const sp::CheckpointCacheConfig config{
-            .max_separation = 1,
             .num_unprunable = 20,
+            .max_separation = 1,
             .density_factor = 1
         };
     const std::uint64_t min_checkpoint_index{0};
@@ -107,8 +107,8 @@ TEST(checkpoint_cache, unprunable_only)
 TEST(checkpoint_cache, greater_refresh)
 {
     const sp::CheckpointCacheConfig config{
-            .max_separation = 100,
             .num_unprunable = 10,
+            .max_separation = 100,
             .density_factor = 5
         };
     const std::uint64_t min_checkpoint_index{20};
@@ -122,8 +122,8 @@ TEST(checkpoint_cache, greater_refresh)
 TEST(checkpoint_cache, big_cache)
 {
     const sp::CheckpointCacheConfig config{
-            .max_separation = 100000,
             .num_unprunable = 30,
+            .max_separation = 100000,
             .density_factor = 20
         };
     const std::uint64_t min_checkpoint_index{0};
@@ -137,8 +137,8 @@ TEST(checkpoint_cache, big_cache)
 TEST(checkpoint_cache, big_cache_incremental)
 {
     const sp::CheckpointCacheConfig config{
-            .max_separation = 100000,
             .num_unprunable = 30,
+            .max_separation = 100000,
             .density_factor = 20
         };
     const std::uint64_t min_checkpoint_index{0};

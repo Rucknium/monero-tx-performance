@@ -65,8 +65,8 @@ public:
         const std::uint64_t default_spendable_age,
         const CheckpointCacheConfig &checkpoint_cache_config =
                 CheckpointCacheConfig{
-                        .max_separation = 100000,
                         .num_unprunable = 50,
+                        .max_separation = 100000,
                         .density_factor = 20
                     }
             );
