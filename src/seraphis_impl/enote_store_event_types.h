@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Events that can happen when updating an enote store.
 
 #pragma once
@@ -48,10 +46,10 @@
 namespace sp
 {
 
-/// blocks added from a legacy-intermediate scan update
+/// blocks added from a legacy intermediate scan update
 struct LegacyIntermediateBlocksDiff final
 {
-    /// old index of top sp-scanned block
+    /// old index of top legacy intermediate scanned block
     std::uint64_t old_top_index;
 
     /// range of new blocks added
@@ -59,10 +57,10 @@ struct LegacyIntermediateBlocksDiff final
     std::uint64_t num_blocks_added;
 };
 
-/// blocks added from a legacy-full scan update
+/// blocks added from a legacy full scan update
 struct LegacyBlocksDiff final
 {
-    /// old index of top sp-scanned block
+    /// old index of top legacy full scanned block
     std::uint64_t old_top_index;
 
     /// range of new blocks added
@@ -73,7 +71,7 @@ struct LegacyBlocksDiff final
 /// blocks added from a seraphis intermediate scan update
 struct SpIntermediateBlocksDiff final
 {
-    /// old index of top sp-scanned block
+    /// old index of top seraphis intermediate scanned block
     std::uint64_t old_top_index;
 
     /// range of new blocks added
@@ -84,7 +82,7 @@ struct SpIntermediateBlocksDiff final
 /// blocks added from a seraphis scan update
 struct SpBlocksDiff final
 {
-    /// old index of top sp-scanned block
+    /// old index of top seraphis scanned block
     std::uint64_t old_top_index;
 
     /// range of new blocks added
