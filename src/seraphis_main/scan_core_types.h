@@ -28,6 +28,16 @@
 
 // Core types for scanning enotes and key images to recover a user's balance.
 
+// PRECONDITIONS:
+// 1. chunks must be built from an atomic view of the source cache (ledger, unconfirmed cache, offchain cache)
+// 2. chunk data: contextual_key_images must reference a tx recorded in basic_records_per_tx (even if you
+//    need to add empty map entries to achieve that)
+// 3. any call to get a chunk from a scanning context should produce a chunk that is at least as fresh as any
+//    other chunk obtained from that context (atomic ordering)
+// 4. any call to consume a chunk in a chunk consumer should resolve all side-effects observable via the consumer's
+//    interface by the time the call is complete (e.g. any changes to block ids observable by get_nearest_block() need
+//    to be completed during the 'consume chunk' call)
+
 #pragma once
 
 //local headers
@@ -67,17 +77,17 @@ struct ChunkData final
 
 ////
 // ChunkContext
-// - chunk range (in block indices): [start index, end index)
-//   - end index = start index + num blocks
 // - prefix block id: id of block that comes before the chunk range, used for contiguity checks between chunks and with
 //   a chunk consumer
+// - chunk range (in block indices): [start index, end index)
+//   - end index = start index + num blocks
 ///
 struct ChunkContext final
 {
-    /// start index
-    std::uint64_t start_index;
     /// block id at 'start index - 1'  (implicitly ignored if start_index == 0)
     rct::key prefix_block_id;
+    /// start index
+    std::uint64_t start_index;
     /// block ids in range [start index, end index)
     std::vector<rct::key> block_ids;
 };

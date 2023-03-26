@@ -91,8 +91,8 @@ public:
     void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
         const scanning::ChunkData &chunk_data) override;
     void consume_onchain_chunk(const scanning::LedgerChunk &chunk,
-        const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
+        const std::uint64_t first_new_block,
         const std::vector<rct::key> &new_block_ids) override;
 
 //member variables
@@ -136,8 +136,8 @@ public:
     void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
         const scanning::ChunkData &chunk_data) override;
     void consume_onchain_chunk(const scanning::LedgerChunk &chunk,
-        const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
+        const std::uint64_t first_new_block,
         const std::vector<rct::key> &new_block_ids) override;
 
 //member variables
@@ -176,8 +176,8 @@ public:
     void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
         const scanning::ChunkData &chunk_data) override;
     void consume_onchain_chunk(const scanning::LedgerChunk &chunk,
-        const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
+        const std::uint64_t first_new_block,
         const std::vector<rct::key> &new_block_ids) override;
 
 //member variables
@@ -217,8 +217,8 @@ public:
     void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status,
         const scanning::ChunkData &chunk_data) override;
     void consume_onchain_chunk(const scanning::LedgerChunk &chunk,
-        const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
+        const std::uint64_t first_new_block,
         const std::vector<rct::key> &new_block_ids) override;
 
 //member variables

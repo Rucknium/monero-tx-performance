@@ -70,9 +70,9 @@ public:
     ChunkConsumer& operator=(ChunkConsumer&&) = delete;
 
 //member functions
-    /// get index of first block the internal enote store cares about
+    /// get index of first block the consumer cares about
     virtual std::uint64_t refresh_index() const = 0;
-    /// get index of first block the updater wants to have scanned
+    /// get index of first block the consumer wants to have scanned
     virtual std::uint64_t desired_first_block() const = 0;
     /// get a marker for the nearest block >= the specified index
     /// ERROR: return { -1, boost::none } if there is no such block
@@ -81,8 +81,8 @@ public:
     /// consume a chunk of basic enote records and save the results
     virtual void consume_nonledger_chunk(const SpEnoteOriginStatus nonledger_origin_status, const ChunkData &data) = 0;
     virtual void consume_onchain_chunk(const LedgerChunk &chunk,
-        const std::uint64_t first_new_block,
         const rct::key &alignment_block_id,
+        const std::uint64_t first_new_block,
         const std::vector<rct::key> &new_block_ids) = 0;
 };
 

@@ -53,12 +53,12 @@ namespace sp
 namespace scanning
 {
 //-------------------------------------------------------------------------------------------------------------------
-// this is the number of extra blocks to scan below our desired start index in case there was a reorg lower
-//   than that start index
+// reorg avoidance depth: this is the number of extra blocks to scan below our desired start index in case there was a
+//   reorg affecting blocks lower than that start index
 // - we use an exponential back-off as a function of fullscan attempts because if a fullscan fails then
-//   the true location of alignment divergence is unknown; moreover, the distance between the desired
-//   start index and the lowest scannable index may be very large; if a fixed back-off were
-//   used, then it could take many fullscan attempts to find the point of divergence
+//   the true location of alignment divergence is unknown; the distance between the desired start index and the
+//   lowest scannable index may be very large, so if a fixed back-off were used it could take many fullscan attempts
+//   to find the point of divergence
 //-------------------------------------------------------------------------------------------------------------------
 static std::uint64_t get_reorg_avoidance_depth(const std::uint64_t reorg_avoidance_increment,
     const std::uint64_t completed_fullscan_attempts)
@@ -70,13 +70,13 @@ static std::uint64_t get_reorg_avoidance_depth(const std::uint64_t reorg_avoidan
     if (completed_fullscan_attempts == 0)
         return 0;
 
-    // 2. check that the default depth is not 0
-    // - check this after one fullscan attempt to support unit tests that set the reorg avoidance depth to 0
+    // 2. check that the increment is not 0
+    // - check this after one fullscan attempt to support unit tests that set the increment to 0
     CHECK_AND_ASSERT_THROW_MES(reorg_avoidance_increment > 0,
         "seraphis scan state machine (get reorg avoidance depth): tried more than one fullscan with zero reorg "
-        "avoidance depth.");
+        "avoidance increment.");
 
-    // 3. 10 ^ (fullscan attempts) * default depth
+    // 3. 10 ^ (fullscan attempts - 1) * increment
     return math::uint_pow(10, completed_fullscan_attempts - 1) * reorg_avoidance_increment;
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -87,23 +87,15 @@ static std::uint64_t get_estimated_start_scan_index(const std::uint64_t reorg_av
     const std::uint64_t desired_start_index)
 {
     // 1. set reorg avoidance depth
-    // - this is the number of extra blocks to scan below our desired start index in case there was a reorg lower
-    //   than our initial contiguity marker before this scan attempt
-    // note: we use an exponential back-off as a function of fullscan attempts because if a fullscan fails then
-    //       the true location of alignment divergence is unknown; moreover, the distance between the first
-    //       desired start index and the chunk consumer's refresh index may be very large; if a fixed back-off were
-    //       used, then it could take many fullscan attempts to find the point of divergence
-    // note: we start at '0', which means if a NEED_PARTIALSCAN is detected before any NEED_FULLSCANs then we will
-    //       have to loop through and get a NEED_FULLSCAN before the reorg can be resolved (it should be fairly cheap)
     const std::uint64_t reorg_avoidance_depth{
             get_reorg_avoidance_depth(reorg_avoidance_increment, completed_fullscan_attempts)
         };
 
     // 2. initial block to scan = max(desired first block - reorg depth, chunk consumer's min scan index)
-    if (desired_start_index >= reorg_avoidance_depth + lowest_scannable_index)
-        return desired_start_index - reorg_avoidance_depth;
-    else
-        return lowest_scannable_index;
+    return
+        (desired_start_index >= reorg_avoidance_depth + lowest_scannable_index)
+        ? desired_start_index - reorg_avoidance_depth
+        : lowest_scannable_index;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -111,7 +103,11 @@ static void set_initial_contiguity_marker(const ChunkConsumer &chunk_consumer,
     const std::uint64_t estimated_start_scan_index,
     ContiguityMarker &contiguity_marker_inout)
 {
-    // start at the consumer's block closest to the block below our estimated start index, or the consumer's prefix block
+    // our initial point of contiguity is the consumer's block closest to the block below our estimated start index,
+    //   or the consumer's prefix block
+    // note: setting contiguity to the block >= the estimated start index instead of <= that index will cause relatively
+    //       less efficient fullscan backoffs; that inefficiency is deemed of insufficient importance to justify
+    //       increasing the implementation/API complexity
     if (estimated_start_scan_index + 1 <= chunk_consumer.refresh_index() + 1)
     {
         contiguity_marker_inout = ContiguityMarker{
@@ -127,10 +123,10 @@ static void set_initial_contiguity_marker(const ChunkConsumer &chunk_consumer,
 static bool contiguity_check(const ContiguityMarker &marker_A, const ContiguityMarker &marker_B)
 {
     // 1. a marker with unspecified block id is contiguous with all markers below and equal to its index (but not
-    //    contiguous with markers above them)
-    // note: this odd rule exists so that if the chain index is below our start index, we will be considered
+    //    contiguous with markers above it)
+    // note: this rule exists so that if the chain index is below our start index, we will be considered
     //       contiguous with it and won't erroneously think we have encountered a reorg (i.e. a broken contiguity);
-    //       to explore that situation, change the '<=' to '==' then step through the unit tests that break
+    //       to see why that matters, change the '<=' to '==' then step through the unit tests that break
     if (!marker_A.block_id &&
         marker_B.block_index + 1 <= marker_A.block_index + 1)
         return true;
@@ -156,8 +152,7 @@ static bool contiguity_check(const ContiguityMarker &marker_A, const ContiguityM
 //-------------------------------------------------------------------------------------------------------------------
 static ScanMachineStatus new_chunk_scan_status(const ContiguityMarker &contiguity_marker,
     const ChunkContext &chunk_context,
-    const std::uint64_t first_contiguity_index,
-    const std::uint64_t full_discontinuity_test_index)
+    const std::uint64_t first_contiguity_index)
 {
     // 1. success case: check if this chunk is contiguous with our marker
     if (contiguity_check(
@@ -175,7 +170,7 @@ static ScanMachineStatus new_chunk_scan_status(const ContiguityMarker &contiguit
     // - in this case, there was a reorg that affected our first expected point of contiguity (i.e. we obtained no new
     //   chunks that were contiguous with our existing known contiguous chain)
     // note: +1 in case either index is '-1'
-    if (first_contiguity_index + 1 >= full_discontinuity_test_index + 1)
+    if (first_contiguity_index + 1 >= contiguity_marker.block_index + 1)
         return ScanMachineStatus::NEED_FULLSCAN;
 
     // 3. failure case: the chunk is not contiguous, but we don't need a full scan
@@ -198,39 +193,36 @@ static void update_alignment_marker(const ChunkConsumer &chunk_consumer,
             };
         const ContiguityMarker consumer_nearest_block{chunk_consumer.get_nearest_block(block_index)};
 
-        // b. fail if the consumer's block is not within the input block range
+        // b. exit if the consumer's block is not within the input block range
         if (consumer_nearest_block.block_index + 1 < start_index + 1 ||
             consumer_nearest_block.block_index + 1 >= start_index + block_ids.size() + 1)
             return;
 
         // c, sanity check
-        // - this is after range check in case the consumer has no blocks and returns a null marker
+        // - this is after the range check in case the consumer returned a null marker
         CHECK_AND_ASSERT_THROW_MES(consumer_nearest_block.block_index + 1 >= block_index + 1,
-            "scan machine (update alignment marker): consumer's nearest block index is below the specified block index.");
+            "seraphis scan state machine (update alignment marker): consumer's nearest block index is below the "
+            "specified block index.");
 
-        // d. fail if we did not got a block id from the consumer
-        // - can fail if the consumer's prefix block is within the input block range
-        if (!consumer_nearest_block.block_id)
-            return;
-
-        // e. move to the consumer's nearest block's index
+        // d. move to the consumer's nearest block's index
         std::advance(ids_it, consumer_nearest_block.block_index - block_index);
 
-        // f. fail if the consumer is not aligned with this block
-        if (!(*ids_it == *consumer_nearest_block.block_id))
+        // e. exit if the consumer is not aligned with this block
+        // - we are automatically aligned if the consumer's block id is null
+        if (consumer_nearest_block.block_id &&
+            !(*ids_it == *consumer_nearest_block.block_id))
             return;
 
-        // g. update the alignment marker
+        // f. update the alignment marker
         alignment_marker_inout.block_index = block_index;
         alignment_marker_inout.block_id    = *ids_it;
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static void align_block_ids(const ChunkConsumer &chunk_consumer,
+static std::vector<rct::key> get_aligned_block_ids(const ChunkConsumer &chunk_consumer,
     const ChunkContext &chunk_context,
-    ContiguityMarker &alignment_marker_inout,
-    std::vector<rct::key> &scanned_block_ids_cropped_inout)
+    ContiguityMarker &alignment_marker_inout)
 {
     // 1. update the alignment marker
     update_alignment_marker(chunk_consumer,
@@ -246,11 +238,14 @@ static void align_block_ids(const ChunkConsumer &chunk_consumer,
         "seraphis scan state machine (align block ids): the alignment range is larger than the chunk's block range "
         "(bug).");
 
-    // 3. crop the chunk block ids
-    scanned_block_ids_cropped_inout.clear();
-    scanned_block_ids_cropped_inout.insert(scanned_block_ids_cropped_inout.end(),
-        std::next(chunk_context.block_ids.begin(), alignment_marker_inout.block_index + 1 - chunk_context.start_index),
-        chunk_context.block_ids.end());
+    // 3. crop chunk block ids that are <= the alignment marker
+    return std::vector<rct::key>{
+            std::next(
+                    chunk_context.block_ids.begin(),
+                    alignment_marker_inout.block_index + 1 - chunk_context.start_index
+                ),
+            chunk_context.block_ids.end()
+        };
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -263,49 +258,44 @@ static ScanMachineStatus handle_nonempty_chunk(const std::uint64_t first_contigu
     //   the chunk was acquired
     const ChunkContext &chunk_context{ledger_chunk.get_context()};
 
-    // 1. verify that this is a non-empty chunk
+    // 1. verify this is a non-empty chunk
     CHECK_AND_ASSERT_THROW_MES(!chunk_is_empty(ledger_chunk),
         "seraphis scan state machine (handle nonempty chunk): chunk is empty unexpectedly.");
 
-    // 2. validate chunk semantics (this should check all array bounds to prevent out-of-range accesses below)
+    // 2. validate chunk semantics
     check_ledger_chunk_semantics_v1(ledger_chunk, contiguity_marker_inout.block_index);
 
     // 3. check if this chunk is contiguous with the contiguity marker
-    // - if not contiguous, then there must have been a reorg, so we need to rescan
+    // - if not contiguous then there must have been a reorg, so we need to rescan
     const ScanMachineStatus scan_status{
-            new_chunk_scan_status(contiguity_marker_inout,
-                chunk_context,
-                first_contiguity_index,
-                contiguity_marker_inout.block_index)
+            new_chunk_scan_status(contiguity_marker_inout, chunk_context, first_contiguity_index)
         };
 
     if (scan_status != ScanMachineStatus::SUCCESS)
         return scan_status;
 
-    // 4. set alignment marker for before the chunk has been processed (assume we always start aligned)
-    // - alignment means a chunk's block id matches the chunk consumer's block id at the alignment block index
+    // 4. set alignment marker (assume we always start aligned)
+    // - alignment means a block id in a chunk matches the chunk consumer's block id at the alignment block index
     ContiguityMarker alignment_marker{contiguity_marker_inout};
 
     // 5. align the chunk's block ids with the chunk consumer
     // - update the point of alignment if this chunk overlaps with blocks known by the chunk consumer
     // - crop the chunk's block ids to only include block ids unknown to the chunk consumer
-    std::vector<rct::key> scanned_block_ids_cropped;
-    align_block_ids(chunk_consumer_inout,
-        chunk_context,
-        alignment_marker,
-        scanned_block_ids_cropped);
+    const std::vector<rct::key> aligned_block_ids{
+            get_aligned_block_ids(chunk_consumer_inout, chunk_context, alignment_marker)
+        };
 
     // 6. consume the chunk if it's not empty
     // - if the chunk is empty after aligning, that means our chunk consumer already knows about the entire span
     //   of the chunk; we don't want to pass the chunk in, because there may be blocks in the NEXT chunk that
     //   our chunk consumer also knows about; we don't want the chunk consumer to think it needs to roll back its state
     //   to the top of this chunk
-    if (scanned_block_ids_cropped.size() > 0)
+    if (aligned_block_ids.size() > 0)
     {
         chunk_consumer_inout.consume_onchain_chunk(ledger_chunk,
-            alignment_marker.block_index + 1,
             alignment_marker.block_id ? *(alignment_marker.block_id) : rct::zero(),
-            scanned_block_ids_cropped);
+            alignment_marker.block_index + 1,
+            aligned_block_ids);
     }
 
     // 7. set contiguity marker to last block of this chunk
@@ -325,9 +315,9 @@ static ScanMachineStatus handle_empty_chunk(const std::uint64_t first_contiguity
 {
     const ChunkContext &chunk_context{ledger_chunk.get_context()};
 
-    // 1. verify that the last chunk obtained is an empty chunk representing the top of the current block chain
+    // 1. verify that the chunk obtained is an empty chunk representing the top of the current blockchain
     CHECK_AND_ASSERT_THROW_MES(chunk_is_empty(chunk_context),
-        "seraphis scan state machine (handle empty chunk): final chunk is not empty as expected.");
+        "seraphis scan state machine (handle empty chunk): chunk is not empty as expected.");
 
     // 2. check if the scan process is aborted
     // - when a scan process is aborted, the empty chunk returned may not represent the end of the chain, so we don't
@@ -342,10 +332,7 @@ static ScanMachineStatus handle_empty_chunk(const std::uint64_t first_contiguity
     //       an unspecified block id; we don't care if the top index is lower than our scanning 'backstop' (i.e.
     //       lowest point in our chunk consumer) when we haven't actually scanned any blocks
     const ScanMachineStatus scan_status{
-            new_chunk_scan_status(contiguity_marker_inout,
-                chunk_context,
-                first_contiguity_index,
-                chunk_context.start_index - 1)
+            new_chunk_scan_status(contiguity_marker_inout, chunk_context, first_contiguity_index)
         };
 
     if (scan_status != ScanMachineStatus::SUCCESS)
@@ -355,8 +342,8 @@ static ScanMachineStatus handle_empty_chunk(const std::uint64_t first_contiguity
     // - we need to update with the termination chunk in case a reorg popped blocks, so the chunk consumer can roll back
     //   its state
     chunk_consumer_inout.consume_onchain_chunk(ledger_chunk,
-        contiguity_marker_inout.block_index + 1,
         contiguity_marker_inout.block_id ? *(contiguity_marker_inout.block_id) : rct::zero(),
+        contiguity_marker_inout.block_index + 1,
         {});
 
     // 5. no more scanning required
@@ -401,13 +388,13 @@ static ScanMachineStatus do_scan_pass(const std::uint64_t first_contiguity_index
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static bool try_handle_need_fullscan(const ChunkConsumer &chunk_consumer,
-    ScanMachineMetadata &metadata_inout)
+static bool try_handle_need_fullscan(const ChunkConsumer &chunk_consumer, ScanMachineMetadata &metadata_inout)
 {
     if (metadata_inout.status != ScanMachineStatus::NEED_FULLSCAN)
         return false;
 
     // 1. get index of the first block we want to scan
+    // - this is only an estimate since the chunk consumer may not have the block at this exact index cached
     const std::uint64_t estimated_start_scan_index{
             get_estimated_start_scan_index(metadata_inout.config.reorg_avoidance_increment,
                 metadata_inout.fullscan_attempts,
@@ -416,8 +403,8 @@ static bool try_handle_need_fullscan(const ChunkConsumer &chunk_consumer,
         };
 
     // 2. set initial contiguity marker
-    // - this starts as the prefix of the first block to scan, and should either be known to the data
-    //   updater or have an unspecified block id
+    // - this starts as the prefix of the first block to scan, and should either be known to the chunk consumer
+    //   or have an unspecified block id
     metadata_inout.contiguity_marker = ContiguityMarker{};
     set_initial_contiguity_marker(chunk_consumer, estimated_start_scan_index, metadata_inout.contiguity_marker);
 
@@ -438,8 +425,7 @@ static bool try_handle_need_fullscan(const ChunkConsumer &chunk_consumer,
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static bool try_handle_need_partialscan(const ChunkConsumer &chunk_consumer,
-    ScanMachineMetadata &metadata_inout)
+static bool try_handle_need_partialscan(const ChunkConsumer &chunk_consumer, ScanMachineMetadata &metadata_inout)
 {
     if (metadata_inout.status != ScanMachineStatus::NEED_PARTIALSCAN)
         return false;
@@ -453,8 +439,8 @@ static bool try_handle_need_partialscan(const ChunkConsumer &chunk_consumer,
         };
 
     // 2. set initial contiguity marker
-    // - this starts as the prefix of the first block to scan, and should either be known to the data
-    //   updater or have an unspecified block id
+    // - this starts as the prefix of the first block to scan, and should either be known to the chunk consumer
+    //   or have an unspecified block id
     metadata_inout.contiguity_marker = ContiguityMarker{};
     set_initial_contiguity_marker(chunk_consumer, estimated_start_scan_index, metadata_inout.contiguity_marker);
 
@@ -474,19 +460,18 @@ static bool try_handle_need_partialscan(const ChunkConsumer &chunk_consumer,
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static bool try_handle_start_scan(ScanningContextLedger &scanning_context_inout,
-    ScanMachineMetadata &metadata_inout)
+static bool try_handle_start_scan(ScanningContextLedger &scanning_context_inout, ScanMachineMetadata &metadata_inout)
 {
     if (metadata_inout.status != ScanMachineStatus::START_SCAN)
         return false;
 
     try
     {
-        // initialize the scanning context
+        // a. initialize the scanning context
         scanning_context_inout.begin_scanning_from_index(metadata_inout.contiguity_marker.block_index + 1,
             metadata_inout.config.max_chunk_size);
 
-        // prepare the next state
+        // b. prepare the next state
         metadata_inout.status                 = ScanMachineStatus::DO_SCAN;
         metadata_inout.first_contiguity_index = metadata_inout.contiguity_marker.block_index;
     }
@@ -503,7 +488,7 @@ static bool try_handle_do_scan(ScanningContextLedger &scanning_context_inout,
     if (metadata_inout.status != ScanMachineStatus::DO_SCAN)
         return false;
 
-    // perform one scan pass then update the status
+    // 1. perform one scan pass then update the status
     try
     {
         metadata_inout.status = do_scan_pass(metadata_inout.first_contiguity_index,
@@ -513,7 +498,7 @@ static bool try_handle_do_scan(ScanningContextLedger &scanning_context_inout,
     }
     catch (...) { metadata_inout.status = ScanMachineStatus::FAIL; }
 
-    // try to terminate the scanning context if the next state is not another scan pass
+    // 2. try to terminate the scanning context if the next state is not another scan pass
     try
     {
         if (metadata_inout.status != ScanMachineStatus::DO_SCAN)

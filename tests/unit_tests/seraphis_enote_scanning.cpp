@@ -5360,31 +5360,19 @@ static void legacy_view_scan_recovery_cycle(const legacy_mock_keys &legacy_keys,
 
     // c. first block that might have a fullscanned block ID
     const std::uint64_t legacy_refresh_index{enote_store_inout.legacy_refresh_index()};
-    const std::uint64_t first_potential_fullscaned_index{
+    const std::uint64_t first_potential_fullscanned_index{
             std::max(full_index_pre_import_cycle + 1, legacy_refresh_index + 1) - 1
         };
 
     // d. block id checkpoints within range of partialscanned blocks we are trying to update
-    // - use an exponential back-off to save space; the highest 20 block ids are saved explicitly since that's
-    //   where reorgs are most likely
     std::map<std::uint64_t, rct::key> block_id_checkpoints;
 
-    for (std::uint64_t block_index{first_potential_fullscaned_index};
-        block_index + 21 < intermediate_index_pre_import_cycle + 1;
-        block_index += (block_index - intermediate_index_pre_import_cycle)/2)
-    {
-        ASSERT_TRUE(enote_store_inout.try_get_block_id_for_legacy_partialscan(block_index,
-            block_id_checkpoints[block_index]));
-    }
-
     for (std::uint64_t block_index{
-                std::max(
-                        first_potential_fullscaned_index + 21,
-                        intermediate_index_pre_import_cycle + 1
-                    ) - 21
+                enote_store_inout.nearest_legacy_partialscanned_block_index(first_potential_fullscanned_index)
             };
-        block_index + 21 <= intermediate_index_pre_import_cycle + 21;
-        ++block_index)
+        block_index != static_cast<std::uint64_t>(-1) &&
+            block_index + 1 <= intermediate_index_pre_import_cycle + 1;  //maybe redundant, better to be safe
+        block_index = enote_store_inout.nearest_legacy_partialscanned_block_index(block_index + 1))
     {
         ASSERT_TRUE(enote_store_inout.try_get_block_id_for_legacy_partialscan(block_index,
             block_id_checkpoints[block_index]));
@@ -5432,7 +5420,7 @@ static void legacy_view_scan_recovery_cycle(const legacy_mock_keys &legacy_keys,
     ASSERT_TRUE(enote_store_inout.legacy_intermediate_records().size() == 0);
 
 
-    /// ATOMIC READ-LOCK
+    /// ATOMIC WRITE-LOCK
     // 8. update the legacy fullscan index to account for a complete view-only scan cycle with key image recovery
     // - only update up to the highest aligned checkpoint from when intermediate records were exported, so that
     //   any reorg that replaced blocks below the partial scan index recorded at the beginning of the cycle won't
@@ -5440,16 +5428,14 @@ static void legacy_view_scan_recovery_cycle(const legacy_mock_keys &legacy_keys,
     std::uint64_t highest_aligned_index_post_import_cycle{enote_store_inout.top_legacy_fullscanned_block_index()};
     rct::key temp_block_id;
 
-    for (auto checkpoints_it = block_id_checkpoints.begin();
-        checkpoints_it != block_id_checkpoints.end();
-        ++checkpoints_it)
+    for (const auto checkpoint : block_id_checkpoints)
     {
-        if (enote_store_inout.try_get_block_id_for_legacy_partialscan(checkpoints_it->first, temp_block_id) &&
-            temp_block_id == checkpoints_it->second)
+        if (enote_store_inout.try_get_block_id_for_legacy_partialscan(checkpoint.first, temp_block_id) &&
+            temp_block_id == checkpoint.second)
         {
-            highest_aligned_index_post_import_cycle = checkpoints_it->first;
+            highest_aligned_index_post_import_cycle =
+                std::max(checkpoint.first + 1, highest_aligned_index_post_import_cycle + 1) - 1;
         }
-        else break;
     }
 
     ASSERT_NO_THROW(enote_store_inout.update_legacy_fullscan_index_for_import_cycle(
@@ -5457,7 +5443,7 @@ static void legacy_view_scan_recovery_cycle(const legacy_mock_keys &legacy_keys,
 
     // 9. check the legacy fullscan index is at the expected value
     ASSERT_TRUE(enote_store_inout.top_legacy_fullscanned_block_index() == expected_final_legacy_fullscan_index);
-    /// end ATOMIC READ-LOCK
+    /// end ATOMIC WRITE-LOCK
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------

@@ -141,8 +141,8 @@ void ChunkConsumerMockLegacyIntermediate::consume_nonledger_chunk(const SpEnoteO
 }
 //-------------------------------------------------------------------------------------------------------------------
 void ChunkConsumerMockLegacyIntermediate::consume_onchain_chunk(const scanning::LedgerChunk &chunk,
-    const std::uint64_t first_new_block,
     const rct::key &alignment_block_id,
+    const std::uint64_t first_new_block,
     const std::vector<rct::key> &new_block_ids)
 {
     // 1. extract the data
@@ -242,8 +242,8 @@ void ChunkConsumerMockLegacy::consume_nonledger_chunk(const SpEnoteOriginStatus 
 }
 //-------------------------------------------------------------------------------------------------------------------
 void ChunkConsumerMockLegacy::consume_onchain_chunk(const scanning::LedgerChunk &chunk,
-    const std::uint64_t first_new_block,
     const rct::key &alignment_block_id,
+    const std::uint64_t first_new_block,
     const std::vector<rct::key> &new_block_ids)
 {
     // 1. extract the data
@@ -336,8 +336,8 @@ void ChunkConsumerMockSpIntermediate::consume_nonledger_chunk(const SpEnoteOrigi
 }
 //-------------------------------------------------------------------------------------------------------------------
 void ChunkConsumerMockSpIntermediate::consume_onchain_chunk(const scanning::LedgerChunk &chunk,
-    const std::uint64_t first_new_block,
     const rct::key &alignment_block_id,
+    const std::uint64_t first_new_block,
     const std::vector<rct::key> &new_block_ids)
 {
     // 1. extract the data
@@ -436,8 +436,8 @@ void ChunkConsumerMockSp::consume_nonledger_chunk(const SpEnoteOriginStatus nonl
 }
 //-------------------------------------------------------------------------------------------------------------------
 void ChunkConsumerMockSp::consume_onchain_chunk(const scanning::LedgerChunk &chunk,
-    const std::uint64_t first_new_block,
     const rct::key &alignment_block_id,
+    const std::uint64_t first_new_block,
     const std::vector<rct::key> &new_block_ids)
 {
     // 1. extract the data

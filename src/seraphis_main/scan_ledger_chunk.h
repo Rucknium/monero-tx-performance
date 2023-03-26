@@ -32,7 +32,7 @@
 
 //local headers
 #include "misc_log_ex.h"
-#include "seraphis_main/scan_core_types.h"
+#include "ringct/rctTypes.h"
 
 //third party headers
 
@@ -40,7 +40,14 @@
 #include <vector>
 
 //forward declarations
-
+namespace sp
+{
+namespace scanning
+{
+    struct ChunkData;
+    struct ChunkContext;
+}
+}
 
 namespace sp
 {
@@ -52,9 +59,9 @@ namespace scanning
 // - interface for implementing a ledger chunk; implementations may store data directly or asynchronously
 //
 // - chunk context: tracks where this chunk exists on-chain
-// - chunk data: data obtained from scanning the chunk (per-subconsumer)
+// - chunk data: data obtained from scanning the chunk (per subconsumer)
 //
-// - a ledger chunk can store chunk data for multiple subconsumers (i.e. so subconsumers can share a chunk context)
+// - subconsumers: a ledger chunk can store chunk data for multiple subconsumers (so they can share a chunk context)
 ///
 class LedgerChunk
 {
@@ -64,6 +71,7 @@ public:
     virtual const ChunkContext& get_context() const = 0;
     /// chunk data (includes owned enote candidates and key image candidates)
     virtual const ChunkData* try_get_data(const rct::key &subconsumer_id) const = 0;
+    /// set of subconsumers associated with this ledger chunk
     virtual const std::vector<rct::key>& subconsumer_ids() const = 0;
 };
 
