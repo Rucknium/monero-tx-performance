@@ -77,7 +77,7 @@ static std::uint64_t get_reorg_avoidance_depth(const std::uint64_t reorg_avoidan
         "avoidance increment.");
 
     // 3. 10 ^ (fullscan attempts - 1) * increment
-    return math::uint_pow(10, completed_fullscan_attempts - 1) * reorg_avoidance_increment;
+    return math::saturating_mul(math::uint_pow(10, completed_fullscan_attempts - 1), reorg_avoidance_increment, -1);
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -92,10 +92,7 @@ static std::uint64_t get_estimated_start_scan_index(const std::uint64_t reorg_av
         };
 
     // 2. initial block to scan = max(desired first block - reorg depth, chunk consumer's min scan index)
-    return
-        (desired_start_index >= reorg_avoidance_depth + lowest_scannable_index)
-        ? desired_start_index - reorg_avoidance_depth
-        : lowest_scannable_index;
+    return math::saturating_sub(desired_start_index, reorg_avoidance_depth, lowest_scannable_index);
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------

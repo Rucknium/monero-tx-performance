@@ -33,6 +33,7 @@
 
 //third party headers
 #include <boost/math/special_functions/binomial.hpp>
+#include "boost/multiprecision/cpp_int.hpp"
 
 //standard headers
 #include <cmath>
@@ -76,24 +77,32 @@ std::uint64_t clamp(const std::uint64_t a, const std::uint64_t min, const std::u
         return a;
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::uint64_t saturating_sub(const std::uint64_t a, const std::uint64_t b, const std::uint64_t min)
-{
-    if (a < min)
-        return min;
-
-    return a - min >= b
-        ? a - b
-        : min;
-}
-//-------------------------------------------------------------------------------------------------------------------
 std::uint64_t saturating_add(const std::uint64_t a, const std::uint64_t b, const std::uint64_t max)
 {
-    if (a > max)
+    if (a > max ||
+        b > max - a)
+        return max;
+    return a + b;
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t saturating_sub(const std::uint64_t a, const std::uint64_t b, const std::uint64_t min)
+{
+    if (a < min ||
+        b > a - min)
+        return min;
+    return a - b;
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t saturating_mul(const std::uint64_t a, const std::uint64_t b, const std::uint64_t max)
+{
+    boost::multiprecision::uint128_t a_big{a};
+    boost::multiprecision::uint128_t b_big{b};
+    boost::multiprecision::uint128_t r_big{a * b};
+
+    if (r_big > max)
         return max;
 
-    return max - a >= b
-        ? a + b
-        : max;
+    return static_cast<std::uint64_t>(r_big);
 }
 //-------------------------------------------------------------------------------------------------------------------
 std::uint64_t mod(const std::uint64_t a, const std::uint64_t n)
@@ -123,6 +132,16 @@ std::uint64_t mod_sub(const std::uint64_t a, const std::uint64_t b, const std::u
 {
     // a - b mod n
     return mod_add(a, mod_negate(b, n), n);
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t mod_mul(std::uint64_t a, std::uint64_t b, const std::uint64_t n)
+{
+    // a * b mod n
+    boost::multiprecision::uint128_t a_big{mod(a, n)};
+    boost::multiprecision::uint128_t b_big{mod(b, n)};
+    boost::multiprecision::uint128_t r_big{a * b};
+
+    return static_cast<std::uint64_t>(n > 0 ? r_big % n : r_big);
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace math

@@ -40,6 +40,7 @@
 #include "seraphis_main/scan_machine_types.h"
 
 //third party headers
+#include "boost/multiprecision/cpp_int.hpp"
 
 //standard headers
 #include <ctime>

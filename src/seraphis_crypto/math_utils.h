@@ -97,13 +97,17 @@ std::uint32_t n_choose_k(const std::uint32_t n, const std::uint32_t k);
 */
 std::uint64_t clamp(const std::uint64_t a, const std::uint64_t min, const std::uint64_t max);
 /**
+* a + b, saturate to 'max'
+*/
+std::uint64_t saturating_add(const std::uint64_t a, const std::uint64_t b, const std::uint64_t max);
+/**
 * a - b, saturate to 'min'
 */
 std::uint64_t saturating_sub(const std::uint64_t a, const std::uint64_t b, const std::uint64_t min);
 /**
-* a + b, saturate to 'max'
+* a * b, saturate to 'max'
 */
-std::uint64_t saturating_add(const std::uint64_t a, const std::uint64_t b, const std::uint64_t max);
+std::uint64_t saturating_mul(const std::uint64_t a, const std::uint64_t b, const std::uint64_t max);
 /**
 * a mod n
 * special case: n = 0 means n = std::uint64_t::max + 1
@@ -121,6 +125,10 @@ std::uint64_t mod_add(std::uint64_t a, std::uint64_t b, const std::uint64_t n);
 * a - b mod n
 */
 std::uint64_t mod_sub(const std::uint64_t a, const std::uint64_t b, const std::uint64_t n);
+/**
+* a * b mod n
+*/
+std::uint64_t mod_mul(std::uint64_t a, std::uint64_t b, const std::uint64_t n);
 
 } //namespace math
 } //namespace sp
