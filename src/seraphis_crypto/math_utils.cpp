@@ -45,7 +45,7 @@ namespace sp
 {
 namespace math
 {
-//----------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
 std::uint32_t n_choose_k(const std::uint32_t n, const std::uint32_t k)
 {
     static_assert(std::numeric_limits<std::int32_t>::digits <= std::numeric_limits<double>::digits,
@@ -64,6 +64,66 @@ std::uint32_t n_choose_k(const std::uint32_t n, const std::uint32_t k)
 
     return static_cast<std::uint32_t>(std::round(fp_result));
 }
-//----------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t clamp(const std::uint64_t a, const std::uint64_t min, const std::uint64_t max)
+{
+    // clamp 'a' to range [min, max]
+    if (a < min)
+        return min;
+    else if (a > max)
+        return max;
+    else
+        return a;
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t saturating_sub(const std::uint64_t a, const std::uint64_t b, const std::uint64_t min)
+{
+    if (a < min)
+        return min;
+
+    return a - min >= b
+        ? a - b
+        : min;
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t saturating_add(const std::uint64_t a, const std::uint64_t b, const std::uint64_t max)
+{
+    if (a > max)
+        return max;
+
+    return max - a >= b
+        ? a + b
+        : max;
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t mod(const std::uint64_t a, const std::uint64_t n)
+{
+    // a mod n
+    // - special case: n = 0 means n = std::uint64_t::max + 1
+    return n > 0 ? a % n : a;
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t mod_negate(const std::uint64_t a, const std::uint64_t n)
+{
+    // -a mod n = n - (a mod n)
+    return n - mod(a, n);
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t mod_add(std::uint64_t a, std::uint64_t b, const std::uint64_t n)
+{
+    // a + b mod n
+    a = mod(a, n);
+    b = mod(b, n);
+
+    // if adding doesn't overflow the modulus, then add directly, otherwise overflow the modulus
+    return (n - a > b) ? a + b : b - (n - a);
+}
+//-------------------------------------------------------------------------------------------------------------------
+std::uint64_t mod_sub(const std::uint64_t a, const std::uint64_t b, const std::uint64_t n)
+{
+    // a - b mod n
+    return mod_add(a, mod_negate(b, n), n);
+}
+//-------------------------------------------------------------------------------------------------------------------
 } //namespace math
 } //namespace sp

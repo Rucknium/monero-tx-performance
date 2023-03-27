@@ -36,6 +36,7 @@
 #include "int-util.h"
 #include "misc_log_ex.h"
 #include "ringct/rctTypes.h"
+#include "seraphis_crypto/math_utils.h"
 #include "seraphis_crypto/sp_hash_functions.h"
 #include "seraphis_crypto/sp_transcript.h"
 #include "sp_ref_set_index_mapper.h"
@@ -55,80 +56,13 @@ namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static std::uint64_t clamp(const std::uint64_t a, const std::uint64_t min, const std::uint64_t max)
-{
-    // clamp 'a' to range [min, max]
-    if (a < min)
-        return min;
-    else if (a > max)
-        return max;
-    else
-        return a;
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-static std::uint64_t saturating_sub(const std::uint64_t a, const std::uint64_t b, const std::uint64_t min)
-{
-    if (a < min)
-        return min;
-
-    return a - min >= b
-        ? a - b
-        : min;
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-static std::uint64_t saturating_add(const std::uint64_t a, const std::uint64_t b, const std::uint64_t max)
-{
-    if (a > max)
-        return max;
-
-    return max - a >= b
-        ? a + b
-        : max;
-}
-//-------------------------------------------------------------------------------------------------------------------
-// special case: n = 0 means n = std::uint64_t::max + 1
-//-------------------------------------------------------------------------------------------------------------------
-static std::uint64_t mod(const std::uint64_t a, const std::uint64_t n)
-{
-    // a mod n
-    return n > 0 ? a % n : a;
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-static std::uint64_t mod_negate(const std::uint64_t a, const std::uint64_t n)
-{
-    // -a mod n = n - (a mod n)
-    return n - mod(a, n);
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-static std::uint64_t mod_add(std::uint64_t a, std::uint64_t b, const std::uint64_t n)
-{
-    // a + b mod n
-    a = mod(a, n);
-    b = mod(b, n);
-
-    // if adding doesn't overflow the modulus, then add directly, otherwise overflow the modulus
-    return (n - a > b) ? a + b : b - (n - a);
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-static std::uint64_t mod_sub(const std::uint64_t a, const std::uint64_t b, const std::uint64_t n)
-{
-    // a - b mod n
-    return mod_add(a, mod_negate(b, n), n);
-}
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
 static void rotate_elements(const std::uint64_t range_limit,
     const std::uint64_t rotation_factor,
     std::vector<std::uint64_t> &elements_inout)
 {
     // rotate a group of elements by a rotation factor
     for (std::uint64_t &element : elements_inout)
-        element = mod_add(element, rotation_factor, range_limit);
+        element = math::mod_add(element, rotation_factor, range_limit);
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -182,7 +116,7 @@ static void make_normalized_bin_members(const SpBinnedReferenceSetConfigV1 &bin_
     //   perfect partitioning: [0..5][6..11]
     const std::uint64_t clip_allowed_max{
             std::numeric_limits<std::uint64_t>::max() -
-                mod(mod(std::numeric_limits<std::uint64_t>::max(), bin_width) + 1, bin_width)
+                math::mod(math::mod(std::numeric_limits<std::uint64_t>::max(), bin_width) + 1, bin_width)
         };
 
     // generate each bin member (as a unique index within the bin)
@@ -229,7 +163,7 @@ static void make_normalized_bin_members(const SpBinnedReferenceSetConfigV1 &bin_
             } while (generator_clip > clip_allowed_max);
 
             // compute the candidate bin member: generator mod bin_width
-            member_candidate = mod(generator_clip, bin_width);
+            member_candidate = math::mod(generator_clip, bin_width);
         } while (std::find(members_of_bin_out.begin(), members_of_bin_out.end(), member_candidate) !=
             members_of_bin_out.end());
 
@@ -271,10 +205,10 @@ static void generate_bin_loci(const SpRefSetIndexMapper &index_mapper,
 
     // 1) define range where the locus may reside (clamp bounds to element distribution range)
     const std::uint64_t real_locus_min{
-            saturating_sub(real_reference_index, bin_config.bin_radius, distribution_min_index)
+            math::saturating_sub(real_reference_index, bin_config.bin_radius, distribution_min_index)
         };
     const std::uint64_t real_locus_max{
-            saturating_add(real_reference_index, bin_config.bin_radius, distribution_max_index)
+            math::saturating_add(real_reference_index, bin_config.bin_radius, distribution_max_index)
         };
 
     // 2) generate the bin locus within the element distribution
@@ -298,7 +232,7 @@ static void generate_bin_loci(const SpRefSetIndexMapper &index_mapper,
     const std::uint64_t designated_real_bin{crypto::rand_range<std::uint64_t>(0, num_bins - 1)};
 
     // 2) compute rotation factor
-    const std::uint64_t bin_loci_rotation_factor{mod_sub(real_locus_flattened, bin_loci[designated_real_bin], 0)};
+    const std::uint64_t bin_loci_rotation_factor{math::mod_sub(real_locus_flattened, bin_loci[designated_real_bin], 0)};
 
     // 3) rotate all the bin loci
     rotate_elements(0, bin_loci_rotation_factor, bin_loci);
@@ -321,8 +255,8 @@ static void generate_bin_loci(const SpRefSetIndexMapper &index_mapper,
     {
         // test for gaps above and below the locus
         smallest_gap = std::min(
-                mod_sub(real_locus, bin_loci[bin_loci_index], distribution_width),  //gap below
-                mod_sub(bin_loci[bin_loci_index], real_locus, distribution_width)   //gap above
+                math::mod_sub(real_locus, bin_loci[bin_loci_index], distribution_width),  //gap below
+                math::mod_sub(bin_loci[bin_loci_index], real_locus, distribution_width)   //gap above
             );
 
         if (smallest_gap < locus_gap)
@@ -344,13 +278,13 @@ static void generate_bin_loci(const SpRefSetIndexMapper &index_mapper,
     // 2) shift bin loci so their entire widths are within the element distribution
     for (std::uint64_t &bin_locus : bin_loci)
     {
-        bin_locus = clamp(bin_locus,
+        bin_locus = math::clamp(bin_locus,
             distribution_min_index + bin_config.bin_radius,
             distribution_max_index - bin_config.bin_radius);
     }
 
     const std::uint64_t real_locus_shifted{
-            clamp(real_locus,
+            math::clamp(real_locus,
                 distribution_min_index + bin_config.bin_radius,
                 distribution_max_index - bin_config.bin_radius)
         };
@@ -463,7 +397,7 @@ void make_binned_reference_set_v1(const SpRefSetIndexMapper &index_mapper,
 
     // 4) compute rotation factor
     binned_reference_set_out.bin_rotation_factor = static_cast<ref_set_bin_dimension_v1_t>(
-            mod_sub(normalized_real_reference, members_of_real_bin[designated_real_bin_member], bin_width)
+            math::mod_sub(normalized_real_reference, members_of_real_bin[designated_real_bin_member], bin_width)
         );
 
 
