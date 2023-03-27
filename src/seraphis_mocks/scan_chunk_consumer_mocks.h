@@ -84,7 +84,9 @@ public:
     std::uint64_t refresh_index() const override;
     /// get index of first block the updater wants to have scanned
     std::uint64_t desired_first_block() const override;
-    /// get a marker for the nearest block >= the specified index
+    /// get a marker for the next block > the specified index
+    scanning::ContiguityMarker get_next_block(const std::uint64_t block_index) const override;
+    /// get a marker for the nearest block <= the specified index
     scanning::ContiguityMarker get_nearest_block(const std::uint64_t block_index) const override;
 
     /// consume a chunk of basic enote records and save the results
@@ -129,7 +131,9 @@ public:
     std::uint64_t refresh_index() const override;
     /// get index of first block the updater wants to have scanned
     std::uint64_t desired_first_block() const override;
-    /// get a marker for the nearest block >= the specified index
+    /// get a marker for the next block > the specified index
+    scanning::ContiguityMarker get_next_block(const std::uint64_t block_index) const override;
+    /// get a marker for the nearest block <= the specified index
     scanning::ContiguityMarker get_nearest_block(const std::uint64_t block_index) const override;
 
     /// consume a chunk of basic enote records and save the results
@@ -169,7 +173,9 @@ public:
     std::uint64_t refresh_index() const override;
     /// get index of first block the updater wants to have scanned
     std::uint64_t desired_first_block() const override;
-    /// get a marker for the nearest block >= the specified index
+    /// get a marker for the next block > the specified index
+    scanning::ContiguityMarker get_next_block(const std::uint64_t block_index) const override;
+    /// get a marker for the nearest block <= the specified index
     scanning::ContiguityMarker get_nearest_block(const std::uint64_t block_index) const override;
 
     /// consume a chunk of basic enote records and save the results
@@ -210,7 +216,9 @@ public:
     std::uint64_t refresh_index() const override;
     /// get index of first block the updater wants to have scanned
     std::uint64_t desired_first_block() const override;
-    /// get a marker for the nearest block >= the specified index
+    /// get a marker for the next block > the specified index
+    scanning::ContiguityMarker get_next_block(const std::uint64_t block_index) const override;
+    /// get a marker for the nearest block <= the specified index
     scanning::ContiguityMarker get_nearest_block(const std::uint64_t block_index) const override;
 
     /// consume a chunk of basic enote records and save the results

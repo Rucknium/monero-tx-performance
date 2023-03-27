@@ -74,8 +74,11 @@ public:
     virtual std::uint64_t refresh_index() const = 0;
     /// get index of first block the consumer wants to have scanned
     virtual std::uint64_t desired_first_block() const = 0;
-    /// get a marker for the nearest block >= the specified index
+    /// get a marker for the next block > the specified index
     /// ERROR: return { -1, boost::none } if there is no such block
+    virtual ContiguityMarker get_next_block(const std::uint64_t block_index) const = 0;
+    /// get a marker for the nearest block <= the specified index
+    /// ERROR: return { refresh_index - 1, boost::none } if there is no such block
     virtual ContiguityMarker get_nearest_block(const std::uint64_t block_index) const = 0;
 
     /// consume a chunk of basic enote records and save the results

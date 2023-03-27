@@ -92,12 +92,15 @@ std::uint64_t CheckpointCache::get_next_block_index(const std::uint64_t test_ind
     return test_checkpoint->first;
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::uint64_t CheckpointCache::get_nearest_block_index_clampdown(const std::uint64_t test_index) const
+std::uint64_t CheckpointCache::get_nearest_block_index(const std::uint64_t test_index) const
 {
     // get the block index of the closest checkpoint <= the test index
 
-    // 1. early return if no checkpoints
-    if (this->num_checkpoints() == 0)
+    // 1. early return if:
+    // - no checkpoints
+    // - test index is -1
+    if (this->num_checkpoints() == 0 ||
+        test_index == static_cast<std::uint64_t>(-1))
         return m_min_checkpoint_index - 1;
 
     // 2. get closest checkpoint > test index

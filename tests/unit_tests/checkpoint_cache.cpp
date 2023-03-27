@@ -46,10 +46,14 @@ static void check_checkpoint_cache_state(const sp::CheckpointCache &cache,
 {
     ASSERT_GE(cache.bottom_block_index() + 1, (cache.min_checkpoint_index() - 1) + 1);
     ASSERT_LE(cache.bottom_block_index(), cache.top_block_index());
+    ASSERT_EQ(cache.get_nearest_block_index(cache.bottom_block_index() - 1), cache.min_checkpoint_index() - 1);
+    ASSERT_EQ(cache.get_nearest_block_index(-1), cache.min_checkpoint_index() - 1);
     if (cache.num_checkpoints() > 0)
     {
         ASSERT_NE(cache.bottom_block_index(), -1);
         ASSERT_EQ(cache.top_block_index(), expected_top_index);
+        ASSERT_EQ(cache.get_next_block_index(cache.bottom_block_index() - 1), cache.bottom_block_index());
+        ASSERT_EQ(cache.get_next_block_index(-1), cache.bottom_block_index());
 
         for (std::uint64_t i{
                     cache.top_block_index() - std::min(expected_num_unpruned, cache.num_checkpoints()) + 1
@@ -57,14 +61,19 @@ static void check_checkpoint_cache_state(const sp::CheckpointCache &cache,
             i <= cache.top_block_index();
             ++i)
         {
-            ASSERT_EQ(cache.get_nearest_block_index_clampdown(i), i);
+            ASSERT_EQ(cache.get_nearest_block_index(i), i);
         }
+    }
+    else
+    {
+        ASSERT_EQ(cache.get_next_block_index(cache.bottom_block_index() - 1), -1);
+        ASSERT_EQ(cache.get_next_block_index(-1), -1);
     }
     for (std::uint64_t index_iterator{cache.bottom_block_index()};
         index_iterator != -1;
         index_iterator = cache.get_next_block_index(index_iterator))
     {
-        ASSERT_EQ(cache.get_nearest_block_index_clampdown(index_iterator), index_iterator);
+        ASSERT_EQ(cache.get_nearest_block_index(index_iterator), index_iterator);
     }
 }
 //-------------------------------------------------------------------------------------------------------------------

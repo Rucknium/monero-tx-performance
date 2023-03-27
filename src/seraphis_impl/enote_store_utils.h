@@ -47,6 +47,10 @@ namespace sp
     class CheckpointCache;
     class SpEnoteStore;
     class SpEnoteStorePaymentValidator;
+namespace scanning
+{
+    struct ContiguityMarker;
+}
 }
 
 namespace sp
@@ -82,6 +86,34 @@ void update_checkpoint_cache_with_new_block_ids(const rct::key &alignment_block_
     std::uint64_t &old_top_index_out,
     std::uint64_t &range_start_index_out,
     std::uint64_t &num_blocks_added_out);
+/**
+* brief: get_next_*_block - get the enote store's next cached block > the test index
+*   - marker = {-1, boost::none} on failure
+* param: enote_store -
+* param: block_index -
+* return: marker representing the enote store's next block > the test index
+*/
+scanning::ContiguityMarker get_next_legacy_partialscanned_block(const SpEnoteStore &enote_store,
+    const std::uint64_t block_index);
+scanning::ContiguityMarker get_next_legacy_fullscanned_block(const SpEnoteStore &enote_store,
+    const std::uint64_t block_index);
+scanning::ContiguityMarker get_next_sp_scanned_block(const SpEnoteStorePaymentValidator &enote_store,
+    const std::uint64_t block_index);
+scanning::ContiguityMarker get_next_sp_scanned_block(const SpEnoteStore &enote_store, const std::uint64_t block_index);
+/**
+* brief: get_nearest_*_block - get the enote store's nearest cached block <= the test index
+*   - marker = {refresh index - 1, boost::none} on failure
+* param: enote_store -
+* param: block_index -
+* return: marker representing the enote store's nearest block <= the test index
+*/
+scanning::ContiguityMarker get_nearest_legacy_partialscanned_block(const SpEnoteStore &enote_store,
+    const std::uint64_t block_index);
+scanning::ContiguityMarker get_nearest_legacy_fullscanned_block(const SpEnoteStore &enote_store,
+    const std::uint64_t block_index);
+scanning::ContiguityMarker get_nearest_sp_scanned_block(const SpEnoteStorePaymentValidator &enote_store,
+    const std::uint64_t block_index);
+scanning::ContiguityMarker get_nearest_sp_scanned_block(const SpEnoteStore &enote_store, const std::uint64_t block_index);
 /**
 * brief: get_balance - get current balance of an enote store using specified origin/spent statuses and exclusions
 * param: enote_store -

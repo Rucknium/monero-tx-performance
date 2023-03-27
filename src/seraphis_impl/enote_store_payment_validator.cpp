@@ -61,15 +61,20 @@ namespace sp
 SpEnoteStorePaymentValidator::SpEnoteStorePaymentValidator(const std::uint64_t refresh_index,
     const std::uint64_t default_spendable_age,
     const CheckpointCacheConfig &checkpoint_cache_config) :
-        m_refresh_index{refresh_index},
         m_default_spendable_age{default_spendable_age},
         m_sp_block_id_cache{checkpoint_cache_config, refresh_index}
 {}
 //-------------------------------------------------------------------------------------------------------------------
+std::uint64_t SpEnoteStorePaymentValidator::next_sp_scanned_block_index(const std::uint64_t block_index) const
+{
+    // get the cached seraphis block index > the requested index
+    return m_sp_block_id_cache.get_next_block_index(block_index);
+}
+//-------------------------------------------------------------------------------------------------------------------
 std::uint64_t SpEnoteStorePaymentValidator::nearest_sp_scanned_block_index(const std::uint64_t block_index) const
 {
-    // get the cached seraphis block index >= the requested index
-    return m_sp_block_id_cache.get_next_block_index(block_index - 1);
+    // get the cached seraphis block index <= the requested index
+    return m_sp_block_id_cache.get_nearest_block_index(block_index);
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool SpEnoteStorePaymentValidator::try_get_block_id_for_sp(const std::uint64_t block_index, rct::key &block_id_out) const
@@ -79,7 +84,7 @@ bool SpEnoteStorePaymentValidator::try_get_block_id_for_sp(const std::uint64_t b
     const std::uint64_t nearest_cached_index{this->nearest_sp_scanned_block_index(block_index)};
 
     // 2. check error states
-    if (nearest_cached_index == static_cast<std::uint64_t>(-1) ||
+    if (nearest_cached_index == this->refresh_index() - 1 ||
         nearest_cached_index != block_index)
         return false;
 

@@ -37,6 +37,7 @@
 #include "seraphis_main/contextual_enote_record_types.h"
 #include "seraphis_main/contextual_enote_record_utils.h"
 #include "seraphis_main/enote_record_utils_legacy.h"
+#include "seraphis_main/scan_machine_types.h"
 
 //third party headers
 
@@ -333,6 +334,124 @@ void update_checkpoint_cache_with_new_block_ids(const rct::key &alignment_block_
 
     // 3. insert the new block ids
     cache_inout.insert_new_block_ids(first_new_block_index, new_block_ids);
+}
+//-------------------------------------------------------------------------------------------------------------------
+scanning::ContiguityMarker get_next_legacy_partialscanned_block(const SpEnoteStore &enote_store,
+    const std::uint64_t block_index)
+{
+    // 1. next block known by enote store > test index
+    const std::uint64_t next_index{enote_store.next_legacy_partialscanned_block_index(block_index)};
+
+    // 2. try to get the block index for the next block
+    rct::key temp_block_id;
+    if (!enote_store.try_get_block_id_for_legacy_partialscan(next_index, temp_block_id))
+        return scanning::ContiguityMarker{static_cast<std::uint64_t>(-1), boost::none};
+
+    // 3. { next block index, next block id }
+    return scanning::ContiguityMarker{next_index, temp_block_id};
+}
+//-------------------------------------------------------------------------------------------------------------------
+scanning::ContiguityMarker get_next_legacy_fullscanned_block(const SpEnoteStore &enote_store,
+    const std::uint64_t block_index)
+{
+    // 1. next block known by enote store > test index
+    const std::uint64_t next_index{enote_store.next_legacy_fullscanned_block_index(block_index)};
+
+    // 2. try to get the block index for the next block
+    rct::key temp_block_id;
+    if (!enote_store.try_get_block_id_for_legacy_fullscan(next_index, temp_block_id))
+        return scanning::ContiguityMarker{static_cast<std::uint64_t>(-1), boost::none};
+
+    // 3. { next block index, next block id }
+    return scanning::ContiguityMarker{next_index, temp_block_id};
+}
+//-------------------------------------------------------------------------------------------------------------------
+scanning::ContiguityMarker get_next_sp_scanned_block(const SpEnoteStorePaymentValidator &enote_store,
+    const std::uint64_t block_index)
+{
+    // 1. next block known by enote store > test index
+    const std::uint64_t next_index{enote_store.next_sp_scanned_block_index(block_index)};
+
+    // 2. try to get the block index for the next block
+    rct::key temp_block_id;
+    if (!enote_store.try_get_block_id_for_sp(next_index, temp_block_id))
+        return scanning::ContiguityMarker{static_cast<std::uint64_t>(-1), boost::none};
+
+    // 3. { next block index, next block id }
+    return scanning::ContiguityMarker{next_index, temp_block_id};
+}
+//-------------------------------------------------------------------------------------------------------------------
+scanning::ContiguityMarker get_next_sp_scanned_block(const SpEnoteStore &enote_store, const std::uint64_t block_index)
+{
+    // 1. next block known by enote store > test index
+    const std::uint64_t next_index{enote_store.next_sp_scanned_block_index(block_index)};
+
+    // 2. try to get the block index for the next block
+    rct::key temp_block_id;
+    if (!enote_store.try_get_block_id_for_sp(next_index, temp_block_id))
+        return scanning::ContiguityMarker{static_cast<std::uint64_t>(-1), boost::none};
+
+    // 3. { next block index, next block id }
+    return scanning::ContiguityMarker{next_index, temp_block_id};
+}
+//-------------------------------------------------------------------------------------------------------------------
+scanning::ContiguityMarker get_nearest_legacy_partialscanned_block(const SpEnoteStore &enote_store,
+    const std::uint64_t block_index)
+{
+    // 1. nearest block known by enote store <= test index
+    const std::uint64_t nearest_index{enote_store.nearest_legacy_partialscanned_block_index(block_index)};
+
+    // 2. try to get the block index for the nearest block
+    rct::key temp_block_id;
+    if (!enote_store.try_get_block_id_for_legacy_partialscan(nearest_index, temp_block_id))
+        return scanning::ContiguityMarker{enote_store.legacy_refresh_index() - 1, boost::none};
+
+    // 3. { nearest block index, nearest block id }
+    return scanning::ContiguityMarker{nearest_index, temp_block_id};
+}
+//-------------------------------------------------------------------------------------------------------------------
+scanning::ContiguityMarker get_nearest_legacy_fullscanned_block(const SpEnoteStore &enote_store,
+    const std::uint64_t block_index)
+{
+    // 1. nearest block known by enote store <= test index
+    const std::uint64_t nearest_index{enote_store.nearest_legacy_fullscanned_block_index(block_index)};
+
+    // 2. try to get the block index for the nearest block
+    rct::key temp_block_id;
+    if (!enote_store.try_get_block_id_for_legacy_fullscan(nearest_index, temp_block_id))
+        return scanning::ContiguityMarker{enote_store.legacy_refresh_index() - 1, boost::none};
+
+    // 3. { nearest block index, nearest block id }
+    return scanning::ContiguityMarker{nearest_index, temp_block_id};
+}
+//-------------------------------------------------------------------------------------------------------------------
+scanning::ContiguityMarker get_nearest_sp_scanned_block(const SpEnoteStorePaymentValidator &enote_store,
+    const std::uint64_t block_index)
+{
+    // 1. nearest block known by enote store <= test index
+    const std::uint64_t nearest_index{enote_store.nearest_sp_scanned_block_index(block_index)};
+
+    // 2. try to get the block index for the nearest block
+    rct::key temp_block_id;
+    if (!enote_store.try_get_block_id_for_sp(nearest_index, temp_block_id))
+        return scanning::ContiguityMarker{enote_store.refresh_index() - 1, boost::none};
+
+    // 3. { nearest block index, nearest block id }
+    return scanning::ContiguityMarker{nearest_index, temp_block_id};
+}
+//-------------------------------------------------------------------------------------------------------------------
+scanning::ContiguityMarker get_nearest_sp_scanned_block(const SpEnoteStore &enote_store, const std::uint64_t block_index)
+{
+    // 1. nearest block known by enote store <= test index
+    const std::uint64_t nearest_index{enote_store.nearest_sp_scanned_block_index(block_index)};
+
+    // 2. try to get the block index for the nearest block
+    rct::key temp_block_id;
+    if (!enote_store.try_get_block_id_for_sp(nearest_index, temp_block_id))
+        return scanning::ContiguityMarker{enote_store.sp_refresh_index() - 1, boost::none};
+
+    // 3. { nearest block index, nearest block id }
+    return scanning::ContiguityMarker{nearest_index, temp_block_id};
 }
 //-------------------------------------------------------------------------------------------------------------------
 boost::multiprecision::uint128_t get_balance(const SpEnoteStore &enote_store,

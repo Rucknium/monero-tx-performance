@@ -90,10 +90,11 @@ public:
     /// get the lowest stored index or 'min index - 1' if cache is empty
     std::uint64_t bottom_block_index() const;
     /// get the block index of the nearest checkpoint > the test index, or -1 on failure
-    /// note: it is allowed to test index -1 (e.g. in case the cache has an entry for index 0)
+    /// note: it is allowed to test index -1
     std::uint64_t get_next_block_index(const std::uint64_t test_index) const;
     /// get the block index of the nearest checkpoint <= the test index, or 'min index - 1' on failure
-    std::uint64_t get_nearest_block_index_clampdown(const std::uint64_t test_index) const;
+    /// note: it is allowed to test index -1
+    std::uint64_t get_nearest_block_index(const std::uint64_t test_index) const;
     /// try to get the block id with the given index (fails if index is unknown)
     bool try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const;
 

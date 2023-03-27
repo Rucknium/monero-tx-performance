@@ -5372,7 +5372,7 @@ static void legacy_view_scan_recovery_cycle(const legacy_mock_keys &legacy_keys,
             };
         block_index != static_cast<std::uint64_t>(-1) &&
             block_index + 1 <= intermediate_index_pre_import_cycle + 1;  //maybe redundant, better to be safe
-        block_index = enote_store_inout.nearest_legacy_partialscanned_block_index(block_index + 1))
+        block_index = enote_store_inout.next_legacy_partialscanned_block_index(block_index))
     {
         ASSERT_TRUE(enote_store_inout.try_get_block_id_for_legacy_partialscan(block_index,
             block_id_checkpoints[block_index]));
@@ -5430,12 +5430,13 @@ static void legacy_view_scan_recovery_cycle(const legacy_mock_keys &legacy_keys,
 
     for (const auto checkpoint : block_id_checkpoints)
     {
-        if (enote_store_inout.try_get_block_id_for_legacy_partialscan(checkpoint.first, temp_block_id) &&
-            temp_block_id == checkpoint.second)
-        {
-            highest_aligned_index_post_import_cycle =
-                std::max(checkpoint.first + 1, highest_aligned_index_post_import_cycle + 1) - 1;
-        }
+        if (!enote_store_inout.try_get_block_id_for_legacy_partialscan(checkpoint.first, temp_block_id))
+            continue;
+        if (!(temp_block_id == checkpoint.second))
+            continue;
+
+        highest_aligned_index_post_import_cycle =
+            std::max(checkpoint.first + 1, highest_aligned_index_post_import_cycle + 1) - 1;
     }
 
     ASSERT_NO_THROW(enote_store_inout.update_legacy_fullscan_index_for_import_cycle(

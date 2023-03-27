@@ -72,11 +72,11 @@ public:
             );
 
 //member functions
-    /// config: get index of first block the enote store cares about
-    std::uint64_t legacy_refresh_index()  const { return m_refresh_index;                                              }
-    std::uint64_t sp_refresh_index()      const { return std::max(m_refresh_index, m_first_sp_enabled_block_in_chain); }
+    /// config: get index of the first block the enote store cares about
+    std::uint64_t legacy_refresh_index() const;
+    std::uint64_t sp_refresh_index() const;
     /// config: get default spendable age
-    std::uint64_t default_spendable_age() const { return m_default_spendable_age;                                      }
+    std::uint64_t default_spendable_age() const { return m_default_spendable_age; }
 
     /// get index of highest recorded block (refresh index - 1 if no recorded blocks)
     std::uint64_t top_block_index() const;
@@ -87,7 +87,11 @@ public:
     /// get index of highest block that was seraphis view-balance scanned
     std::uint64_t top_sp_scanned_block_index()            const { return m_sp_scanned_index;         }
 
-    /// get the nearest cached block index >= the requested index (-1 on failure)
+    /// get the next cached block index > the requested index (-1 on failure)
+    std::uint64_t next_legacy_fullscanned_block_index   (const std::uint64_t block_index) const;
+    std::uint64_t next_legacy_partialscanned_block_index(const std::uint64_t block_index) const;
+    std::uint64_t next_sp_scanned_block_index           (const std::uint64_t block_index) const;
+    /// get the nearest cached block index <= the requested index (refresh index - 1 on failure)
     std::uint64_t nearest_legacy_fullscanned_block_index   (const std::uint64_t block_index) const;
     std::uint64_t nearest_legacy_partialscanned_block_index(const std::uint64_t block_index) const;
     std::uint64_t nearest_sp_scanned_block_index           (const std::uint64_t block_index) const;
@@ -274,8 +278,6 @@ private:
     /// [ legacy KI : legacy Ko ]
     std::unordered_map<crypto::key_image, rct::key> m_legacy_key_images;
 
-    /// refresh index
-    std::uint64_t m_refresh_index{0};
     /// cached block ids in range: [refresh index, end of known legacy-supporting chain]
     CheckpointCache m_legacy_block_id_cache;
     /// cached block ids in range:
@@ -290,8 +292,6 @@ private:
     /// note: manually reduced this then re-scan to fix issues with seraphis scanning (e.g. due to data corruption)
     std::uint64_t m_sp_scanned_index{static_cast<std::uint64_t>(-1)};
 
-    /// configuration value: the first ledger block that can contain seraphis txs
-    std::uint64_t m_first_sp_enabled_block_in_chain{static_cast<std::uint64_t>(-1)};
     /// configuration value: default spendable age; an enote is considered 'spendable' in the next block if it's
     //      on-chain and the next index is >= 'origin index + max(1, default_spendable_age)'; legacy enotes also have
     //      an unlock_time attribute on top of the default spendable age

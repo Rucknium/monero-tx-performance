@@ -72,12 +72,14 @@ public:
 
 //member functions
     /// get index of first block the enote store cares about
-    std::uint64_t refresh_index() const { return m_refresh_index; }
+    std::uint64_t refresh_index() const { return m_sp_block_id_cache.min_checkpoint_index(); }
     /// get index of highest recorded block (refresh index - 1 if no recorded blocks) (highest block PayVal-scanned)
     std::uint64_t top_block_index() const { return m_sp_block_id_cache.top_block_index(); }
     /// config: get default spendable age
     std::uint64_t default_spendable_age() const { return m_default_spendable_age; }
-    /// get the nearest cached block index >= the requested index (-1 on failure)
+    /// get the next cached block index > the requested index (-1 on failure)
+    std::uint64_t next_sp_scanned_block_index(const std::uint64_t block_index) const;
+    /// get the nearest cached block index <= the requested index (refresh index - 1 on failure)
     std::uint64_t nearest_sp_scanned_block_index(const std::uint64_t block_index) const;
     /// try to get the recorded block id for a given index
     bool try_get_block_id_for_sp(const std::uint64_t block_index, rct::key &block_id_out) const;
@@ -105,8 +107,6 @@ private:
     /// seraphis enotes
     std::unordered_map<rct::key, SpContextualIntermediateEnoteRecordV1> m_sp_contextual_enote_records;
 
-    /// refresh index
-    std::uint64_t m_refresh_index{0};
     /// cached block ids in range [refresh index, end of known chain]
     CheckpointCache m_sp_block_id_cache;
 

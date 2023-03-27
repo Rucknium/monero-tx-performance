@@ -101,22 +101,14 @@ static std::uint64_t get_estimated_start_scan_index(const std::uint64_t reorg_av
 //-------------------------------------------------------------------------------------------------------------------
 static void set_initial_contiguity_marker(const ChunkConsumer &chunk_consumer,
     const std::uint64_t estimated_start_scan_index,
-    ContiguityMarker &contiguity_marker_inout)
+    ContiguityMarker &contiguity_marker_out)
 {
-    // our initial point of contiguity is the consumer's block closest to the block below our estimated start index,
+    // our initial point of contiguity is the consumer's block nearest to the block < our estimated start index,
     //   or the consumer's prefix block
-    // note: setting contiguity to the block >= the estimated start index instead of <= that index will cause relatively
-    //       less efficient fullscan backoffs; that inefficiency is deemed of insufficient importance to justify
-    //       increasing the implementation/API complexity
-    if (estimated_start_scan_index + 1 <= chunk_consumer.refresh_index() + 1)
-    {
-        contiguity_marker_inout = ContiguityMarker{
-                .block_index = chunk_consumer.refresh_index() - 1,
-                .block_id    = boost::none
-            };
-    }
-    else
-        contiguity_marker_inout = chunk_consumer.get_nearest_block(estimated_start_scan_index - 1);
+    contiguity_marker_out = chunk_consumer.get_nearest_block(estimated_start_scan_index - 1);
+
+    CHECK_AND_ASSERT_THROW_MES(contiguity_marker_out.block_index + 1 >= chunk_consumer.refresh_index(),
+        "sp scan machine (set initial contiguity marker): contiguity marker is below refresh index.");
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -187,30 +179,30 @@ static void update_alignment_marker(const ChunkConsumer &chunk_consumer,
     // trace through the block ids to find the highest one that aligns with the chunk consumer's cached block ids
     for (auto ids_it{block_ids.begin()}; ids_it != block_ids.end(); ++ids_it)
     {
-        // a. get the chunk consumer's block index nearest to this block in the input set
+        // a. get the chunk consumer's block index closest to this block (i.e. >= this block) in the input set
         const std::uint64_t block_index{
                 start_index + std::distance(block_ids.begin(), ids_it)
             };
-        const ContiguityMarker consumer_nearest_block{chunk_consumer.get_nearest_block(block_index)};
+        const ContiguityMarker consumer_closest_block{chunk_consumer.get_next_block(block_index - 1)};
 
         // b. exit if the consumer's block is not within the input block range
-        if (consumer_nearest_block.block_index + 1 < start_index + 1 ||
-            consumer_nearest_block.block_index + 1 >= start_index + block_ids.size() + 1)
+        if (consumer_closest_block.block_index + 1 < start_index + 1 ||
+            consumer_closest_block.block_index + 1 >= start_index + block_ids.size() + 1)
             return;
 
         // c, sanity check
         // - this is after the range check in case the consumer returned a null marker
-        CHECK_AND_ASSERT_THROW_MES(consumer_nearest_block.block_index + 1 >= block_index + 1,
-            "seraphis scan state machine (update alignment marker): consumer's nearest block index is below the "
+        CHECK_AND_ASSERT_THROW_MES(consumer_closest_block.block_index + 1 >= block_index + 1,
+            "seraphis scan state machine (update alignment marker): consumer's closest block index is below the "
             "specified block index.");
 
-        // d. move to the consumer's nearest block's index
-        std::advance(ids_it, consumer_nearest_block.block_index - block_index);
+        // d. move to the consumer's closest block's index
+        std::advance(ids_it, consumer_closest_block.block_index - block_index);
 
         // e. exit if the consumer is not aligned with this block
         // - we are automatically aligned if the consumer's block id is null
-        if (consumer_nearest_block.block_id &&
-            !(*ids_it == *consumer_nearest_block.block_id))
+        if (consumer_closest_block.block_id &&
+            !(*ids_it == *consumer_closest_block.block_id))
             return;
 
         // f. update the alignment marker
@@ -262,10 +254,7 @@ static ScanMachineStatus handle_nonempty_chunk(const std::uint64_t first_contigu
     CHECK_AND_ASSERT_THROW_MES(!chunk_is_empty(ledger_chunk),
         "seraphis scan state machine (handle nonempty chunk): chunk is empty unexpectedly.");
 
-    // 2. validate chunk semantics
-    check_ledger_chunk_semantics_v1(ledger_chunk, contiguity_marker_inout.block_index);
-
-    // 3. check if this chunk is contiguous with the contiguity marker
+    // 2. check if this chunk is contiguous with the contiguity marker
     // - if not contiguous then there must have been a reorg, so we need to rescan
     const ScanMachineStatus scan_status{
             new_chunk_scan_status(contiguity_marker_inout, chunk_context, first_contiguity_index)
@@ -274,16 +263,21 @@ static ScanMachineStatus handle_nonempty_chunk(const std::uint64_t first_contigu
     if (scan_status != ScanMachineStatus::SUCCESS)
         return scan_status;
 
-    // 4. set alignment marker (assume we always start aligned)
+    // 3. set alignment marker (assume we always start aligned)
     // - alignment means a block id in a chunk matches the chunk consumer's block id at the alignment block index
     ContiguityMarker alignment_marker{contiguity_marker_inout};
 
-    // 5. align the chunk's block ids with the chunk consumer
+    // 4. align the chunk's block ids with the chunk consumer
     // - update the point of alignment if this chunk overlaps with blocks known by the chunk consumer
     // - crop the chunk's block ids to only include block ids unknown to the chunk consumer
     const std::vector<rct::key> aligned_block_ids{
             get_aligned_block_ids(chunk_consumer_inout, chunk_context, alignment_marker)
         };
+
+    // 5. validate chunk semantics
+    // - do this after checking the new chunk's scan status in case the chunk data is deferred; we don't want to block
+    //   on getting the data until we know we will need it
+    check_ledger_chunk_semantics_v1(ledger_chunk, contiguity_marker_inout.block_index);
 
     // 6. consume the chunk if it's not empty
     // - if the chunk is empty after aligning, that means our chunk consumer already knows about the entire span
@@ -299,6 +293,9 @@ static ScanMachineStatus handle_nonempty_chunk(const std::uint64_t first_contigu
     }
 
     // 7. set contiguity marker to last block of this chunk
+    CHECK_AND_ASSERT_THROW_MES(chunk_context.block_ids.size() > 0,
+        "seraphis scan state machine (handle nonempty chunk): no block ids (bug).");
+
     contiguity_marker_inout.block_index = chunk_context.start_index + chunk_context.block_ids.size() - 1;
     contiguity_marker_inout.block_id    = chunk_context.block_ids.back();
 
