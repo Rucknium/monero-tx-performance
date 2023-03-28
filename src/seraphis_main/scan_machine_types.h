@@ -31,6 +31,7 @@
 #pragma once
 
 //local headers
+#include "common/variant.h"
 #include "ringct/rctTypes.h"
 
 //third party headers
@@ -62,21 +63,6 @@ struct ScanMachineConfig final
 };
 
 ////
-// ScanMachineStatus
-// - helper enum for tracking the state of a scan process
-///
-enum class ScanMachineStatus : unsigned char
-{
-    NEED_FULLSCAN,
-    NEED_PARTIALSCAN,
-    START_SCAN,
-    DO_SCAN,
-    SUCCESS,
-    FAIL,
-    ABORTED
-};
-
-////
 // ContiguityMarker
 // - marks the end of a contiguous chain of blocks
 // - if the contiguous chain is empty, then the block id will be unspecified and the block index will equal the chain's
@@ -95,28 +81,96 @@ struct ContiguityMarker final
     boost::optional<rct::key> block_id;
 };
 
+
 ////
 // ScanMachineMetadata
 // - metadata for the scan state machine
-//todo: since metadata is stateful it may be worthwhile to upgrade this to a full class (doing that may help reduce
-//      spaghetti around updating the metadata)
 ///
 struct ScanMachineMetadata final
 {
     /// config details for the machine
     ScanMachineConfig config;
 
-    /// status: tracks the machine's state
-    ScanMachineStatus status;
-
     /// attempt counters: track history of the machine
     std::size_t partialscan_attempts;
     std::size_t fullscan_attempts;
+};
+
+////
+// ScanMachineResult
+///
+enum class ScanMachineResult : unsigned char
+{
+    FAIL,
+    ABORTED,
+    SUCCESS
+};
+
+////
+// ScanMachineNeedFullscan
+// - the machine needs to perform a full scan
+///
+struct ScanMachineNeedFullscan final
+{
+    /// metadata for the machine
+    ScanMachineMetadata metadata;
+};
+
+////
+// ScanMachineNeedPartialscan
+// - the machine needs to perform a partial scan
+///
+struct ScanMachineNeedPartialscan final
+{
+    /// metadata for the machine
+    ScanMachineMetadata metadata;
+};
+
+////
+// ScanMachineStartScan
+// - the machine needs to initialize a scan process
+///
+struct ScanMachineStartScan final
+{
+    /// metadata for the machine
+    ScanMachineMetadata metadata;
+
+     /// contiguity marker: keeps track of where in the ledger the machine is pointing to right now
+    ContiguityMarker contiguity_marker;
+};
+
+////
+// ScanMachineDoScan
+// - the machine needs to scan one new chunk
+///
+struct ScanMachineDoScan final
+{
+    /// metadata for the machine
+    ScanMachineMetadata metadata;
 
     /// contiguity context: keeps track of where in the ledger the machine is pointing to right now
     ContiguityMarker contiguity_marker;
     std::uint64_t first_contiguity_index;
 };
+
+////
+// ScanMachineTerminated
+// - the machine has nothing more it can do
+///
+struct ScanMachineTerminated final
+{
+    ScanMachineResult result;
+};
+
+/// variant of scan machine states
+using ScanMachineState =
+    tools::variant<
+        ScanMachineNeedFullscan,
+        ScanMachineNeedPartialscan,
+        ScanMachineStartScan,
+        ScanMachineDoScan,
+        ScanMachineTerminated
+    >;
 
 } //namespace scanning
 } //namespace sp

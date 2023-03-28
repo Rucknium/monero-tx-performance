@@ -31,6 +31,7 @@
 #pragma once
 
 //local headers
+#include "scan_machine_types.h"
 
 //third party headers
 
@@ -41,7 +42,6 @@ namespace sp
 {
 namespace scanning
 {
-    struct ScanMachineMetadata;
     class ScanningContextLedger;
     class ChunkConsumer;
 }
@@ -54,14 +54,14 @@ namespace scanning
 
 /**
 * brief: try_advance_state_machine - advance the scan state machine to the next state
-* inoutparam: metadata_inout -
 * inoutparam: scanning_context_inout -
 * inoutparam: chunk_consumer_inout -
+* inoutparam: state_inout -
 * return: true if the machine was advanced to a new non-terminal state, false if the machine is in a terminal state
 */
-bool try_advance_state_machine(ScanMachineMetadata &metadata_inout,
-    ScanningContextLedger &scanning_context_inout,
-    ChunkConsumer &chunk_consumer_inout);
+bool try_advance_state_machine(ScanningContextLedger &scanning_context_inout,
+    ChunkConsumer &chunk_consumer_inout,
+    ScanMachineState &state_inout);
 
 } //namespace scanning
 } //namespace sp

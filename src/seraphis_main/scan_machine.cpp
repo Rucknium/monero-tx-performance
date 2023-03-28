@@ -52,6 +52,17 @@ namespace sp
 {
 namespace scanning
 {
+
+////
+// ContiguityCheckResult
+///
+enum class ContiguityCheckResult : unsigned char
+{
+    NEED_PARTIALSCAN,
+    NEED_FULLSCAN,
+    SUCCESS
+};
+
 //-------------------------------------------------------------------------------------------------------------------
 // reorg avoidance depth: this is the number of extra blocks to scan below our desired start index in case there was a
 //   reorg affecting blocks lower than that start index
@@ -139,7 +150,7 @@ static bool contiguity_check(const ContiguityMarker &marker_A, const ContiguityM
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static ScanMachineStatus new_chunk_scan_status(const ContiguityMarker &contiguity_marker,
+static ContiguityCheckResult new_chunk_contiguity_check(const ContiguityMarker &contiguity_marker,
     const ChunkContext &chunk_context,
     const std::uint64_t first_contiguity_index)
 {
@@ -153,18 +164,35 @@ static ScanMachineStatus new_chunk_scan_status(const ContiguityMarker &contiguit
                 : boost::none
             }
         ))
-        return ScanMachineStatus::SUCCESS;
+        return ContiguityCheckResult::SUCCESS;
 
     // 2. failure case: the chunk is not contiguous, check if we need to full scan
     // - in this case, there was a reorg that affected our first expected point of contiguity (i.e. we obtained no new
     //   chunks that were contiguous with our existing known contiguous chain)
     // note: +1 in case either index is '-1'
     if (first_contiguity_index + 1 >= contiguity_marker.block_index + 1)
-        return ScanMachineStatus::NEED_FULLSCAN;
+        return ContiguityCheckResult::NEED_FULLSCAN;
 
     // 3. failure case: the chunk is not contiguous, but we don't need a full scan
     // - there was a reorg detected but there is new chunk data that wasn't affected
-    return ScanMachineStatus::NEED_PARTIALSCAN;
+    return ContiguityCheckResult::NEED_PARTIALSCAN;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+static ScanMachineState machine_state_from_contiguity_result(const ContiguityCheckResult contiguity_check_result,
+    const ScanMachineMetadata &metadata)
+{
+    CHECK_AND_ASSERT_THROW_MES(contiguity_check_result != ContiguityCheckResult::SUCCESS,
+        "seraphis scan machine (machine state from contiguity result): cannot convert success to a new machine state.");
+
+    // convert the contiguity check result to a new machine state
+    if (contiguity_check_result == ContiguityCheckResult::NEED_PARTIALSCAN)
+        return ScanMachineNeedPartialscan{ .metadata = metadata };
+    else if (contiguity_check_result == ContiguityCheckResult::NEED_FULLSCAN)
+        return ScanMachineNeedFullscan{ .metadata = metadata };
+
+    CHECK_AND_ASSERT_THROW_MES(false, "seraphis scan machine (machine state from contiguity result): unknown result.");
+    return ScanMachineTerminated{ .result = ScanMachineResult::FAIL };
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -238,10 +266,11 @@ static std::vector<rct::key> get_aligned_block_ids(const ChunkConsumer &chunk_co
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static ScanMachineStatus handle_nonempty_chunk(const std::uint64_t first_contiguity_index,
+static ScanMachineState handle_nonempty_chunk(const ScanMachineMetadata &metadata,
+    const std::uint64_t first_contiguity_index,
     const LedgerChunk &ledger_chunk,
-    ChunkConsumer &chunk_consumer_inout,
-    ContiguityMarker &contiguity_marker_inout)
+    const ContiguityMarker &contiguity_marker,
+    ChunkConsumer &chunk_consumer_inout)
 {
     // note: we don't check if the scanning context is aborted here because the process could have been aborted after
     //   the chunk was acquired
@@ -253,16 +282,16 @@ static ScanMachineStatus handle_nonempty_chunk(const std::uint64_t first_contigu
 
     // 2. check if this chunk is contiguous with the contiguity marker
     // - if not contiguous then there must have been a reorg, so we need to rescan
-    const ScanMachineStatus scan_status{
-            new_chunk_scan_status(contiguity_marker_inout, chunk_context, first_contiguity_index)
+    const ContiguityCheckResult contiguity_check_result{
+            new_chunk_contiguity_check(contiguity_marker, chunk_context, first_contiguity_index)
         };
 
-    if (scan_status != ScanMachineStatus::SUCCESS)
-        return scan_status;
+    if (contiguity_check_result != ContiguityCheckResult::SUCCESS)
+        return machine_state_from_contiguity_result(contiguity_check_result, metadata);
 
     // 3. set alignment marker (assume we always start aligned)
     // - alignment means a block id in a chunk matches the chunk consumer's block id at the alignment block index
-    ContiguityMarker alignment_marker{contiguity_marker_inout};
+    ContiguityMarker alignment_marker{contiguity_marker};
 
     // 4. align the chunk's block ids with the chunk consumer
     // - update the point of alignment if this chunk overlaps with blocks known by the chunk consumer
@@ -274,7 +303,7 @@ static ScanMachineStatus handle_nonempty_chunk(const std::uint64_t first_contigu
     // 5. validate chunk semantics
     // - do this after checking the new chunk's scan status in case the chunk data is deferred; we don't want to block
     //   on getting the data until we know we will need it
-    check_ledger_chunk_semantics_v1(ledger_chunk, contiguity_marker_inout.block_index);
+    check_ledger_chunk_semantics_v1(ledger_chunk, contiguity_marker.block_index);
 
     // 6. consume the chunk if it's not empty
     // - if the chunk is empty after aligning, that means our chunk consumer already knows about the entire span
@@ -293,19 +322,26 @@ static ScanMachineStatus handle_nonempty_chunk(const std::uint64_t first_contigu
     CHECK_AND_ASSERT_THROW_MES(chunk_context.block_ids.size() > 0,
         "seraphis scan state machine (handle nonempty chunk): no block ids (bug).");
 
-    contiguity_marker_inout.block_index = chunk_context.start_index + chunk_context.block_ids.size() - 1;
-    contiguity_marker_inout.block_id    = chunk_context.block_ids.back();
+    const ContiguityMarker new_contiguity_marker{
+            .block_index = chunk_context.start_index + chunk_context.block_ids.size() - 1,
+            .block_id    = chunk_context.block_ids.back()
+        };
 
     // 8. next scan state: scan another chunk
-    return ScanMachineStatus::DO_SCAN;
+    return ScanMachineDoScan{
+            .metadata               = metadata,
+            .contiguity_marker      = new_contiguity_marker,
+            .first_contiguity_index = new_contiguity_marker.block_index
+        };
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static ScanMachineStatus handle_empty_chunk(const std::uint64_t first_contiguity_index,
+static ScanMachineState handle_empty_chunk(const ScanMachineMetadata &metadata,
+    const std::uint64_t first_contiguity_index,
     const LedgerChunk &ledger_chunk,
+    const ContiguityMarker &contiguity_marker,
     ScanningContextLedger &scanning_context_inout,
-    ChunkConsumer &chunk_consumer_inout,
-    ContiguityMarker &contiguity_marker_inout)
+    ChunkConsumer &chunk_consumer_inout)
 {
     const ChunkContext &chunk_context{ledger_chunk.get_context()};
 
@@ -317,7 +353,7 @@ static ScanMachineStatus handle_empty_chunk(const std::uint64_t first_contiguity
     // - when a scan process is aborted, the empty chunk returned may not represent the end of the chain, so we don't
     //   want to consume that chunk
     if (scanning_context_inout.is_aborted())
-        return ScanMachineStatus::ABORTED;
+        return ScanMachineTerminated{ .result = ScanMachineResult::ABORTED };
 
     // 3. verify that our termination chunk is contiguous with the chunks received so far
     // - this can fail if a reorg dropped below our contiguity marker without replacing the dropped blocks, causing the
@@ -325,30 +361,31 @@ static ScanMachineStatus handle_empty_chunk(const std::uint64_t first_contiguity
     // note: this test won't fail if the chain's top index is below our contiguity marker when our contiguity marker has
     //       an unspecified block id; we don't care if the top index is lower than our scanning 'backstop' (i.e.
     //       lowest point in our chunk consumer) when we haven't actually scanned any blocks
-    const ScanMachineStatus scan_status{
-            new_chunk_scan_status(contiguity_marker_inout, chunk_context, first_contiguity_index)
+    const ContiguityCheckResult contiguity_check_result{
+            new_chunk_contiguity_check(contiguity_marker, chunk_context, first_contiguity_index)
         };
 
-    if (scan_status != ScanMachineStatus::SUCCESS)
-        return scan_status;
+    if (contiguity_check_result != ContiguityCheckResult::SUCCESS)
+        return machine_state_from_contiguity_result(contiguity_check_result, metadata);
 
     // 4. final update for our chunk consumer
     // - we need to update with the termination chunk in case a reorg popped blocks, so the chunk consumer can roll back
     //   its state
     chunk_consumer_inout.consume_onchain_chunk(ledger_chunk,
-        contiguity_marker_inout.block_id ? *(contiguity_marker_inout.block_id) : rct::zero(),
-        contiguity_marker_inout.block_index + 1,
+        contiguity_marker.block_id ? *(contiguity_marker.block_id) : rct::zero(),
+        contiguity_marker.block_index + 1,
         {});
 
     // 5. no more scanning required
-    return ScanMachineStatus::SUCCESS;
+    return ScanMachineTerminated{ .result = ScanMachineResult::SUCCESS };
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static ScanMachineStatus do_scan_pass(const std::uint64_t first_contiguity_index,
+static ScanMachineState do_scan_pass(const ScanMachineMetadata &metadata,
+    const std::uint64_t first_contiguity_index,
+    const ContiguityMarker &contiguity_marker,
     ScanningContextLedger &scanning_context_inout,
-    ChunkConsumer &chunk_consumer_inout,
-    ContiguityMarker &contiguity_marker_inout)
+    ChunkConsumer &chunk_consumer_inout)
 {
     // 1. get a new chunk
     std::unique_ptr<LedgerChunk> new_chunk;
@@ -363,35 +400,36 @@ static ScanMachineStatus do_scan_pass(const std::uint64_t first_contiguity_index
         throw;
     }
 
-    // 2. handle the chunk
+    // 2. handle the chunk and return the next machine state
     if (chunk_is_empty(*new_chunk))
     {
-        return handle_empty_chunk(first_contiguity_index,
+        return handle_empty_chunk(metadata,
+            first_contiguity_index,
             *new_chunk,
+            contiguity_marker,
             scanning_context_inout,
-            chunk_consumer_inout,
-            contiguity_marker_inout);
+            chunk_consumer_inout);
     }
     else
     {
-        return handle_nonempty_chunk(first_contiguity_index,
+        return handle_nonempty_chunk(metadata,
+            first_contiguity_index,
             *new_chunk,
-            chunk_consumer_inout,
-            contiguity_marker_inout);
+            contiguity_marker,
+            chunk_consumer_inout);
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static bool try_handle_need_fullscan(const ChunkConsumer &chunk_consumer, ScanMachineMetadata &metadata_inout)
+static ScanMachineState handle_need_fullscan(const ScanMachineNeedFullscan &state, const ChunkConsumer &chunk_consumer)
 {
-    if (metadata_inout.status != ScanMachineStatus::NEED_FULLSCAN)
-        return false;
-
     // 1. get index of the first block we want to scan
     // - this is only an estimate since the chunk consumer may not have the block at this exact index cached
+    ScanMachineMetadata next_metadata{state.metadata};
+
     const std::uint64_t estimated_start_scan_index{
-            get_estimated_start_scan_index(metadata_inout.config.reorg_avoidance_increment,
-                metadata_inout.fullscan_attempts,
+            get_estimated_start_scan_index(next_metadata.config.reorg_avoidance_increment,
+                next_metadata.fullscan_attempts,
                 chunk_consumer.refresh_index(),
                 chunk_consumer.desired_first_block())
         };
@@ -399,34 +437,34 @@ static bool try_handle_need_fullscan(const ChunkConsumer &chunk_consumer, ScanMa
     // 2. set initial contiguity marker
     // - this starts as the prefix of the first block to scan, and should either be known to the chunk consumer
     //   or have an unspecified block id
-    metadata_inout.contiguity_marker = ContiguityMarker{};
-    set_initial_contiguity_marker(chunk_consumer, estimated_start_scan_index, metadata_inout.contiguity_marker);
+    ContiguityMarker start_scan_contiguity_marker;
+    set_initial_contiguity_marker(chunk_consumer, estimated_start_scan_index, start_scan_contiguity_marker);
 
     // 3. record the scan attempt
-    metadata_inout.fullscan_attempts += 1;
+    next_metadata.fullscan_attempts += 1;
 
-    if (metadata_inout.fullscan_attempts > 50)
+    if (next_metadata.fullscan_attempts > 50)
     {
         LOG_ERROR("scan state machine (handle need fullscan): fullscan attempts exceeded 50 (sanity check fail).");
-        metadata_inout.status = ScanMachineStatus::FAIL;
-        return true;
+        return ScanMachineTerminated{ .result = ScanMachineResult::FAIL };
     }
 
-    // 4. prepare the next state
-    metadata_inout.status = ScanMachineStatus::START_SCAN;
-
-    return true;
+    // 4. return the next state
+    return ScanMachineStartScan{
+            .metadata          = next_metadata,
+            .contiguity_marker = start_scan_contiguity_marker
+        };
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static bool try_handle_need_partialscan(const ChunkConsumer &chunk_consumer, ScanMachineMetadata &metadata_inout)
+static ScanMachineState handle_need_partialscan(const ScanMachineNeedPartialscan &state,
+    const ChunkConsumer &chunk_consumer)
 {
-    if (metadata_inout.status != ScanMachineStatus::NEED_PARTIALSCAN)
-        return false;
-
     // 1. get index of the first block we want to scan
+    ScanMachineMetadata next_metadata{state.metadata};
+
     const std::uint64_t estimated_start_scan_index{
-            get_estimated_start_scan_index(metadata_inout.config.reorg_avoidance_increment,
+            get_estimated_start_scan_index(next_metadata.config.reorg_avoidance_increment,
                 1,  //in partial scans always back off by just one reorg avoidance increment
                 chunk_consumer.refresh_index(),
                 chunk_consumer.desired_first_block())
@@ -435,114 +473,153 @@ static bool try_handle_need_partialscan(const ChunkConsumer &chunk_consumer, Sca
     // 2. set initial contiguity marker
     // - this starts as the prefix of the first block to scan, and should either be known to the chunk consumer
     //   or have an unspecified block id
-    metadata_inout.contiguity_marker = ContiguityMarker{};
-    set_initial_contiguity_marker(chunk_consumer, estimated_start_scan_index, metadata_inout.contiguity_marker);
+    ContiguityMarker start_scan_contiguity_marker;
+    set_initial_contiguity_marker(chunk_consumer, estimated_start_scan_index, start_scan_contiguity_marker);
 
     // 3. record the scan attempt
-    metadata_inout.partialscan_attempts += 1;
+    next_metadata.partialscan_attempts += 1;
 
     // 4. prepare the next state
     // a. fail if we have exceeded the max number of partial scanning attempts (i.e. too many reorgs were detected,
     //    so now we abort)
-    if (metadata_inout.partialscan_attempts > metadata_inout.config.max_partialscan_attempts)
-        metadata_inout.status = ScanMachineStatus::FAIL;
-    // b. otherwise, scan
-    else
-        metadata_inout.status = ScanMachineStatus::START_SCAN;
+    if (next_metadata.partialscan_attempts > next_metadata.config.max_partialscan_attempts)
+        return ScanMachineTerminated{ .result = ScanMachineResult::FAIL };
 
+    // 5. return the next state
+    return ScanMachineStartScan{
+            .metadata          = next_metadata,
+            .contiguity_marker = start_scan_contiguity_marker
+        };
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+static ScanMachineState handle_start_scan(const ScanMachineStartScan &state,
+    ScanningContextLedger &scanning_context_inout)
+{
+    try
+    {
+        // a. initialize the scanning context
+        scanning_context_inout.begin_scanning_from_index(state.contiguity_marker.block_index + 1,
+            state.metadata.config.max_chunk_size);
+
+        // b. return the next state
+        return ScanMachineDoScan{
+                .metadata               = state.metadata,
+                .contiguity_marker      = state.contiguity_marker,
+                .first_contiguity_index = state.contiguity_marker.block_index
+            };
+    }
+    catch (...) { return ScanMachineTerminated{ .result = ScanMachineResult::FAIL }; }
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+static ScanMachineState handle_do_scan(const ScanMachineDoScan &state,
+    ScanningContextLedger &scanning_context_inout,
+    ChunkConsumer &chunk_consumer_inout)
+{
+    // 1. perform one scan pass then update the status
+    ScanMachineState next_state;
+    try
+    {
+        next_state = do_scan_pass(state.metadata,
+            state.first_contiguity_index,
+            state.contiguity_marker,
+            scanning_context_inout,
+            chunk_consumer_inout);
+    }
+    catch (...) { next_state = ScanMachineTerminated{ .result = ScanMachineResult::FAIL }; }
+
+    // 2. try to terminate the scanning context if the next state is not another scan pass
+    try
+    {
+        if (!next_state.is_type<ScanMachineDoScan>())
+            scanning_context_inout.terminate_scanning();
+    } catch (...) { LOG_ERROR("seraphis scan state machine (try handle do scan): scan context termination failed."); }
+
+    return next_state;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+static bool try_handle_need_fullscan(const ChunkConsumer &chunk_consumer, ScanMachineState &state_inout)
+{
+    const ScanMachineNeedFullscan *need_fullscan{state_inout.try_unwrap<ScanMachineNeedFullscan>()};
+    if (!need_fullscan) return false;
+    state_inout = handle_need_fullscan(*need_fullscan, chunk_consumer);
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static bool try_handle_start_scan(ScanningContextLedger &scanning_context_inout, ScanMachineMetadata &metadata_inout)
+static bool try_handle_need_partialscan(const ChunkConsumer &chunk_consumer, ScanMachineState &state_inout)
 {
-    if (metadata_inout.status != ScanMachineStatus::START_SCAN)
-        return false;
-
-    try
-    {
-        // a. initialize the scanning context
-        scanning_context_inout.begin_scanning_from_index(metadata_inout.contiguity_marker.block_index + 1,
-            metadata_inout.config.max_chunk_size);
-
-        // b. prepare the next state
-        metadata_inout.status                 = ScanMachineStatus::DO_SCAN;
-        metadata_inout.first_contiguity_index = metadata_inout.contiguity_marker.block_index;
-    }
-    catch (...) { metadata_inout.status = ScanMachineStatus::FAIL; }
-
+    const ScanMachineNeedPartialscan *need_partialscan{state_inout.try_unwrap<ScanMachineNeedPartialscan>()};
+    if (!need_partialscan) return false;
+    state_inout = handle_need_partialscan(*need_partialscan, chunk_consumer);
+    return true;
+}
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
+static bool try_handle_start_scan(ScanningContextLedger &scanning_context_inout, ScanMachineState &state_inout)
+{
+    const ScanMachineStartScan *start_scan{state_inout.try_unwrap<ScanMachineStartScan>()};
+    if (!start_scan) return false;
+    state_inout = handle_start_scan(*start_scan, scanning_context_inout);
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static bool try_handle_do_scan(ScanningContextLedger &scanning_context_inout,
     ChunkConsumer &chunk_consumer_inout,
-    ScanMachineMetadata &metadata_inout)
+    ScanMachineState &state_inout)
 {
-    if (metadata_inout.status != ScanMachineStatus::DO_SCAN)
-        return false;
-
-    // 1. perform one scan pass then update the status
-    try
-    {
-        metadata_inout.status = do_scan_pass(metadata_inout.first_contiguity_index,
-            scanning_context_inout,
-            chunk_consumer_inout,
-            metadata_inout.contiguity_marker);
-    }
-    catch (...) { metadata_inout.status = ScanMachineStatus::FAIL; }
-
-    // 2. try to terminate the scanning context if the next state is not another scan pass
-    try
-    {
-        if (metadata_inout.status != ScanMachineStatus::DO_SCAN)
-            scanning_context_inout.terminate_scanning();
-    } catch (...) { LOG_ERROR("seraphis scan state machine (try handle do scan): scan context termination failed."); }
-
+    const ScanMachineDoScan *do_scan{state_inout.try_unwrap<ScanMachineDoScan>()};
+    if (!do_scan) return false;
+    state_inout = handle_do_scan(*do_scan, scanning_context_inout, chunk_consumer_inout);
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static bool is_terminal_state_with_log(const ScanMachineStatus status)
+static bool is_terminal_state_with_log(const ScanMachineState &state)
 {
+    const ScanMachineTerminated *terminated{state.try_unwrap<ScanMachineTerminated>()};
+
     // 1. check if in a terminal state
-    if (!is_terminal_state(status))
+    if (!terminated)
         return false;
 
     // 2. log error as needed
-    if (status == ScanMachineStatus::FAIL)
+    if (terminated->result == ScanMachineResult::FAIL)
         LOG_ERROR("seraphis scan state machine (terminal state): scan failed!");
-    else if (status == ScanMachineStatus::ABORTED)
+    else if (terminated->result == ScanMachineResult::ABORTED)
         LOG_ERROR("seraphis scan state machine (terminal state): scan aborted!");
-    else if (status != ScanMachineStatus::SUCCESS)
+    else if (terminated->result != ScanMachineResult::SUCCESS)
         LOG_ERROR("seraphis scan state machine (terminal state): unknown failure!");
 
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-bool try_advance_state_machine(ScanMachineMetadata &metadata_inout,
-    ScanningContextLedger &scanning_context_inout,
-    ChunkConsumer &chunk_consumer_inout)
+bool try_advance_state_machine(ScanningContextLedger &scanning_context_inout,
+    ChunkConsumer &chunk_consumer_inout,
+    ScanMachineState &state_inout)
 {
     // check terminal states
-    if (is_terminal_state_with_log(metadata_inout.status))
+    if (is_terminal_state_with_log(state_inout))
         return false;
 
     // NEED_FULLSCAN
-    if (try_handle_need_fullscan(chunk_consumer_inout, metadata_inout))
+    if (try_handle_need_fullscan(chunk_consumer_inout, state_inout))
         return true;
 
     // NEED_PARTIALSCAN
-    if (try_handle_need_partialscan(chunk_consumer_inout, metadata_inout))
+    if (try_handle_need_partialscan(chunk_consumer_inout, state_inout))
         return true;
 
     // START_SCAN
-    if (try_handle_start_scan(scanning_context_inout, metadata_inout))
+    if (try_handle_start_scan(scanning_context_inout, state_inout))
         return true;
 
     // DO_SCAN
-    if (try_handle_do_scan(scanning_context_inout, chunk_consumer_inout, metadata_inout))
+    if (try_handle_do_scan(scanning_context_inout, chunk_consumer_inout, state_inout))
         return true;
 
     return false;

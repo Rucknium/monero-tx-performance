@@ -167,33 +167,29 @@ void check_ledger_chunk_semantics_v1(const LedgerChunk &ledger_chunk, const std:
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-void initialize_scan_machine_metadata(const ScanMachineConfig &scan_config, ScanMachineMetadata &metadata_out)
+ScanMachineMetadata initialize_scan_machine_metadata(const ScanMachineConfig &scan_config)
 {
-    metadata_out = ScanMachineMetadata{
+    return ScanMachineMetadata{
             .config                = scan_config,
-            .status                = ScanMachineStatus::NEED_FULLSCAN,
             .partialscan_attempts  = 0,
-            .fullscan_attempts     = 0,
-            .contiguity_marker     = {},
-            .first_contiguity_index = static_cast<std::uint64_t>(-1)
+            .fullscan_attempts     = 0
         };
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool is_terminal_state(const ScanMachineStatus status)
+ScanMachineState initialize_scan_machine_state(const ScanMachineConfig &scan_config)
 {
-    // 1. non-terminal states
-    switch (status)
-    {
-        case ScanMachineStatus::NEED_FULLSCAN    :
-        case ScanMachineStatus::NEED_PARTIALSCAN :
-        case ScanMachineStatus::START_SCAN       :
-        case ScanMachineStatus::DO_SCAN          :
-            return false;
-        default:;
-    }
-
-    // 2. terminal states: everything else
-    return true;
+    return ScanMachineNeedFullscan{ .metadata = initialize_scan_machine_metadata(scan_config) };
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool is_terminal_state(const ScanMachineState &state)
+{
+    return state.is_type<ScanMachineTerminated>();
+}
+//-------------------------------------------------------------------------------------------------------------------
+bool is_success_state(const ScanMachineState &state)
+{
+    const ScanMachineTerminated *terminated{state.try_unwrap<ScanMachineTerminated>()};
+    return terminated && terminated->result == ScanMachineResult::SUCCESS;
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace scanning

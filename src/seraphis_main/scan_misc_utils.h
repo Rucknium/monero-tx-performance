@@ -90,17 +90,30 @@ void check_chunk_data_semantics_v1(const ChunkData &chunk_data,
 */
 void check_ledger_chunk_semantics_v1(const LedgerChunk &ledger_chunk, const std::uint64_t expected_prefix_index);
 /**
-* brief: initialize_scan_machine_metadata - initialize a scan machine with a specified configuration
+* brief: initialize_scan_machine_metadata - initialize scan machine metadata with a specified configuration
 * param: scan_config -
-* param: metadata_out -
+* return: initialized metadata
 */
-void initialize_scan_machine_metadata(const ScanMachineConfig &scan_config, ScanMachineMetadata &metadata_out);
+ScanMachineMetadata initialize_scan_machine_metadata(const ScanMachineConfig &scan_config);
+/**
+* brief: initialize_scan_machine_state - initialize a scan machine state with a specified configuration
+*   - initial state: need fullscan
+* param: scan_config -
+* return: initialized scan machine state
+*/
+ScanMachineState initialize_scan_machine_state(const ScanMachineConfig &scan_config);
 /**
 * brief: is_terminal_state - test if a scan machine is in a terminal state
-* param: status -
-* return: true if status is terminal
+* param: state -
+* return: true if state is terminal
 */
-bool is_terminal_state(const ScanMachineStatus status);
+bool is_terminal_state(const ScanMachineState &state);
+/**
+* brief: is_success_state - test if a scan machine is in a successful terminal state
+* param: state -
+* return: true if state is terminal
+*/
+bool is_success_state(const ScanMachineState &state);
 
 } //namespace scanning
 } //namespace sp

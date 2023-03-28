@@ -88,16 +88,15 @@ bool refresh_enote_store_ledger(const scanning::ScanMachineConfig &scan_machine_
     scanning::ChunkConsumer &chunk_consumer_inout)
 {
     // 1. prepare metadata
-    scanning::ScanMachineMetadata metadata;
-    scanning::initialize_scan_machine_metadata(scan_machine_config, metadata);
+    scanning::ScanMachineState state{scanning::initialize_scan_machine_state(scan_machine_config)};
 
     // 2. advance the state machine until it terminates or encounters a failure
-    while (scanning::try_advance_state_machine(metadata, ledger_scanning_context_inout, chunk_consumer_inout) &&
-        !scanning::is_terminal_state(metadata.status))
+    while (scanning::try_advance_state_machine(ledger_scanning_context_inout, chunk_consumer_inout, state) &&
+        !scanning::is_terminal_state(state))
     {}
 
     // 3. check the result
-    if (metadata.status != scanning::ScanMachineStatus::SUCCESS)
+    if (!scanning::is_success_state(state))
         return false;
 
     return true;
