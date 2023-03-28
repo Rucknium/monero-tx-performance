@@ -50,6 +50,7 @@
 #include "seraphis_crypto/sp_composition_proof.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "seraphis_impl/enote_store_utils.h"
+#include "seraphis_impl/legacy_ki_import_tool.h"
 #include "seraphis_impl/scan_process_basic.h"
 #include "seraphis_impl/scanning_context_simple.h"
 #include "seraphis_impl/tx_fee_calculator_squashed_v1.h"
@@ -5347,41 +5348,11 @@ static void legacy_view_scan_recovery_cycle(const legacy_mock_keys &legacy_keys,
 
     /// ATOMIC READ-LOCK
     // 3. get enote store current state
-    // a. last block partialscanned
-    const std::uint64_t intermediate_index_pre_import_cycle{
-            enote_store_inout.top_legacy_partialscanned_block_index()
-        };
-
-    // b. last block fullscanned
-    const std::uint64_t full_index_pre_import_cycle{
-            enote_store_inout.top_legacy_fullscanned_block_index()
-        };
-    ASSERT_TRUE(full_index_pre_import_cycle + 1 <= intermediate_index_pre_import_cycle + 1);
-
-    // c. first block that might have a fullscanned block ID
-    const std::uint64_t legacy_refresh_index{enote_store_inout.legacy_refresh_index()};
-    const std::uint64_t first_potential_fullscanned_index{
-            std::max(full_index_pre_import_cycle + 1, legacy_refresh_index + 1) - 1
-        };
-
-    // d. block id checkpoints within range of partialscanned blocks we are trying to update
-    std::map<std::uint64_t, rct::key> block_id_checkpoints;
-
-    for (std::uint64_t block_index{
-                enote_store_inout.nearest_legacy_partialscanned_block_index(first_potential_fullscanned_index)
-            };
-        block_index != static_cast<std::uint64_t>(-1) &&
-            block_index + 1 <= intermediate_index_pre_import_cycle + 1;  //maybe redundant, better to be safe
-        block_index = enote_store_inout.next_legacy_partialscanned_block_index(block_index))
-    {
-        ASSERT_TRUE(enote_store_inout.try_get_block_id_for_legacy_partialscan(block_index,
-            block_id_checkpoints[block_index]));
-    }
+    LegacyKIImportCheckpoint import_cycle_checkpoint;
+    ASSERT_NO_THROW(make_legacy_ki_import_checkpoint(enote_store_inout, import_cycle_checkpoint));
 
     // e. export intermediate onetime addresses that need key images
-    const auto &legacy_intermediate_records = enote_store_inout.legacy_intermediate_records();
-
-    for (const auto &legacy_intermediate_record : legacy_intermediate_records)
+    for (const auto &legacy_intermediate_record : import_cycle_checkpoint.legacy_intermediate_records)
     {
         ASSERT_TRUE(std::find(legacy_onetime_addresses_expected.begin(),
                 legacy_onetime_addresses_expected.end(),
@@ -5393,12 +5364,12 @@ static void legacy_view_scan_recovery_cycle(const legacy_mock_keys &legacy_keys,
 
     // 4. import expected key images (will fail if the onetime addresses and key images don't line up)
     std::list<EnoteStoreEvent> events;
+    std::unordered_map<rct::key, crypto::key_image> legacy_key_images;  //[ Ko : KI ]
+
     for (std::size_t i{0}; i < legacy_onetime_addresses_expected.size(); ++i)
-    {
-        ASSERT_TRUE(enote_store_inout.try_import_legacy_key_image(legacy_key_images_expected[i],
-            legacy_onetime_addresses_expected[i],
-            events));
-    }
+        legacy_key_images[legacy_onetime_addresses_expected[i]] = legacy_key_images_expected[i];
+
+    ASSERT_NO_THROW(import_legacy_key_images(legacy_key_images, enote_store_inout, events));
 
     // 5. check results of importing key images
     ASSERT_TRUE(get_balance(enote_store_inout, {SpEnoteOriginStatus::ONCHAIN},
@@ -5425,22 +5396,7 @@ static void legacy_view_scan_recovery_cycle(const legacy_mock_keys &legacy_keys,
     // - only update up to the highest aligned checkpoint from when intermediate records were exported, so that
     //   any reorg that replaced blocks below the partial scan index recorded at the beginning of the cycle won't
     //   be ignored by the next partial scan
-    std::uint64_t highest_aligned_index_post_import_cycle{enote_store_inout.top_legacy_fullscanned_block_index()};
-    rct::key temp_block_id;
-
-    for (const auto checkpoint : block_id_checkpoints)
-    {
-        if (!enote_store_inout.try_get_block_id_for_legacy_partialscan(checkpoint.first, temp_block_id))
-            continue;
-        if (!(temp_block_id == checkpoint.second))
-            continue;
-
-        highest_aligned_index_post_import_cycle =
-            std::max(checkpoint.first + 1, highest_aligned_index_post_import_cycle + 1) - 1;
-    }
-
-    ASSERT_NO_THROW(enote_store_inout.update_legacy_fullscan_index_for_import_cycle(
-        highest_aligned_index_post_import_cycle));
+    ASSERT_NO_THROW(finish_legacy_ki_import_cycle(import_cycle_checkpoint, enote_store_inout));
 
     // 9. check the legacy fullscan index is at the expected value
     ASSERT_TRUE(enote_store_inout.top_legacy_fullscanned_block_index() == expected_final_legacy_fullscan_index);

@@ -291,6 +291,7 @@ bool have_same_destination(const SpContextualIntermediateEnoteRecordV1 &a,
     const SpContextualIntermediateEnoteRecordV1 &b);
 bool have_same_destination(const SpContextualEnoteRecordV1 &a, const SpContextualEnoteRecordV1 &b);
 /// check origin status
+bool has_origin_status(const LegacyContextualIntermediateEnoteRecordV1 &record, const SpEnoteOriginStatus test_status);
 bool has_origin_status(const LegacyContextualEnoteRecordV1 &record, const SpEnoteOriginStatus test_status);
 bool has_origin_status(const SpContextualEnoteRecordV1 &record, const SpEnoteOriginStatus test_status);
 /// check spent status

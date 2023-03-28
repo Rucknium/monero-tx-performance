@@ -225,6 +225,11 @@ bool have_same_destination(const SpContextualEnoteRecordV1 &a, const SpContextua
     return onetime_address_ref(a.record.enote) == onetime_address_ref(b.record.enote);
 }
 //-------------------------------------------------------------------------------------------------------------------
+bool has_origin_status(const LegacyContextualIntermediateEnoteRecordV1 &record, const SpEnoteOriginStatus test_status)
+{
+    return record.origin_context.origin_status == test_status;
+}
+//-------------------------------------------------------------------------------------------------------------------
 bool has_origin_status(const LegacyContextualEnoteRecordV1 &record, const SpEnoteOriginStatus test_status)
 {
     return record.origin_context.origin_status == test_status;
