@@ -58,6 +58,7 @@
 #include "seraphis_crypto/sp_composition_proof.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "seraphis_impl/enote_store_utils.h"
+#include "seraphis_impl/legacy_ki_import_tool.h"
 #include "seraphis_impl/scanning_context_simple.h"
 #include "seraphis_impl/tx_builder_utils.h"
 #include "seraphis_impl/tx_input_selection_output_context_v1.h"
@@ -125,17 +126,14 @@ static void refresh_user_enote_store_legacy_multisig(const std::vector<multisig:
         ledger_context,
         enote_store_inout);
 
-    // 2. prepare key image import cycle
-    const std::uint64_t intermediate_index_pre_import_cycle{
-            enote_store_inout.top_legacy_partialscanned_block_index()
-        };
+    // 2. start key image import cycle
+    LegacyKIImportCheckpoint import_cycle_checkpoint;
+    ASSERT_NO_THROW(make_legacy_ki_import_checkpoint(enote_store_inout, import_cycle_checkpoint));
 
-    // 3. export intermediate onetime addresses that need key images
-    const auto &legacy_intermediate_records = enote_store_inout.legacy_intermediate_records();
-
+    // 3. extract view-key secret keys of the intermediate records in this cycle
     std::unordered_map<crypto::public_key, crypto::secret_key> saved_key_components;
 
-    for (const auto &intermediate_record : legacy_intermediate_records)
+    for (const auto &intermediate_record : import_cycle_checkpoint.legacy_intermediate_records)
     {
         saved_key_components[rct::rct2pk(onetime_address_ref(intermediate_record.second))] =
             intermediate_record.second.record.enote_view_extension;
@@ -147,14 +145,9 @@ static void refresh_user_enote_store_legacy_multisig(const std::vector<multisig:
         saved_key_components,
         recovered_key_images));
 
-    // 5. import acquired key images (will fail if the onetime addresses and key images don't line up)
+    // 5. import acquired key images
     std::list<EnoteStoreEvent> events;
-    for (const auto &recovered_key_image : recovered_key_images)
-    {
-        ASSERT_TRUE(enote_store_inout.try_import_legacy_key_image(recovered_key_image.second,
-            rct::pk2rct(recovered_key_image.first),
-            events));
-    }
+    ASSERT_NO_THROW(import_legacy_key_images(recovered_key_images, enote_store_inout, events));
 
     // 6. legacy key-image-refresh scan
     refresh_user_enote_store_legacy_intermediate(rct::pk2rct(accounts[0].get_multisig_pubkey()),
@@ -169,8 +162,7 @@ static void refresh_user_enote_store_legacy_multisig(const std::vector<multisig:
     ASSERT_TRUE(enote_store_inout.legacy_intermediate_records().size() == 0);
 
     // 8. update the legacy fullscan index to account for a complete view-only scan cycle with key image recovery
-    ASSERT_NO_THROW(enote_store_inout.update_legacy_fullscan_index_for_import_cycle(
-        intermediate_index_pre_import_cycle));
+    ASSERT_NO_THROW(finish_legacy_ki_import_cycle(import_cycle_checkpoint, enote_store_inout));
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------

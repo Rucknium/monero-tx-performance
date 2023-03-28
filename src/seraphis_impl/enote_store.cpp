@@ -251,7 +251,7 @@ bool SpEnoteStore::try_get_legacy_enote_record(const crypto::key_image &key_imag
     if (identifiers_of_duplicates.size() == 0)
         return false;
 
-    // search for the highest-amount enote amoung the duplicates
+    // search for the highest-amount enote among the duplicates
     rct::key best_identifier{rct::zero()};
     rct::xmr_amount best_amount{0};
     rct::xmr_amount temp_record_amount;
@@ -278,7 +278,7 @@ bool SpEnoteStore::try_get_legacy_enote_record(const crypto::key_image &key_imag
         }
     }
 
-    // if the highest-amount enote is not amoung the full enote records, then we failed
+    // if the highest-amount enote is not among the full enote records, then we failed
     if (m_legacy_contextual_enote_records.find(best_identifier) == m_legacy_contextual_enote_records.end())
         return false;
 

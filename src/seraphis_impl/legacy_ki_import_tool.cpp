@@ -99,6 +99,20 @@ void import_legacy_key_images(const std::unordered_map<rct::key, crypto::key_ima
         enote_store_inout.try_import_legacy_key_image(import_pair.second, import_pair.first, update_events_out);
 }
 //-------------------------------------------------------------------------------------------------------------------
+void import_legacy_key_images(const std::unordered_map<crypto::public_key, crypto::key_image> &legacy_key_images,
+    SpEnoteStore &enote_store_inout,
+    std::list<EnoteStoreEvent> &update_events_out)
+{
+    // import key images (ignore failures)
+    update_events_out.clear();
+    for (const auto import_pair : legacy_key_images)
+    {
+        enote_store_inout.try_import_legacy_key_image(import_pair.second,
+            rct::pk2rct(import_pair.first),
+            update_events_out);
+    }
+}
+//-------------------------------------------------------------------------------------------------------------------
 void finish_legacy_ki_import_cycle(const LegacyKIImportCheckpoint &checkpoint, SpEnoteStore &enote_store_inout)
 {
     // 1. find the highest aligned checkpoint from when intermediate records were exported

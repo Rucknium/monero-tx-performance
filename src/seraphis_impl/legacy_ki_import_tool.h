@@ -87,10 +87,13 @@ struct LegacyKIImportCheckpoint final
 void make_legacy_ki_import_checkpoint(const SpEnoteStore &enote_store, LegacyKIImportCheckpoint &checkpoint_out);
 /**
 * brief: import_legacy_key_images - import legacy key images to an enote store
-* param: legacy_key_images -
+* param: legacy_key_images - [ Ko : KI ]
 * inoutparam: enote_store_inout -
 */
-void import_legacy_key_images(const std::unordered_map<rct::key, crypto::key_image> &legacy_key_images,  //[ Ko : KI ]
+void import_legacy_key_images(const std::unordered_map<rct::key, crypto::key_image> &legacy_key_images,
+    SpEnoteStore &enote_store_inout,
+    std::list<EnoteStoreEvent> &update_events_out);
+void import_legacy_key_images(const std::unordered_map<crypto::public_key, crypto::key_image> &legacy_key_images,
     SpEnoteStore &enote_store_inout,
     std::list<EnoteStoreEvent> &update_events_out);
 /**

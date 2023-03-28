@@ -5351,7 +5351,7 @@ static void legacy_view_scan_recovery_cycle(const legacy_mock_keys &legacy_keys,
     LegacyKIImportCheckpoint import_cycle_checkpoint;
     ASSERT_NO_THROW(make_legacy_ki_import_checkpoint(enote_store_inout, import_cycle_checkpoint));
 
-    // e. export intermediate onetime addresses that need key images
+    // 4. check the intermediate onetime addresses that need key images are expected
     for (const auto &legacy_intermediate_record : import_cycle_checkpoint.legacy_intermediate_records)
     {
         ASSERT_TRUE(std::find(legacy_onetime_addresses_expected.begin(),
@@ -5364,12 +5364,12 @@ static void legacy_view_scan_recovery_cycle(const legacy_mock_keys &legacy_keys,
 
     // 4. import expected key images (will fail if the onetime addresses and key images don't line up)
     std::list<EnoteStoreEvent> events;
-    std::unordered_map<rct::key, crypto::key_image> legacy_key_images;  //[ Ko : KI ]
+    std::unordered_map<rct::key, crypto::key_image> recovered_key_images;  //[ Ko : KI ]
 
     for (std::size_t i{0}; i < legacy_onetime_addresses_expected.size(); ++i)
-        legacy_key_images[legacy_onetime_addresses_expected[i]] = legacy_key_images_expected[i];
+        recovered_key_images[legacy_onetime_addresses_expected[i]] = legacy_key_images_expected[i];
 
-    ASSERT_NO_THROW(import_legacy_key_images(legacy_key_images, enote_store_inout, events));
+    ASSERT_NO_THROW(import_legacy_key_images(recovered_key_images, enote_store_inout, events));
 
     // 5. check results of importing key images
     ASSERT_TRUE(get_balance(enote_store_inout, {SpEnoteOriginStatus::ONCHAIN},
