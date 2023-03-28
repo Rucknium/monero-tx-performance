@@ -48,21 +48,6 @@ namespace scanning
 {
 
 ////
-// ScanMachineConfig
-// - configuration details for the scan state machine
-///
-struct ScanMachineConfig final
-{
-    /// increment for avoiding reorgs
-    /// - each fullscan attempt looks (10^attempts * increment) blocks below the requested start index
-    std::uint64_t reorg_avoidance_increment{10};
-    /// max number of blocks per ledger chunk
-    std::uint64_t max_chunk_size{100};
-    /// maximum number of times to try rescanning if a partial reorg is detected
-    std::uint64_t max_partialscan_attempts{3};
-};
-
-////
 // ContiguityMarker
 // - marks the end of a contiguous chain of blocks
 // - if the contiguous chain is empty, then the block id will be unspecified and the block index will equal the chain's
@@ -81,6 +66,21 @@ struct ContiguityMarker final
     boost::optional<rct::key> block_id;
 };
 
+////
+// ScanMachineConfig
+// - configuration details for the scan state machine
+///
+struct ScanMachineConfig final
+{
+    /// increment for avoiding reorgs
+    /// - each fullscan attempt looks (10^attempts * increment) blocks below the requested start index
+    std::uint64_t reorg_avoidance_increment{10};
+    /// max number of blocks per ledger chunk
+    /// - this is only a hint, the downstream scanning context is free to ignore it
+    std::uint64_t max_chunk_size_hint{100};
+    /// maximum number of times to try rescanning if a partial reorg is detected
+    std::uint64_t max_partialscan_attempts{3};
+};
 
 ////
 // ScanMachineMetadata

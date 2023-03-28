@@ -500,7 +500,7 @@ static ScanMachineState handle_start_scan(const ScanMachineStartScan &state,
     {
         // a. initialize the scanning context
         scanning_context_inout.begin_scanning_from_index(state.contiguity_marker.block_index + 1,
-            state.metadata.config.max_chunk_size);
+            state.metadata.config.max_chunk_size_hint);
 
         // b. return the next state
         return ScanMachineDoScan{

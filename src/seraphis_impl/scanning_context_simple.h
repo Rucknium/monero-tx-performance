@@ -111,10 +111,11 @@ public:
 
 //member functions
     /// start scanning from a specified block index
-    void begin_scanning_from_index(const std::uint64_t initial_start_index, const std::uint64_t max_chunk_size) override
+    void begin_scanning_from_index(const std::uint64_t initial_start_index,
+        const std::uint64_t max_chunk_size_hint) override
     {
         m_next_start_index = initial_start_index;
-        m_max_chunk_size   = max_chunk_size;
+        m_max_chunk_size   = max_chunk_size_hint;
     }
     /// get the next available onchain chunk (or empty chunk representing top of current chain)
     /// - start past the end of the last chunk acquired since starting to scan

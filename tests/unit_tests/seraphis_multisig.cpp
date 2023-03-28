@@ -379,7 +379,7 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
 
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 

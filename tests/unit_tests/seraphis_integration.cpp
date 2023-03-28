@@ -92,7 +92,7 @@ TEST(seraphis_integration, txtype_squashed_v1)
 
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 

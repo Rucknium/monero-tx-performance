@@ -87,7 +87,7 @@ public:
 //member functions
     /// tell the scanning context a block index to start scanning from
     virtual void begin_scanning_from_index(const std::uint64_t initial_start_index,
-        const std::uint64_t max_chunk_size) = 0;
+        const std::uint64_t max_chunk_size_hint) = 0;
     /// get the next available onchain chunk (must be contiguous with the last chunk acquired since starting to scan)
     /// note: if there is no chunk to return, return an empty chunk representing the top of the current chain
     virtual std::unique_ptr<LedgerChunk> get_onchain_chunk() = 0;

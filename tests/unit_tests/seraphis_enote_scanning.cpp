@@ -159,10 +159,10 @@ public:
 //member functions
     /// tell the enote finder it can start scanning from a specified block index
     void begin_scanning_from_index(const std::uint64_t initial_start_index,
-        const std::uint64_t max_chunk_size) override
+        const std::uint64_t max_chunk_size_hint) override
     {
         m_invocable_begin_scanning.invoke();
-        m_core_scanning_context.begin_scanning_from_index(initial_start_index, max_chunk_size);
+        m_core_scanning_context.begin_scanning_from_index(initial_start_index, max_chunk_size_hint);
     }
     /// get the next available onchain chunk (must be contiguous with the last chunk acquired since starting to scan)
     /// note: if chunk is empty, chunk represents top of current chain
@@ -289,7 +289,7 @@ TEST(seraphis_enote_scanning, trivial_ledger)
     SpEnoteStore user_enote_store{0, 0, 0};
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
     const EnoteFindingContextUnconfirmedMockSp enote_finding_context_unconfirmed{ledger_context, user_keys.xk_fr};
@@ -324,7 +324,7 @@ TEST(seraphis_enote_scanning, simple_ledger_1)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 0,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -358,7 +358,7 @@ TEST(seraphis_enote_scanning, simple_ledger_2)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 0,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -392,7 +392,7 @@ TEST(seraphis_enote_scanning, simple_ledger_3)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 0,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -436,7 +436,7 @@ TEST(seraphis_enote_scanning, simple_ledger_4)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 0,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -478,7 +478,7 @@ TEST(seraphis_enote_scanning, simple_ledger_5)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -536,7 +536,7 @@ TEST(seraphis_enote_scanning, simple_ledger_6)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -606,7 +606,7 @@ TEST(seraphis_enote_scanning, simple_ledger_7)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
     const CheckpointCacheConfig checkpoint_cache_config{
@@ -707,7 +707,7 @@ TEST(seraphis_enote_scanning, simple_ledger_locked)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 0,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -791,7 +791,7 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_1)
 
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -892,7 +892,7 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_2)
 
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -983,7 +983,7 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_3)
 
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -1075,7 +1075,7 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_4)
 
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -1255,7 +1255,7 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_5)
 
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -1452,7 +1452,7 @@ TEST(seraphis_enote_scanning, basic_ledger_tx_passing_6)
 
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 5,
+            .max_chunk_size_hint = 5,
             .max_partialscan_attempts = 0
         };
 
@@ -1719,7 +1719,7 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_1)
     // 1. full internal reorg
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
     MockLedgerContext ledger_context{0, 0};
@@ -1831,7 +1831,7 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_2)
     // 2. full internal reorg with replacement
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
     MockLedgerContext ledger_context{0, 0};
@@ -1959,7 +1959,7 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_3)
     // 3. partial internal reorg with replacement
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 1
         };
     MockLedgerContext ledger_context{0, 0};
@@ -2089,7 +2089,7 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_4)
     // 4. partial internal reorgs to failure
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 2,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 4
         };
     MockLedgerContext ledger_context{0, 0};
@@ -2186,7 +2186,7 @@ TEST(seraphis_enote_scanning, reorgs_while_scanning_5)
     // 5. sneaky tx found in follow-up loop
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 4
         };
     MockLedgerContext ledger_context{0, 0};
@@ -2290,7 +2290,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_1)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -2492,7 +2492,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_2)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -2724,7 +2724,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_3)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -3217,7 +3217,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_4)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -3412,7 +3412,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_5)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -3616,7 +3616,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_6)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -4057,7 +4057,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_7)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -4516,7 +4516,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_8)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -4912,7 +4912,7 @@ TEST(seraphis_enote_scanning, legacy_pre_transition_9)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -5584,7 +5584,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_1)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 2,
+            .max_chunk_size_hint = 2,
             .max_partialscan_attempts = 0
         };
 
@@ -6672,7 +6672,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_2)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 2,
+            .max_chunk_size_hint = 2,
             .max_partialscan_attempts = 0
         };
 
@@ -7696,7 +7696,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_3)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -8229,7 +8229,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_4)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 2,
+            .max_chunk_size_hint = 2,
             .max_partialscan_attempts = 0
         };
 
@@ -8848,7 +8848,7 @@ TEST(seraphis_enote_scanning, legacy_sp_transition_5)
     // 1. config
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 2,
+            .max_chunk_size_hint = 2,
             .max_partialscan_attempts = 0
         };
 

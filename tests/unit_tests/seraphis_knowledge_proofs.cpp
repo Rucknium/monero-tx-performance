@@ -410,7 +410,7 @@ TEST(seraphis_knowledge_proofs, reserve_proof)
 
     const scanning::ScanMachineConfig refresh_config{
             .reorg_avoidance_increment = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
@@ -529,7 +529,7 @@ TEST(seraphis_knowledge_proofs, sp_all_knowledge_proofs)
 
     const scan_machine::ScanConfig refresh_config{
             .reorg_avoidance_depth = 1,
-            .max_chunk_size = 1,
+            .max_chunk_size_hint = 1,
             .max_partialscan_attempts = 0
         };
 
