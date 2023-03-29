@@ -26,9 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
-// Simple ledger chunk types
+// Simple ledger chunk types.
 
 #pragma once
 
@@ -61,7 +59,7 @@ public:
     LedgerChunkEmpty(ChunkContext context) :
         m_context{std::move(context)},
         m_data{},
-        m_subconsumer_ids{rct::zero()}
+        m_subconsumer_ids{rct::zero()}  //we need at least one subconsumer to satisfy ledger chunk semantics checks
     {
         CHECK_AND_ASSERT_THROW_MES(chunk_context_is_empty(context), "empty ledger chunk: chunk is not empty.");
     }
