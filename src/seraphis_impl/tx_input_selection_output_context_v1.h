@@ -55,7 +55,7 @@ public:
         const std::vector<jamtis::JamtisPaymentProposalSelfSendV1> &selfsend_payment_proposals);
 
 //overloaded operators
-    /// disable copy/move (this is a scoped manager (concept: context binding))
+    /// disable copy/move (this is a scoped manager [concept: context binding])
     OutputSetContextForInputSelectionV1& operator=(OutputSetContextForInputSelectionV1&&) = delete;
 
 //member functions

@@ -82,7 +82,7 @@ struct SpTxCoinbaseV1 final
 };
 
 /// get size of a possible tx
-std::size_t sp_tx_coinbase_v1_size_bytes(const std::size_t num_outputs, const TxExtra &tx_extra);
+std::size_t sp_tx_coinbase_v1_size_bytes(const std::size_t num_outputs, const std::size_t tx_extra_size);
 /// get size of the tx
 std::size_t sp_tx_coinbase_v1_size_bytes(const SpTxCoinbaseV1 &tx);
 /// get weight of a possible tx (weight == size)

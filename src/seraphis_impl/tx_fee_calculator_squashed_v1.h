@@ -54,7 +54,7 @@ public:
         const std::size_t ref_set_decomp_n,
         const std::size_t ref_set_decomp_m,
         const std::size_t num_bin_members,
-        const TxExtra &tx_extra);
+        const std::size_t tx_extra_size);
 
 //member functions
     static rct::xmr_amount compute_fee(const std::size_t fee_per_weight, const std::size_t weight);
@@ -71,7 +71,7 @@ private:
     std::size_t m_ref_set_decomp_n;
     std::size_t m_ref_set_decomp_m;
     std::size_t m_num_bin_members;
-    TxExtra m_tx_extra;
+    std::size_t m_tx_extra_size;
 };
 
 } //namespace sp

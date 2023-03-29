@@ -49,12 +49,12 @@ FeeCalculatorSpTxSquashedV1::FeeCalculatorSpTxSquashedV1(const std::size_t legac
     const std::size_t ref_set_decomp_n,
     const std::size_t ref_set_decomp_m,
     const std::size_t num_bin_members,
-    const TxExtra &tx_extra) :
+    const std::size_t tx_extra_size) :
         m_legacy_ring_size{legacy_ring_size},
         m_ref_set_decomp_n{ref_set_decomp_n},
         m_ref_set_decomp_m{ref_set_decomp_m},
         m_num_bin_members{num_bin_members},
-        m_tx_extra{tx_extra}
+        m_tx_extra_size{tx_extra_size}
 {}
 //-------------------------------------------------------------------------------------------------------------------
 rct::xmr_amount FeeCalculatorSpTxSquashedV1::compute_fee(const std::size_t fee_per_weight, const std::size_t weight)
@@ -84,7 +84,7 @@ rct::xmr_amount FeeCalculatorSpTxSquashedV1::compute_fee(const std::size_t fee_p
                 m_ref_set_decomp_n,
                 m_ref_set_decomp_m,
                 m_num_bin_members,
-                m_tx_extra)
+                m_tx_extra_size)
         };
 
     return this->compute_fee(fee_per_weight, weight);

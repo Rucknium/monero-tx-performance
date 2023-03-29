@@ -121,8 +121,8 @@ boost::multiprecision::uint128_t OutputSetContextForInputSelectionV1::total_amou
 std::size_t OutputSetContextForInputSelectionV1::num_outputs_nochange() const
 {
     const bool need_additional_output_no_change{
-        need_additional_output(m_num_outputs, m_output_ephemeral_pubkeys_are_unique, m_self_send_output_types, 0)
-    };
+            need_additional_output(m_num_outputs, m_output_ephemeral_pubkeys_are_unique, m_self_send_output_types, 0)
+        };
 
     return m_num_outputs + (need_additional_output_no_change ? 1 : 0);
 }
@@ -130,8 +130,8 @@ std::size_t OutputSetContextForInputSelectionV1::num_outputs_nochange() const
 std::size_t OutputSetContextForInputSelectionV1::num_outputs_withchange() const
 {
     const bool need_additional_output_with_change{
-        need_additional_output(m_num_outputs, m_output_ephemeral_pubkeys_are_unique, m_self_send_output_types, 1)
-    };
+            need_additional_output(m_num_outputs, m_output_ephemeral_pubkeys_are_unique, m_self_send_output_types, 1)
+        };
 
     return m_num_outputs + (need_additional_output_with_change ? 1 : 0);
 }

@@ -74,7 +74,7 @@ std::size_t sp_tx_squashed_v1_size_bytes(const std::size_t num_legacy_inputs,
     const std::size_t ref_set_decomp_n,
     const std::size_t ref_set_decomp_m,
     const std::size_t num_bin_members,
-    const TxExtra &tx_extra)
+    const std::size_t tx_extra_size)
 {
     // size of the transaction as represented in C++ (it is likely ~5-15% smaller when serialized)
     // note: configs and derived data that are cached post-deserialization are NOT included (e.g. binned reference set
@@ -103,7 +103,7 @@ std::size_t sp_tx_squashed_v1_size_bytes(const std::size_t num_legacy_inputs,
     size += num_sp_inputs * sp_membership_proof_v1_size_bytes_compact(ref_set_decomp_n, ref_set_decomp_m, num_bin_members);
 
     // extra data in tx
-    size += sp_tx_supplement_v1_size_bytes(num_outputs, tx_extra, true);  //with shared ephemeral pubkey assumption
+    size += sp_tx_supplement_v1_size_bytes(num_outputs, tx_extra_size, true);  //with shared ephemeral pubkey assumption
 
     // tx fee
     size += discretized_fee_size_bytes();
@@ -141,7 +141,7 @@ std::size_t sp_tx_squashed_v1_size_bytes(const SpTxSquashedV1 &tx)
         ref_set_decomp_n,
         ref_set_decomp_m,
         num_bin_members,
-        tx.tx_supplement.tx_extra);
+        tx.tx_supplement.tx_extra.size());
 }
 //-------------------------------------------------------------------------------------------------------------------
 std::size_t sp_tx_squashed_v1_weight(const std::size_t num_legacy_inputs,
@@ -151,7 +151,7 @@ std::size_t sp_tx_squashed_v1_weight(const std::size_t num_legacy_inputs,
     const std::size_t ref_set_decomp_n,
     const std::size_t ref_set_decomp_m,
     const std::size_t num_bin_members,
-    const TxExtra &tx_extra)
+    const std::size_t tx_extra_size)
 {
     // tx weight = tx size + balance proof clawback
     std::size_t weight{
@@ -162,7 +162,7 @@ std::size_t sp_tx_squashed_v1_weight(const std::size_t num_legacy_inputs,
                 ref_set_decomp_n,
                 ref_set_decomp_m,
                 num_bin_members,
-                tx_extra)
+                tx_extra_size)
         };
 
     // subtract balance proof size and add its weight
@@ -202,7 +202,7 @@ std::size_t sp_tx_squashed_v1_weight(const SpTxSquashedV1 &tx)
         ref_set_decomp_n,
         ref_set_decomp_m,
         num_bin_members,
-        tx.tx_supplement.tx_extra);
+        tx.tx_supplement.tx_extra.size());
 }
 //-------------------------------------------------------------------------------------------------------------------
 void get_sp_tx_squashed_v1_txid(const SpTxSquashedV1 &tx, rct::key &tx_id_out)

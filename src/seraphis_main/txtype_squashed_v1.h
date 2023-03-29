@@ -109,7 +109,7 @@ std::size_t sp_tx_squashed_v1_size_bytes(const std::size_t num_legacy_inputs,
     const std::size_t ref_set_decomp_n,
     const std::size_t ref_set_decomp_m,
     const std::size_t num_bin_members,
-    const TxExtra &tx_extra);
+    const std::size_t tx_extra_size);
 /// get size of the tx (assuming compact components)
 std::size_t sp_tx_squashed_v1_size_bytes(const SpTxSquashedV1 &tx);
 /// get weight of a possible tx (assuming compact components)
@@ -120,7 +120,7 @@ std::size_t sp_tx_squashed_v1_weight(const std::size_t num_legacy_inputs,
     const std::size_t ref_set_decomp_n,
     const std::size_t ref_set_decomp_m,
     const std::size_t num_bin_members,
-    const TxExtra &tx_extra);
+    const std::size_t tx_extra_size);
 /// get weight of the tx (assuming compact components)
 std::size_t sp_tx_squashed_v1_weight(const SpTxSquashedV1 &tx);
 

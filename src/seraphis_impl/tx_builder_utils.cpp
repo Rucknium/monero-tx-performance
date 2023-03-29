@@ -99,7 +99,7 @@ bool try_prepare_inputs_and_outputs_for_transfer_v1(const jamtis::JamtisDestinat
     // 2. separate into legacy and seraphis inputs
     split_selected_input_set(selected_input_set, legacy_contextual_inputs_out, sp_contextual_inputs_out);
 
-    // 3.  get total input amount
+    // 3. get total input amount
     const boost::multiprecision::uint128_t total_input_amount{
             total_amount(legacy_contextual_inputs_out) +
             total_amount(sp_contextual_inputs_out)

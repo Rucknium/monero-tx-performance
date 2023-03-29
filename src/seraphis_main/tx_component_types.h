@@ -218,7 +218,7 @@ void append_to_transcript(const SpTxSupplementV1 &container, SpTranscriptBuilder
 
 /// get the size in bytes
 std::size_t sp_tx_supplement_v1_size_bytes(const std::size_t num_outputs,
-    const TxExtra &tx_extra,
+    const std::size_t tx_extra_size,
     const bool use_shared_ephemeral_key_assumption);
 std::size_t sp_tx_supplement_v1_size_bytes(const SpTxSupplementV1 &tx_supplement);
 

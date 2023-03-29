@@ -56,7 +56,7 @@
 namespace sp
 {
 //-------------------------------------------------------------------------------------------------------------------
-std::size_t sp_tx_coinbase_v1_size_bytes(const std::size_t num_outputs, const TxExtra &tx_extra)
+std::size_t sp_tx_coinbase_v1_size_bytes(const std::size_t num_outputs, const std::size_t tx_extra_size)
 {
     // size of the transaction as represented in C++
     std::size_t size{0};
@@ -68,24 +68,24 @@ std::size_t sp_tx_coinbase_v1_size_bytes(const std::size_t num_outputs, const Tx
     size += num_outputs * sp_coinbase_enote_v1_size_bytes();
 
     // extra data in tx
-    size += sp_tx_supplement_v1_size_bytes(num_outputs, tx_extra, false);  //without shared ephemeral pubkey assumption
+    size += sp_tx_supplement_v1_size_bytes(num_outputs, tx_extra_size, false);  //without shared ephemeral pubkey assumption
 
     return size;
 }
 //-------------------------------------------------------------------------------------------------------------------
 std::size_t sp_tx_coinbase_v1_size_bytes(const SpTxCoinbaseV1 &tx)
 {
-    return sp_tx_coinbase_v1_size_bytes(tx.outputs.size(), tx.tx_supplement.tx_extra);
+    return sp_tx_coinbase_v1_size_bytes(tx.outputs.size(), tx.tx_supplement.tx_extra.size());
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::size_t sp_tx_coinbase_v1_weight(const std::size_t num_outputs, const TxExtra &tx_extra)
+std::size_t sp_tx_coinbase_v1_weight(const std::size_t num_outputs, const std::size_t tx_extra_size)
 {
-    return sp_tx_coinbase_v1_size_bytes(num_outputs, tx_extra);
+    return sp_tx_coinbase_v1_size_bytes(num_outputs, tx_extra_size);
 }
 //-------------------------------------------------------------------------------------------------------------------
 std::size_t sp_tx_coinbase_v1_weight(const SpTxCoinbaseV1 &tx)
 {
-    return sp_tx_coinbase_v1_weight(tx.outputs.size(), tx.tx_supplement.tx_extra);
+    return sp_tx_coinbase_v1_weight(tx.outputs.size(), tx.tx_supplement.tx_extra.size());
 }
 //-------------------------------------------------------------------------------------------------------------------
 void get_sp_tx_coinbase_v1_txid(const SpTxCoinbaseV1 &tx, rct::key &tx_id_out)
