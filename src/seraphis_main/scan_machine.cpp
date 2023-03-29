@@ -66,40 +66,39 @@ enum class ContiguityCheckResult : unsigned char
 //-------------------------------------------------------------------------------------------------------------------
 // reorg avoidance depth: this is the number of extra blocks to scan below our desired start index in case there was a
 //   reorg affecting blocks lower than that start index
-// - we use an exponential back-off as a function of fullscan attempts because if a fullscan fails then
-//   the true location of alignment divergence is unknown; the distance between the desired start index and the
-//   lowest scannable index may be very large, so if a fixed back-off were used it could take many fullscan attempts
-//   to find the point of divergence
+// - we use an exponential back-off because if a fullscan fails then the true location of alignment divergence is
+//   unknown; the distance between the desired start index and the lowest scannable index may be very large, so if a
+//   fixed back-off were used it could take many fullscan attempts to find the point of divergence
 //-------------------------------------------------------------------------------------------------------------------
 static std::uint64_t get_reorg_avoidance_depth(const std::uint64_t reorg_avoidance_increment,
-    const std::uint64_t completed_fullscan_attempts)
+    const std::uint64_t num_reorg_avoidance_backoffs)
 {
     // 1. start at a depth of zero
-    // - this avoids accidentally reorging your data store if the scanning backend only has a portion
+    // - this allows us to avoid accidentally reorging your data store if the scanning backend only has a portion
     //   of the blocks in your initial reorg avoidance depth range available when 'get chunk' is called (in the case
     //   where there wasn't actually a reorg and the backend is just catching up)
-    if (completed_fullscan_attempts == 0)
+    if (num_reorg_avoidance_backoffs == 0)
         return 0;
 
     // 2. check that the increment is not 0
-    // - check this after one fullscan attempt to support unit tests that set the increment to 0
+    // - check this after one backoff to support unit tests that set the increment to 0
     CHECK_AND_ASSERT_THROW_MES(reorg_avoidance_increment > 0,
-        "seraphis scan state machine (get reorg avoidance depth): tried more than one fullscan with zero reorg "
-        "avoidance increment.");
+        "seraphis scan state machine (get reorg avoidance depth): requested a reorg avoidance backoff with zero "
+        "reorg avoidance increment.");
 
-    // 3. 10 ^ (fullscan attempts - 1) * increment
-    return math::saturating_mul(math::uint_pow(10, completed_fullscan_attempts - 1), reorg_avoidance_increment, -1);
+    // 3. 10 ^ (num requests - 1) * increment
+    return math::saturating_mul(math::uint_pow(10, num_reorg_avoidance_backoffs - 1), reorg_avoidance_increment, -1);
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static std::uint64_t get_estimated_start_scan_index(const std::uint64_t reorg_avoidance_increment,
-    const std::uint64_t completed_fullscan_attempts,
+    const std::uint64_t num_reorg_avoidance_backoffs,
     const std::uint64_t lowest_scannable_index,
     const std::uint64_t desired_start_index)
 {
     // 1. set reorg avoidance depth
     const std::uint64_t reorg_avoidance_depth{
-            get_reorg_avoidance_depth(reorg_avoidance_increment, completed_fullscan_attempts)
+            get_reorg_avoidance_depth(reorg_avoidance_increment, num_reorg_avoidance_backoffs)
         };
 
     // 2. initial block to scan = max(desired first block - reorg depth, chunk consumer's min scan index)
@@ -107,16 +106,26 @@ static std::uint64_t get_estimated_start_scan_index(const std::uint64_t reorg_av
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static void set_initial_contiguity_marker(const ChunkConsumer &chunk_consumer,
-    const std::uint64_t estimated_start_scan_index,
+static void set_initial_contiguity_marker(const std::uint64_t reorg_avoidance_increment,
+    const std::uint64_t num_reorg_avoidance_backoffs,
+    const ChunkConsumer &chunk_consumer,
     ContiguityMarker &contiguity_marker_out)
 {
-    // our initial point of contiguity is the consumer's block nearest to the block < our estimated start index,
+    // 1. get index of the first block we want to scan
+    // - this is only an estimate since the chunk consumer may not have the block at this exact index cached
+    const std::uint64_t estimated_start_scan_index{
+            get_estimated_start_scan_index(reorg_avoidance_increment,
+                num_reorg_avoidance_backoffs,
+                chunk_consumer.refresh_index(),
+                chunk_consumer.desired_first_block())
+        };
+
+    // 2. set our initial point of contiguity is the consumer's block nearest to the block < our estimated start index,
     //   or the consumer's prefix block
     contiguity_marker_out = chunk_consumer.get_nearest_block(estimated_start_scan_index - 1);
 
     CHECK_AND_ASSERT_THROW_MES(contiguity_marker_out.block_index + 1 >= chunk_consumer.refresh_index(),
-        "sp scan machine (set initial contiguity marker): contiguity marker is below refresh index.");
+        "sp scan machine (set initial contiguity marker): contiguity marker is too far below refresh index.");
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -124,7 +133,7 @@ static bool contiguity_check(const ContiguityMarker &marker_A, const ContiguityM
 {
     // 1. a marker with unspecified block id is contiguous with all markers below and equal to its index (but not
     //    contiguous with markers above it)
-    // note: this rule exists so that if the chain index is below our start index, we will be considered
+    // note: this rule exists so that if the chain's top block is below our refresh index, we will be considered
     //       contiguous with it and won't erroneously think we have encountered a reorg (i.e. a broken contiguity);
     //       to see why that matters, change the '<=' to '==' then step through the unit tests that break
     if (!marker_A.block_id &&
@@ -277,7 +286,7 @@ static ScanMachineState handle_nonempty_chunk(const ScanMachineMetadata &metadat
     const ChunkContext &chunk_context{ledger_chunk.get_context()};
 
     // 1. verify this is a non-empty chunk
-    CHECK_AND_ASSERT_THROW_MES(!chunk_is_empty(ledger_chunk),
+    CHECK_AND_ASSERT_THROW_MES(!chunk_context_is_empty(chunk_context),
         "seraphis scan state machine (handle nonempty chunk): chunk is empty unexpectedly.");
 
     // 2. check if this chunk is contiguous with the contiguity marker
@@ -302,8 +311,8 @@ static ScanMachineState handle_nonempty_chunk(const ScanMachineMetadata &metadat
 
     // 5. validate chunk semantics
     // - do this after checking the new chunk's scan status in case the chunk data is deferred; we don't want to block
-    //   on getting the data until we know we will need it
-    check_ledger_chunk_semantics_v1(ledger_chunk, contiguity_marker.block_index);
+    //   on accessing the data until we know we will need it
+    check_ledger_chunk_semantics(ledger_chunk, contiguity_marker.block_index);
 
     // 6. consume the chunk if it's not empty
     // - if the chunk is empty after aligning, that means our chunk consumer already knows about the entire span
@@ -346,7 +355,7 @@ static ScanMachineState handle_empty_chunk(const ScanMachineMetadata &metadata,
     const ChunkContext &chunk_context{ledger_chunk.get_context()};
 
     // 1. verify that the chunk obtained is an empty chunk representing the top of the current blockchain
-    CHECK_AND_ASSERT_THROW_MES(chunk_is_empty(chunk_context),
+    CHECK_AND_ASSERT_THROW_MES(chunk_context_is_empty(chunk_context),
         "seraphis scan state machine (handle empty chunk): chunk is not empty as expected.");
 
     // 2. check if the scan process is aborted
@@ -401,7 +410,15 @@ static ScanMachineState do_scan_pass(const ScanMachineMetadata &metadata,
     }
 
     // 2. handle the chunk and return the next machine state
-    if (chunk_is_empty(*new_chunk))
+    if (!chunk_context_is_empty(new_chunk->get_context()))
+    {
+        return handle_nonempty_chunk(metadata,
+            first_contiguity_index,
+            *new_chunk,
+            contiguity_marker,
+            chunk_consumer_inout);
+    }
+    else
     {
         return handle_empty_chunk(metadata,
             first_contiguity_index,
@@ -410,39 +427,23 @@ static ScanMachineState do_scan_pass(const ScanMachineMetadata &metadata,
             scanning_context_inout,
             chunk_consumer_inout);
     }
-    else
-    {
-        return handle_nonempty_chunk(metadata,
-            first_contiguity_index,
-            *new_chunk,
-            contiguity_marker,
-            chunk_consumer_inout);
-    }
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static ScanMachineState handle_need_fullscan(const ScanMachineNeedFullscan &state, const ChunkConsumer &chunk_consumer)
 {
-    // 1. get index of the first block we want to scan
-    // - this is only an estimate since the chunk consumer may not have the block at this exact index cached
-    ScanMachineMetadata next_metadata{state.metadata};
-
-    const std::uint64_t estimated_start_scan_index{
-            get_estimated_start_scan_index(next_metadata.config.reorg_avoidance_increment,
-                next_metadata.fullscan_attempts,
-                chunk_consumer.refresh_index(),
-                chunk_consumer.desired_first_block())
-        };
-
-    // 2. set initial contiguity marker
-    // - this starts as the prefix of the first block to scan, and should either be known to the chunk consumer
-    //   or have an unspecified block id
+    // 1. set initial contiguity marker
     ContiguityMarker start_scan_contiguity_marker;
-    set_initial_contiguity_marker(chunk_consumer, estimated_start_scan_index, start_scan_contiguity_marker);
+    set_initial_contiguity_marker(state.metadata.config.reorg_avoidance_increment,
+        state.metadata.fullscan_attempts,  //exponential backoff as function of fullscan attempts, starting at 0
+        chunk_consumer,
+        start_scan_contiguity_marker);
 
-    // 3. record the scan attempt
+    // 2. record this scan attempt
+    ScanMachineMetadata next_metadata{state.metadata};
     next_metadata.fullscan_attempts += 1;
 
+    // 3. fail if we have exceeded the max number of full scanning attempts (we appear to be in an infinite loop)
     if (next_metadata.fullscan_attempts > 50)
     {
         LOG_ERROR("scan state machine (handle need fullscan): fullscan attempts exceeded 50 (sanity check fail).");
@@ -460,32 +461,23 @@ static ScanMachineState handle_need_fullscan(const ScanMachineNeedFullscan &stat
 static ScanMachineState handle_need_partialscan(const ScanMachineNeedPartialscan &state,
     const ChunkConsumer &chunk_consumer)
 {
-    // 1. get index of the first block we want to scan
-    ScanMachineMetadata next_metadata{state.metadata};
-
-    const std::uint64_t estimated_start_scan_index{
-            get_estimated_start_scan_index(next_metadata.config.reorg_avoidance_increment,
-                1,  //in partial scans always back off by just one reorg avoidance increment
-                chunk_consumer.refresh_index(),
-                chunk_consumer.desired_first_block())
-        };
-
-    // 2. set initial contiguity marker
-    // - this starts as the prefix of the first block to scan, and should either be known to the chunk consumer
-    //   or have an unspecified block id
+    // 1. set initial contiguity marker
     ContiguityMarker start_scan_contiguity_marker;
-    set_initial_contiguity_marker(chunk_consumer, estimated_start_scan_index, start_scan_contiguity_marker);
+    set_initial_contiguity_marker(state.metadata.config.reorg_avoidance_increment,
+        1,  //in partial scans always back off by just one reorg avoidance increment
+        chunk_consumer,
+        start_scan_contiguity_marker);
 
-    // 3. record the scan attempt
+    // 2. record this scan attempt
+    ScanMachineMetadata next_metadata{state.metadata};
     next_metadata.partialscan_attempts += 1;
 
-    // 4. prepare the next state
-    // a. fail if we have exceeded the max number of partial scanning attempts (i.e. too many reorgs were detected,
+    // 3. fail if we have exceeded the max number of partial scanning attempts (i.e. too many reorgs were detected,
     //    so now we abort)
     if (next_metadata.partialscan_attempts > next_metadata.config.max_partialscan_attempts)
         return ScanMachineTerminated{ .result = ScanMachineResult::FAIL };
 
-    // 5. return the next state
+    // 4. return the next state
     return ScanMachineStartScan{
             .metadata          = next_metadata,
             .contiguity_marker = start_scan_contiguity_marker

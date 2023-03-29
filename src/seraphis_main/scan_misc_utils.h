@@ -61,15 +61,19 @@ namespace scanning
 */
 std::size_t chunk_size(const ChunkContext &chunk_context);
 /**
-* brief: chunk_is_empty - check if a chunk is empty (has no records)
-* ...
-* return: true if the chunk is empty
+* brief: chunk_data_is_empty - check if a chunk data is empty (contains no records)
+* param: chunk_data -
+* return: true if the chunk data is empty
 */
-bool chunk_is_empty(const ChunkData &chunk_data);
-bool chunk_is_empty(const ChunkContext &chunk_context);
-bool chunk_is_empty(const LedgerChunk &chunk);
+bool chunk_data_is_empty(const ChunkData &chunk_data);
 /**
-* brief: check_chunk_data_semantics_v1 - check semantics of chunk data
+* brief: chunk_is_empty - check if a chunk context is empty (refers to no blocks)
+* param: chunk_context -
+* return: true if the chunk context is empty
+*/
+bool chunk_context_is_empty(const ChunkContext &chunk_context);
+/**
+* brief: check_chunk_data_semantics - check semantics of chunk data
 *   - throws on failure
 * param: chunk_data -
 * param: expected_origin_status -
@@ -77,18 +81,19 @@ bool chunk_is_empty(const LedgerChunk &chunk);
 * param: allowed_lowest_index - lowest block index allowed in chunk data (e.g. origin block, spent block)
 * param: allowed_highest_index - highest block index allowed in chunk data (e.g. origin block, spent block)
 */
-void check_chunk_data_semantics_v1(const ChunkData &chunk_data,
+void check_chunk_data_semantics(const ChunkData &chunk_data,
     const SpEnoteOriginStatus expected_origin_status,
     const SpEnoteSpentStatus expected_spent_status,
     const std::uint64_t allowed_lowest_index,
     const std::uint64_t allowed_highest_index);
 /**
-* brief: check_ledger_chunk_semantics_v1 - check semantics of an on-chain chunk
+* brief: check_ledger_chunk_semantics - check semantics of an on-chain chunk
+*   - expects the chunk context to be non-empty
 *   - throws on failure
 * param: ledger_chunk -
 * param: expected_prefix_index -
 */
-void check_ledger_chunk_semantics_v1(const LedgerChunk &ledger_chunk, const std::uint64_t expected_prefix_index);
+void check_ledger_chunk_semantics(const LedgerChunk &ledger_chunk, const std::uint64_t expected_prefix_index);
 /**
 * brief: initialize_scan_machine_metadata - initialize scan machine metadata with a specified configuration
 * param: scan_config -

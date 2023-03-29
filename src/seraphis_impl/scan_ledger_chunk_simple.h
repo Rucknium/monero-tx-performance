@@ -63,7 +63,7 @@ public:
         m_data{},
         m_subconsumer_ids{rct::zero()}
     {
-        CHECK_AND_ASSERT_THROW_MES(chunk_is_empty(context), "empty ledger chunk: chunk is not empty.");
+        CHECK_AND_ASSERT_THROW_MES(chunk_context_is_empty(context), "empty ledger chunk: chunk is not empty.");
     }
 
     const ChunkContext& get_context()              const override { return m_context;         }

@@ -53,31 +53,18 @@ std::size_t chunk_size(const ChunkContext &chunk_context)
     return chunk_context.block_ids.size();
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool chunk_is_empty(const ChunkData &chunk_data)
+bool chunk_data_is_empty(const ChunkData &chunk_data)
 {
     return chunk_data.basic_records_per_tx.size() == 0 &&
         chunk_data.contextual_key_images.size() == 0;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool chunk_is_empty(const ChunkContext &chunk_context)
+bool chunk_context_is_empty(const ChunkContext &chunk_context)
 {
     return chunk_size(chunk_context) == 0;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool chunk_is_empty(const LedgerChunk &chunk)
-{
-    if (!chunk_is_empty(chunk.get_context()))
-        return false;
-    for (const rct::key &subconsumer_id : chunk.subconsumer_ids())
-    {
-        CHECK_AND_ASSERT_THROW_MES(!chunk.try_get_data(subconsumer_id) || chunk_is_empty(*chunk.try_get_data(subconsumer_id)),
-            "scan machine chunk: context indicates an empty chunk but the data is not empty.");
-    }
-
-    return true;
-}
-//-------------------------------------------------------------------------------------------------------------------
-void check_chunk_data_semantics_v1(const ChunkData &chunk_data,
+void check_chunk_data_semantics(const ChunkData &chunk_data,
     const SpEnoteOriginStatus expected_origin_status,
     const SpEnoteSpentStatus expected_spent_status,
     const std::uint64_t allowed_lowest_index,
@@ -134,15 +121,15 @@ void check_chunk_data_semantics_v1(const ChunkData &chunk_data,
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-void check_ledger_chunk_semantics_v1(const LedgerChunk &ledger_chunk, const std::uint64_t expected_prefix_index)
+void check_ledger_chunk_semantics(const LedgerChunk &ledger_chunk, const std::uint64_t expected_prefix_index)
 {
     // 1. check context semantics
     CHECK_AND_ASSERT_THROW_MES(ledger_chunk.get_context().start_index - 1 == expected_prefix_index,
-        "check ledger chunk semantics (v1): chunk range doesn't start at expected prefix index.");
+        "check ledger chunk semantics: chunk range doesn't start at expected prefix index.");
 
     const std::uint64_t num_blocks_in_chunk{ledger_chunk.get_context().block_ids.size()};
     CHECK_AND_ASSERT_THROW_MES(num_blocks_in_chunk >= 1,
-        "check ledger chunk semantics (v1): chunk has no blocks.");    
+        "check ledger chunk semantics: chunk has no blocks.");    
 
     // 2. get start and end block indices
     // - start block = prefix block + 1
@@ -156,10 +143,10 @@ void check_ledger_chunk_semantics_v1(const LedgerChunk &ledger_chunk, const std:
         // a. extract the chunk data
         const ChunkData *chunk_data{ledger_chunk.try_get_data(subconsumer_id)};
         CHECK_AND_ASSERT_THROW_MES(chunk_data,
-            "check ledger chunk semantics (v1): could not get chunk data for subconsumer.");
+            "check ledger chunk semantics: could not get chunk data for subconsumer.");
 
         // b. check the chunk data semantics
-        check_chunk_data_semantics_v1(*chunk_data,
+        check_chunk_data_semantics(*chunk_data,
             SpEnoteOriginStatus::ONCHAIN,
             SpEnoteSpentStatus::SPENT_ONCHAIN,
             allowed_lowest_index,

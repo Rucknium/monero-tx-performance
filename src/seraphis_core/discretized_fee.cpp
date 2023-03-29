@@ -51,7 +51,7 @@ namespace sp
 {
 
 /// discretized fee context: set of <encoding, value> pairs
-struct DiscretizedFeeContext
+struct DiscretizedFeeContext final
 {
     std::vector<discretized_fee_encoding_t> fee_encodings;
     std::vector<std::uint64_t> value_encodings;

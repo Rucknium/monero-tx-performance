@@ -60,14 +60,14 @@ bool refresh_enote_store_nonledger(const SpEnoteOriginStatus expected_origin_sta
         scanning::ChunkData nonledger_chunk;
         scanning_context_inout.get_nonledger_chunk(nonledger_chunk);
 
-        scanning::check_chunk_data_semantics_v1(nonledger_chunk, expected_origin_status, expected_spent_status, 0, -1);
+        scanning::check_chunk_data_semantics(nonledger_chunk, expected_origin_status, expected_spent_status, 0, -1);
 
         // 2. check if the scan context was aborted
         // - don't consume chunk if aborted and chunk is empty (it may not represent the real state of the nonledger
         //   cache)
         // - consume chunk if aborted and chunk is non-empty (it's possible for a scan context to be aborted after
         //   acquiring a chunk)
-        if (scanning::chunk_is_empty(nonledger_chunk) &&
+        if (scanning::chunk_data_is_empty(nonledger_chunk) &&
             scanning_context_inout.is_aborted())
             return false;
 
