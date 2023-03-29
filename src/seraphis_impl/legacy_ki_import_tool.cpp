@@ -34,11 +34,13 @@
 #include "misc_log_ex.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_impl/enote_store.h"
+#include "seraphis_impl/enote_store_event_types.h"
 #include "seraphis_main/contextual_enote_record_types.h"
 
 //third party headers
 
 //standard headers
+#include <list>
 #include <map>
 #include <unordered_map>
 
@@ -51,33 +53,31 @@ namespace sp
 void make_legacy_ki_import_checkpoint(const SpEnoteStore &enote_store, LegacyKIImportCheckpoint &checkpoint_out)
 {
     // 1. get the enote store's last legacy partialscanned block
-    const std::uint64_t intermediate_index_pre_import_cycle{
+    const std::uint64_t partialscan_index_pre_import_cycle{
             enote_store.top_legacy_partialscanned_block_index()
         };
 
     // 2. get the enote store's last legacy fullscanned block
-    const std::uint64_t full_index_pre_import_cycle{
+    const std::uint64_t fullscan_index_pre_import_cycle{
             enote_store.top_legacy_fullscanned_block_index()
         };
-    CHECK_AND_ASSERT_THROW_MES(full_index_pre_import_cycle + 1 <= intermediate_index_pre_import_cycle + 1,
-        "make legacy ki import checkpoint: fullscanned block is higher than intermediate scanned block.");
+    CHECK_AND_ASSERT_THROW_MES(fullscan_index_pre_import_cycle + 1 <= partialscan_index_pre_import_cycle + 1,
+        "make legacy ki import checkpoint: fullscanned block is higher than partialscanned block.");
 
-    // 3. get the highest block known by the enote store that MIGHT have a fullscanned block ID checkpoint
+    // 3. get the lowest block that the enote store needs to fullscan
     const std::uint64_t legacy_refresh_index{enote_store.legacy_refresh_index()};
-    const std::uint64_t top_potential_fullscanned_index{
-            std::max(full_index_pre_import_cycle + 1, legacy_refresh_index + 1) - 1
+    const std::uint64_t first_new_index_for_fullscan{
+            std::max(fullscan_index_pre_import_cycle + 1, legacy_refresh_index)
         };
 
     // 4. save block id checkpoints within range of partialscanned blocks we are trying to update
-    // - range: any block <= our lowest partialscanned-only block TO our last partialscanned-only block
+    // - range: any block <= the first block to fullscan TO our last partialscanned-only block
     checkpoint_out.block_id_checkpoints.clear();
 
-    for (std::uint64_t block_index{
-                enote_store.nearest_legacy_partialscanned_block_index(top_potential_fullscanned_index)
-            };
-        block_index != enote_store.legacy_refresh_index() - 1 &&
-            block_index != static_cast<std::uint64_t>(-1) &&
-            block_index + 1 <= intermediate_index_pre_import_cycle + 1;  //maybe redundant, better to be safe
+    for (std::uint64_t block_index{enote_store.nearest_legacy_partialscanned_block_index(first_new_index_for_fullscan)};
+        block_index != enote_store.legacy_refresh_index() - 1         &&  //can happen if we never did ANY legacy scanning
+            block_index + 1 <= partialscan_index_pre_import_cycle + 1 &&  //shouldn't ever fail; better safe than sorry
+            block_index != static_cast<std::uint64_t>(-1);                //end condition
         block_index = enote_store.next_legacy_partialscanned_block_index(block_index))
     {
         CHECK_AND_ASSERT_THROW_MES(enote_store.try_get_block_id_for_legacy_partialscan(block_index,

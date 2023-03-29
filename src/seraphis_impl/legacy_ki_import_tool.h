@@ -26,25 +26,23 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Tool for supporting a legacy key image import cycle.
 // PROCESS:
-// 1. update your enote store with a legacy intermediate view scan: SCAN MODE
+// 1. update your enote store with a legacy intermediate view scan in SCAN MODE
 // 2. TOOL: make an import cycle checkpoint with an atomic read-lock on your enote store
 // 3. obtain key images for the intermediate records stored in the checkpoint
 //    - no invariants will be broken if only some of the key images are obtained, however that may cause the enote
-//      store to have an intermediate legacy balance that is higher than unexpected after the cycle
+//      store to have an intermediate legacy balance that is higher than expected after the cycle
 // 4. TOOL: import the key images to your enote store
-// 5. update your enote store with a legacy intermediate view scan: KEY IMAGES ONLY MODE
+// 5. update your enote store with a legacy intermediate view scan in KEY IMAGES ONLY MODE
 //    - this is needed to see if any of the imported key images exist on-chain
 // 6. TOOL: finish the import cycle with an atomic write-lock on your enote store
 //    - do this AFTER the key-images-only scan, otherwise subsequent import cycles will waste time re-doing the blocks
 //      from this import cycle
 // WARNING: this process will be less efficient if you do step 2, wait a while, do step 1 again, then finish 3-6; the
 //    reason is alignment tracking relies on block id checkpoints, and step 1 will 'thin out' older block id checkpoints
-//    in the enote store making it possible for failed alignment checks when finalizing an import cycle; the end effect
-//    will be re-doing the import cycle for some blocks from the previous cycle
+//    in the enote store, making it possible for bad alignment checks when finalizing an import cycle; the end effect
+//    will be the next import cycle will redo some blocks from the previous cycle
 
 #pragma once
 
@@ -97,7 +95,8 @@ void import_legacy_key_images(const std::unordered_map<crypto::public_key, crypt
     SpEnoteStore &enote_store_inout,
     std::list<EnoteStoreEvent> &update_events_out);
 /**
-* brief: finish_legacy_ki_import_cycle - finish a legacy key image import cycle
+* brief: finish_legacy_ki_import_cycle - finish a legacy key image import cycle by updating the enote store's
+*    cached fullscan index
 * param: checkpoint -
 * inoutparam: enote_store_inout -
 */
