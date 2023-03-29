@@ -235,6 +235,11 @@ bool has_origin_status(const LegacyContextualEnoteRecordV1 &record, const SpEnot
     return record.origin_context.origin_status == test_status;
 }
 //-------------------------------------------------------------------------------------------------------------------
+bool has_origin_status(const SpContextualIntermediateEnoteRecordV1 &record, const SpEnoteOriginStatus test_status)
+{
+    return record.origin_context.origin_status == test_status;
+}
+//-------------------------------------------------------------------------------------------------------------------
 bool has_origin_status(const SpContextualEnoteRecordV1 &record, const SpEnoteOriginStatus test_status)
 {
     return record.origin_context.origin_status == test_status;

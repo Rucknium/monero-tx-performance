@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Enote store for a seraphis 'payment validator' that can read the amounts and destinations of incoming normal enotes.
 
 #pragma once
@@ -53,7 +51,7 @@ namespace sp
 
 ////
 // SpEnoteStorePaymentValidator
-// - tracks amounts and destinations of non-selfsend seraphis owned enotes
+// - tracks amounts and destinations of normal seraphis owned enotes (selfsends are not tracked)
 ///
 class SpEnoteStorePaymentValidator final
 {
@@ -71,20 +69,20 @@ public:
             );
 
 //member functions
-    /// get index of first block the enote store cares about
+    /// get index of the first block the enote store cares about
     std::uint64_t refresh_index() const { return m_sp_block_id_cache.min_checkpoint_index(); }
-    /// get index of highest recorded block (refresh index - 1 if no recorded blocks) (highest block PayVal-scanned)
+    /// get index of the highest cached block (refresh index - 1 if no cached blocks)
     std::uint64_t top_block_index() const { return m_sp_block_id_cache.top_block_index(); }
-    /// config: get default spendable age
+    /// get the default spendable age (config value)
     std::uint64_t default_spendable_age() const { return m_default_spendable_age; }
     /// get the next cached block index > the requested index (-1 on failure)
     std::uint64_t next_sp_scanned_block_index(const std::uint64_t block_index) const;
     /// get the nearest cached block index <= the requested index (refresh index - 1 on failure)
     std::uint64_t nearest_sp_scanned_block_index(const std::uint64_t block_index) const;
-    /// try to get the recorded block id for a given index
+    /// try to get the cached block id for a given index
     bool try_get_block_id_for_sp(const std::uint64_t block_index, rct::key &block_id_out) const;
 
-    /// get the seraphis intermediate records: [ Ko, sp intermediate records ]
+    /// get the seraphis intermediate records: [ Ko : sp intermediate records ]
     const std::unordered_map<rct::key, SpContextualIntermediateEnoteRecordV1>& sp_intermediate_records() const
     { return m_sp_contextual_enote_records; }
 
@@ -110,9 +108,9 @@ private:
     /// cached block ids in range [refresh index, end of known chain]
     CheckpointCache m_sp_block_id_cache;
 
-    /// configuration value: default spendable age; an enote is considered 'spendable' in the next block if it's on-chain
-    //      and the hext index is >= 'origin index + max(1, default_spendable_age)'
-    std::uint64_t m_default_spendable_age{0};
+    /// configuration value: default spendable age; an enote is considered 'spendable' in the next block if it is
+    ///   on-chain and the next block's index is >= 'enote origin index + max(1, default_spendable_age)'
+    const std::uint64_t m_default_spendable_age;
 };
 
 } //namespace sp

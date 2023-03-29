@@ -63,12 +63,12 @@ SpEnoteStore::SpEnoteStore(const std::uint64_t refresh_index,
     const std::uint64_t first_sp_enabled_block_in_chain,
     const std::uint64_t default_spendable_age,
     const CheckpointCacheConfig &checkpoint_cache_config) :
-        m_legacy_fullscan_index    { refresh_index - 1                      },
-        m_legacy_partialscan_index { refresh_index - 1                      },
-        m_sp_scanned_index         { refresh_index - 1                      },
-        m_default_spendable_age    { default_spendable_age                  },
-        m_legacy_block_id_cache    { checkpoint_cache_config, refresh_index },
-        m_sp_block_id_cache        { checkpoint_cache_config, std::max(refresh_index, first_sp_enabled_block_in_chain) }
+        m_legacy_block_id_cache    { checkpoint_cache_config, refresh_index                                            },
+        m_sp_block_id_cache        { checkpoint_cache_config, std::max(refresh_index, first_sp_enabled_block_in_chain) },
+        m_legacy_fullscan_index    { refresh_index - 1     },
+        m_legacy_partialscan_index { refresh_index - 1     },
+        m_sp_scanned_index         { refresh_index - 1     },
+        m_default_spendable_age    { default_spendable_age }
 {}
 //-------------------------------------------------------------------------------------------------------------------
 std::uint64_t SpEnoteStore::legacy_refresh_index() const
@@ -839,8 +839,7 @@ void SpEnoteStore::clean_maps_for_legacy_ledger_update(const std::uint64_t first
         [&](const auto &mapped_contextual_enote_record) -> bool
         {
             // a. ignore off-chain records
-            if (mapped_contextual_enote_record.second.origin_context.origin_status !=
-                    SpEnoteOriginStatus::ONCHAIN)
+            if (!has_origin_status(mapped_contextual_enote_record.second, SpEnoteOriginStatus::ONCHAIN))
                 return false;
 
             // b. ignore onchain enotes outside of range [first_new_block, end of chain]
@@ -995,8 +994,7 @@ void SpEnoteStore::clean_maps_for_sp_ledger_update(const std::uint64_t first_new
             [&](const auto &mapped_contextual_enote_record) -> bool
             {
                 // a. ignore off-chain records
-                if (mapped_contextual_enote_record.second.origin_context.origin_status !=
-                        SpEnoteOriginStatus::ONCHAIN)
+                if (!has_origin_status(mapped_contextual_enote_record.second, SpEnoteOriginStatus::ONCHAIN))
                     return false;
 
                 // b. ignore onchain enotes outside of range [first_new_block, end of chain]

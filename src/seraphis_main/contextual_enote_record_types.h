@@ -293,6 +293,7 @@ bool have_same_destination(const SpContextualEnoteRecordV1 &a, const SpContextua
 /// check origin status
 bool has_origin_status(const LegacyContextualIntermediateEnoteRecordV1 &record, const SpEnoteOriginStatus test_status);
 bool has_origin_status(const LegacyContextualEnoteRecordV1 &record, const SpEnoteOriginStatus test_status);
+bool has_origin_status(const SpContextualIntermediateEnoteRecordV1 &record, const SpEnoteOriginStatus test_status);
 bool has_origin_status(const SpContextualEnoteRecordV1 &record, const SpEnoteOriginStatus test_status);
 /// check spent status
 bool has_spent_status(const LegacyContextualEnoteRecordV1 &record, const SpEnoteSpentStatus test_status);

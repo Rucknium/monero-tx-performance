@@ -26,8 +26,6 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 //paired header
 #include "enote_store_payment_validator.h"
 
@@ -43,14 +41,8 @@
 //third party headers
 
 //standard headers
-#include <algorithm>
-#include <ctime>
-#include <functional>
-#include <iterator>
-#include <map>
 #include <unordered_map>
 #include <unordered_set>
-#include <utility>
 
 #undef MONERO_DEFAULT_LOG_CATEGORY
 #define MONERO_DEFAULT_LOG_CATEGORY "seraphis_impl"
@@ -61,8 +53,8 @@ namespace sp
 SpEnoteStorePaymentValidator::SpEnoteStorePaymentValidator(const std::uint64_t refresh_index,
     const std::uint64_t default_spendable_age,
     const CheckpointCacheConfig &checkpoint_cache_config) :
-        m_default_spendable_age{default_spendable_age},
-        m_sp_block_id_cache{checkpoint_cache_config, refresh_index}
+        m_sp_block_id_cache     { checkpoint_cache_config, refresh_index },
+        m_default_spendable_age { default_spendable_age                  }
 {}
 //-------------------------------------------------------------------------------------------------------------------
 std::uint64_t SpEnoteStorePaymentValidator::next_sp_scanned_block_index(const std::uint64_t block_index) const
@@ -106,14 +98,16 @@ void SpEnoteStorePaymentValidator::update_with_sp_records_from_nonledger(
 
     // 1. remove records that will be replaced
     tools::for_all_in_map_erase_if(m_sp_contextual_enote_records,
-            [&](const auto &mapped_contextual_enote_record) -> bool
+            [nonledger_origin_status, &events_inout](const auto &mapped_contextual_enote_record) -> bool
             {
-                // ignore enotes that don't have our specified origin
+                // a. ignore enotes that don't have our specified origin
                 if (mapped_contextual_enote_record.second.origin_context.origin_status != nonledger_origin_status)
                     return false;
 
+                // b. save the onetime address of the record being removed
                 events_inout.emplace_back(RemovedSpIntermediateRecord{mapped_contextual_enote_record.first});
 
+                // c. remove the record
                 return true;
             }
         );
@@ -142,26 +136,21 @@ void SpEnoteStorePaymentValidator::update_with_sp_records_from_ledger(const rct:
 
     // 2. remove records that will be replaced
     tools::for_all_in_map_erase_if(m_sp_contextual_enote_records,
-            [&](const auto &mapped_contextual_enote_record) -> bool
+            [first_new_block, &events_inout](const auto &mapped_contextual_enote_record) -> bool
             {
-                // a. remove onchain enotes in range [first_new_block, end of chain]
-                if (mapped_contextual_enote_record.second.origin_context.origin_status ==
-                        SpEnoteOriginStatus::ONCHAIN &&
-                    mapped_contextual_enote_record.second.origin_context.block_index >= first_new_block)
-                {
-                    events_inout.emplace_back(RemovedSpIntermediateRecord{mapped_contextual_enote_record.first});
-                    return true;
-                }
+                // a. ignore enotes that aren't onchain
+                if (!has_origin_status(mapped_contextual_enote_record.second, SpEnoteOriginStatus::ONCHAIN))
+                    return false;
 
-                // b. remove all unconfirmed enotes
-                if (mapped_contextual_enote_record.second.origin_context.origin_status ==
-                        SpEnoteOriginStatus::UNCONFIRMED)
-                {
-                    events_inout.emplace_back(RemovedSpIntermediateRecord{mapped_contextual_enote_record.first});
-                    return true;
-                }
+                // b. ignore enotes not in range [first_new_block, end of chain]
+                if (mapped_contextual_enote_record.second.origin_context.block_index < first_new_block)
+                    return false;
 
-                return false;
+                // c. save the onetime address of the record being removed
+                events_inout.emplace_back(RemovedSpIntermediateRecord{mapped_contextual_enote_record.first});
+
+                // d. remove the record
+                return true;
             }
         );
 
@@ -175,7 +164,7 @@ void SpEnoteStorePaymentValidator::update_with_sp_records_from_ledger(const rct:
 void SpEnoteStorePaymentValidator::add_record(const SpContextualIntermediateEnoteRecordV1 &new_record,
     std::list<PaymentValidatorStoreEvent> &events_inout)
 {
-    const rct::key record_onetime_address{onetime_address_ref(new_record)};
+    const rct::key &record_onetime_address{onetime_address_ref(new_record)};
 
     // add the record or update an existing record's origin context
     if (m_sp_contextual_enote_records.find(record_onetime_address) == m_sp_contextual_enote_records.end())
