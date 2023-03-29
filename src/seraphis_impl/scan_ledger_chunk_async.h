@@ -26,20 +26,17 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Async ledger chunk.
+// WARNING: It is potentially UB to pass an async ledger chunk to any thread not associated with the referenced
+//          threadpool.
 
 #pragma once
 
 //local headers
-#include "async/misc_utils.h"
 #include "async/threadpool.h"
-#include "misc_log_ex.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_main/scan_core_types.h"
 #include "seraphis_main/scan_ledger_chunk.h"
-#include "seraphis_main/scan_misc_utils.h"
 
 //third party headers
 
@@ -77,66 +74,37 @@ struct PendingChunkData final
 
 class AsyncLedgerChunk final : public LedgerChunk
 {
-    void wait_for_context() const
-    {
-        if (async::future_is_ready(m_pending_context.chunk_context))
-            return;
-
-        m_threadpool.work_while_waiting(m_pending_context.context_join_condition, async::DefaultPriorityLevels::MAX);
-        assert(async::future_is_ready(m_pending_context.chunk_context));  //should be ready at this point
-    }
-
-    void wait_for_data(const std::size_t pending_data_index) const
-    {
-        if (pending_data_index >= m_pending_data.size())
-            return;
-        if (async::future_is_ready(m_pending_data[pending_data_index].chunk_data))
-            return;
-
-        m_threadpool.work_while_waiting(m_pending_data[pending_data_index].data_join_condition,
-            async::DefaultPriorityLevels::MAX);
-        assert(async::future_is_ready(m_pending_data[pending_data_index].chunk_data));  //should be ready at this point
-    }
-
 public:
+//constructors
+    /// normal constructor
     AsyncLedgerChunk(async::Threadpool &threadpool,
         PendingChunkContext &&pending_context,
         std::vector<PendingChunkData> &&pending_data,
-        std::vector<rct::key> subconsumer_ids) :
-            m_threadpool{threadpool},
-            m_pending_context{std::move(pending_context)},
-            m_pending_data{std::move(pending_data)},
-            m_subconsumer_ids{std::move(subconsumer_ids)}
-    {
-        CHECK_AND_ASSERT_THROW_MES(m_pending_data.size() == m_subconsumer_ids.size(),
-            "async ledger chunk: pending data and subconsumer ids size mismatch.");
-    }
+        std::vector<rct::key> subconsumer_ids);
 
-    const ChunkContext& get_context() const override
-    {
-        this->wait_for_context();
-        return m_pending_context.chunk_context.get();
-    }
-    const ChunkData* try_get_data(const rct::key &subconsumer_id) const override
-    {
-        auto id_it = std::find(m_subconsumer_ids.begin(), m_subconsumer_ids.end(), subconsumer_id);
-        if (id_it == m_subconsumer_ids.end()) return nullptr;
-        const std::size_t pending_data_index{static_cast<size_t>(std::distance(m_subconsumer_ids.begin(), id_it))};
-
-        this->wait_for_data(pending_data_index);
-        return &(m_pending_data[pending_data_index].chunk_data.get());
-    }
-    const std::vector<rct::key>& subconsumer_ids() const override
-    {
-        return m_subconsumer_ids;
-    }
+//member functions
+    /// access the chunk context
+    const ChunkContext& get_context() const override;
+    /// access the chunk data for a specified subconsumer
+    const ChunkData* try_get_data(const rct::key &subconsumer_id) const override;
+    /// get the cached subconsumer ids associated with this chunk
+    const std::vector<rct::key>& subconsumer_ids() const override;
 
 private:
+    /// wait until the pending context is ready
+    void wait_for_context() const;
+    /// wait until the specified pending data is ready
+    void wait_for_data(const std::size_t pending_data_index) const;
+
+//member variables
     async::Threadpool &m_threadpool;
     mutable PendingChunkContext m_pending_context;
     mutable std::vector<PendingChunkData> m_pending_data;
     const std::vector<rct::key> m_subconsumer_ids;
 };
+
+//-------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------
 
 } //namespace scanning
 } //namespace sp
