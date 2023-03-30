@@ -34,9 +34,9 @@
 
 //local headers
 #include "seraphis_main/enote_finding_context.h"
+#include "seraphis_main/scan_context.h"
 #include "seraphis_main/scan_core_types.h"
 #include "seraphis_main/scan_ledger_chunk.h"
-#include "seraphis_main/scanning_context.h"
 
 //third party headers
 
@@ -52,10 +52,10 @@ namespace scanning
 {
 
 ////
-// ScanningContextNonLedgerDummy
+// ScanContextNonLedgerDummy
 // - dummy nonledger scanning context
 ///
-class ScanningContextNonLedgerDummy final : public ScanningContextNonLedger
+class ScanContextNonLedgerDummy final : public ScanContextNonLedger
 {
 public:
     void get_nonledger_chunk(ChunkData &chunk_out) override { chunk_out = ChunkData{}; }
@@ -63,20 +63,20 @@ public:
 };
 
 ////
-// ScanningContextNonLedgerSimple
+// ScanContextNonLedgerSimple
 // - simple implementation: synchronously obtain chunks from an enote finding context
 ///
-class ScanningContextNonLedgerSimple final : public ScanningContextNonLedger
+class ScanContextNonLedgerSimple final : public ScanContextNonLedger
 {
 public:
 //constructor
-    ScanningContextNonLedgerSimple(const EnoteFindingContextNonLedger &enote_finding_context) :
+    ScanContextNonLedgerSimple(const EnoteFindingContextNonLedger &enote_finding_context) :
         m_enote_finding_context{enote_finding_context}
     {}
 
 //overloaded operators
     /// disable copy/move (this is a scoped manager [reference wrapper])
-    ScanningContextNonLedgerSimple& operator=(ScanningContextNonLedgerSimple&&) = delete;
+    ScanContextNonLedgerSimple& operator=(ScanContextNonLedgerSimple&&) = delete;
 
 //member functions
     /// get a scanning chunk for the nonledger txs in the injected context
@@ -94,20 +94,20 @@ private:
 };
 
 ////
-// ScanningContextLedgerSimple
+// ScanContextLedgerSimple
 // - simple implementation: synchronously obtain chunks from an enote finding context
 ///
-class ScanningContextLedgerSimple final : public ScanningContextLedger
+class ScanContextLedgerSimple final : public ScanContextLedger
 {
 public:
 //constructor
-    ScanningContextLedgerSimple(const EnoteFindingContextLedger &enote_finding_context) :
+    ScanContextLedgerSimple(const EnoteFindingContextLedger &enote_finding_context) :
         m_enote_finding_context{enote_finding_context}
     {}
 
 //overloaded operators
     /// disable copy/move (this is a scoped manager [reference wrapper])
-    ScanningContextLedgerSimple& operator=(ScanningContextLedgerSimple&&) = delete;
+    ScanContextLedgerSimple& operator=(ScanContextLedgerSimple&&) = delete;
 
 //member functions
     /// start scanning from a specified block index

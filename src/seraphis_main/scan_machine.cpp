@@ -33,11 +33,11 @@
 #include "ringct/rctTypes.h"
 #include "seraphis_crypto/math_utils.h"
 #include "seraphis_main/scan_chunk_consumer.h"
+#include "seraphis_main/scan_context.h"
 #include "seraphis_main/scan_core_types.h"
 #include "seraphis_main/scan_ledger_chunk.h"
 #include "seraphis_main/scan_machine_types.h"
 #include "seraphis_main/scan_misc_utils.h"
-#include "seraphis_main/scanning_context.h"
 
 //third party headers
 
@@ -349,7 +349,7 @@ static ScanMachineState handle_empty_chunk(const ScanMachineMetadata &metadata,
     const std::uint64_t first_contiguity_index,
     const LedgerChunk &ledger_chunk,
     const ContiguityMarker &contiguity_marker,
-    ScanningContextLedger &scanning_context_inout,
+    ScanContextLedger &scan_context_inout,
     ChunkConsumer &chunk_consumer_inout)
 {
     const ChunkContext &chunk_context{ledger_chunk.get_context()};
@@ -361,7 +361,7 @@ static ScanMachineState handle_empty_chunk(const ScanMachineMetadata &metadata,
     // 2. check if the scan process is aborted
     // - when a scan process is aborted, the empty chunk returned may not represent the end of the chain, so we don't
     //   want to consume that chunk
-    if (scanning_context_inout.is_aborted())
+    if (scan_context_inout.is_aborted())
         return ScanMachineTerminated{ .result = ScanMachineResult::ABORTED };
 
     // 3. verify that our termination chunk is contiguous with the chunks received so far
@@ -393,14 +393,14 @@ static ScanMachineState handle_empty_chunk(const ScanMachineMetadata &metadata,
 static ScanMachineState do_scan_pass(const ScanMachineMetadata &metadata,
     const std::uint64_t first_contiguity_index,
     const ContiguityMarker &contiguity_marker,
-    ScanningContextLedger &scanning_context_inout,
+    ScanContextLedger &scan_context_inout,
     ChunkConsumer &chunk_consumer_inout)
 {
     // 1. get a new chunk
     std::unique_ptr<LedgerChunk> new_chunk;
     try
     {
-        new_chunk = scanning_context_inout.get_onchain_chunk();
+        new_chunk = scan_context_inout.get_onchain_chunk();
         CHECK_AND_ASSERT_THROW_MES(new_chunk, "seraphis scan state machine (do scan pass): chunk obtained is null.");
     }
     catch (...)
@@ -424,7 +424,7 @@ static ScanMachineState do_scan_pass(const ScanMachineMetadata &metadata,
             first_contiguity_index,
             *new_chunk,
             contiguity_marker,
-            scanning_context_inout,
+            scan_context_inout,
             chunk_consumer_inout);
     }
 }
@@ -486,12 +486,12 @@ static ScanMachineState handle_need_partialscan(const ScanMachineNeedPartialscan
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static ScanMachineState handle_start_scan(const ScanMachineStartScan &state,
-    ScanningContextLedger &scanning_context_inout)
+    ScanContextLedger &scan_context_inout)
 {
     try
     {
         // a. initialize the scanning context
-        scanning_context_inout.begin_scanning_from_index(state.contiguity_marker.block_index + 1,
+        scan_context_inout.begin_scanning_from_index(state.contiguity_marker.block_index + 1,
             state.metadata.config.max_chunk_size_hint);
 
         // b. return the next state
@@ -506,7 +506,7 @@ static ScanMachineState handle_start_scan(const ScanMachineStartScan &state,
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static ScanMachineState handle_do_scan(const ScanMachineDoScan &state,
-    ScanningContextLedger &scanning_context_inout,
+    ScanContextLedger &scan_context_inout,
     ChunkConsumer &chunk_consumer_inout)
 {
     // 1. perform one scan pass then update the status
@@ -516,7 +516,7 @@ static ScanMachineState handle_do_scan(const ScanMachineDoScan &state,
         next_state = do_scan_pass(state.metadata,
             state.first_contiguity_index,
             state.contiguity_marker,
-            scanning_context_inout,
+            scan_context_inout,
             chunk_consumer_inout);
     }
     catch (...) { next_state = ScanMachineTerminated{ .result = ScanMachineResult::FAIL }; }
@@ -525,7 +525,7 @@ static ScanMachineState handle_do_scan(const ScanMachineDoScan &state,
     try
     {
         if (!next_state.is_type<ScanMachineDoScan>())
-            scanning_context_inout.terminate_scanning();
+            scan_context_inout.terminate_scanning();
     } catch (...) { LOG_ERROR("seraphis scan state machine (try handle do scan): scan context termination failed."); }
 
     return next_state;
@@ -550,22 +550,22 @@ static bool try_handle_need_partialscan(const ChunkConsumer &chunk_consumer, Sca
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static bool try_handle_start_scan(ScanningContextLedger &scanning_context_inout, ScanMachineState &state_inout)
+static bool try_handle_start_scan(ScanContextLedger &scan_context_inout, ScanMachineState &state_inout)
 {
     const ScanMachineStartScan *start_scan{state_inout.try_unwrap<ScanMachineStartScan>()};
     if (!start_scan) return false;
-    state_inout = handle_start_scan(*start_scan, scanning_context_inout);
+    state_inout = handle_start_scan(*start_scan, scan_context_inout);
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-static bool try_handle_do_scan(ScanningContextLedger &scanning_context_inout,
+static bool try_handle_do_scan(ScanContextLedger &scan_context_inout,
     ChunkConsumer &chunk_consumer_inout,
     ScanMachineState &state_inout)
 {
     const ScanMachineDoScan *do_scan{state_inout.try_unwrap<ScanMachineDoScan>()};
     if (!do_scan) return false;
-    state_inout = handle_do_scan(*do_scan, scanning_context_inout, chunk_consumer_inout);
+    state_inout = handle_do_scan(*do_scan, scan_context_inout, chunk_consumer_inout);
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -590,7 +590,7 @@ static bool is_terminal_state_with_log(const ScanMachineState &state)
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
-bool try_advance_state_machine(ScanningContextLedger &scanning_context_inout,
+bool try_advance_state_machine(ScanContextLedger &scan_context_inout,
     ChunkConsumer &chunk_consumer_inout,
     ScanMachineState &state_inout)
 {
@@ -607,11 +607,11 @@ bool try_advance_state_machine(ScanningContextLedger &scanning_context_inout,
         return true;
 
     // START_SCAN
-    if (try_handle_start_scan(scanning_context_inout, state_inout))
+    if (try_handle_start_scan(scan_context_inout, state_inout))
         return true;
 
     // DO_SCAN
-    if (try_handle_do_scan(scanning_context_inout, chunk_consumer_inout, state_inout))
+    if (try_handle_do_scan(scan_context_inout, chunk_consumer_inout, state_inout))
         return true;
 
     return false;

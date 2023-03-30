@@ -48,8 +48,8 @@
 #include "seraphis_core/legacy_core_utils.h"
 #include "seraphis_core/legacy_enote_utils.h"
 #include "seraphis_core/sp_core_types.h"
+#include "seraphis_impl/scan_context_simple.h"
 #include "seraphis_impl/scan_process_basic.h"
-#include "seraphis_impl/scanning_context_simple.h"
 #include "seraphis_impl/tx_builder_utils.h"
 #include "seraphis_main/contextual_enote_record_utils.h"
 #include "seraphis_main/scan_machine_types.h"
@@ -449,8 +449,8 @@ void refresh_user_enote_store_legacy_intermediate(const rct::key &legacy_base_sp
             legacy_view_privkey,
             legacy_scan_mode
         };
-    scanning::ScanningContextNonLedgerDummy scanning_context_nonledger{};
-    scanning::ScanningContextLedgerSimple scanning_context_ledger{enote_finding_context};
+    scanning::ScanContextNonLedgerDummy scan_context_nonledger{};
+    scanning::ScanContextLedgerSimple scan_context_ledger{enote_finding_context};
     ChunkConsumerMockLegacyIntermediate chunk_consumer{
             legacy_base_spend_pubkey,
             legacy_view_privkey,
@@ -459,8 +459,8 @@ void refresh_user_enote_store_legacy_intermediate(const rct::key &legacy_base_sp
         };
 
     sp::refresh_enote_store(refresh_config,
-        scanning_context_nonledger,
-        scanning_context_ledger,
+        scan_context_nonledger,
+        scan_context_ledger,
         chunk_consumer);
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -479,8 +479,8 @@ void refresh_user_enote_store_legacy_full(const rct::key &legacy_base_spend_pubk
             legacy_view_privkey,
             LegacyScanMode::SCAN
         };
-    scanning::ScanningContextNonLedgerDummy scanning_context_nonledger{};
-    scanning::ScanningContextLedgerSimple scanning_context_ledger{enote_finding_context};
+    scanning::ScanContextNonLedgerDummy scan_context_nonledger{};
+    scanning::ScanContextLedgerSimple scan_context_ledger{enote_finding_context};
     ChunkConsumerMockLegacy chunk_consumer{
             legacy_base_spend_pubkey,
             legacy_spend_privkey,
@@ -489,8 +489,8 @@ void refresh_user_enote_store_legacy_full(const rct::key &legacy_base_spend_pubk
         };
 
     sp::refresh_enote_store(refresh_config,
-        scanning_context_nonledger,
-        scanning_context_ledger,
+        scan_context_nonledger,
+        scan_context_ledger,
         chunk_consumer);
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -501,8 +501,8 @@ void refresh_user_enote_store_PV(const jamtis::mocks::jamtis_mock_keys &user_key
 {
     const EnoteFindingContextUnconfirmedMockSp enote_finding_context_unconfirmed{ledger_context, user_keys.xk_fr};
     const EnoteFindingContextLedgerMockSp enote_finding_context_ledger{ledger_context, user_keys.xk_fr};
-    scanning::ScanningContextNonLedgerSimple scanning_context_unconfirmed{enote_finding_context_unconfirmed};
-    scanning::ScanningContextLedgerSimple scanning_context_ledger{enote_finding_context_ledger};
+    scanning::ScanContextNonLedgerSimple scan_context_unconfirmed{enote_finding_context_unconfirmed};
+    scanning::ScanContextLedgerSimple scan_context_ledger{enote_finding_context_ledger};
     ChunkConsumerMockSpIntermediate chunk_consumer{
             user_keys.K_1_base,
             user_keys.xk_ua,
@@ -512,8 +512,8 @@ void refresh_user_enote_store_PV(const jamtis::mocks::jamtis_mock_keys &user_key
         };
 
     sp::refresh_enote_store(refresh_config,
-        scanning_context_unconfirmed,
-        scanning_context_ledger,
+        scan_context_unconfirmed,
+        scan_context_ledger,
         chunk_consumer);
 }
 //-------------------------------------------------------------------------------------------------------------------
@@ -524,13 +524,13 @@ void refresh_user_enote_store(const jamtis::mocks::jamtis_mock_keys &user_keys,
 {
     const EnoteFindingContextUnconfirmedMockSp enote_finding_context_unconfirmed{ledger_context, user_keys.xk_fr};
     const EnoteFindingContextLedgerMockSp enote_finding_context_ledger{ledger_context, user_keys.xk_fr};
-    scanning::ScanningContextNonLedgerSimple scanning_context_unconfirmed{enote_finding_context_unconfirmed};
-    scanning::ScanningContextLedgerSimple scanning_context_ledger{enote_finding_context_ledger};
+    scanning::ScanContextNonLedgerSimple scan_context_unconfirmed{enote_finding_context_unconfirmed};
+    scanning::ScanContextLedgerSimple scan_context_ledger{enote_finding_context_ledger};
     ChunkConsumerMockSp chunk_consumer{user_keys.K_1_base, user_keys.k_vb, user_enote_store_inout};
 
     sp::refresh_enote_store(refresh_config,
-        scanning_context_unconfirmed,
-        scanning_context_ledger,
+        scan_context_unconfirmed,
+        scan_context_ledger,
         chunk_consumer);
 }
 //-------------------------------------------------------------------------------------------------------------------

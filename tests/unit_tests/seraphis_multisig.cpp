@@ -59,7 +59,6 @@
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "seraphis_impl/enote_store_utils.h"
 #include "seraphis_impl/legacy_ki_import_tool.h"
-#include "seraphis_impl/scanning_context_simple.h"
 #include "seraphis_impl/tx_builder_utils.h"
 #include "seraphis_impl/tx_input_selection_output_context_v1.h"
 #include "seraphis_main/contextual_enote_record_types.h"

@@ -42,7 +42,7 @@ namespace sp
 {
 namespace scanning
 {
-    class ScanningContextLedger;
+    class ScanContextLedger;
     class ChunkConsumer;
 }
 }
@@ -54,12 +54,12 @@ namespace scanning
 
 /**
 * brief: try_advance_state_machine - advance the scan state machine to the next state
-* inoutparam: scanning_context_inout -
+* inoutparam: scan_context_inout -
 * inoutparam: chunk_consumer_inout -
 * inoutparam: state_inout -
 * return: true if the machine was advanced to a new non-terminal state, false if the machine is in a terminal state
 */
-bool try_advance_state_machine(ScanningContextLedger &scanning_context_inout,
+bool try_advance_state_machine(ScanContextLedger &scan_context_inout,
     ChunkConsumer &chunk_consumer_inout,
     ScanMachineState &state_inout);
 

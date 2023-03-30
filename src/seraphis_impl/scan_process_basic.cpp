@@ -32,11 +32,11 @@
 //local headers
 #include "seraphis_main/contextual_enote_record_types.h"
 #include "seraphis_main/scan_chunk_consumer.h"
+#include "seraphis_main/scan_context.h"
 #include "seraphis_main/scan_core_types.h"
 #include "seraphis_main/scan_machine.h"
 #include "seraphis_main/scan_machine_types.h"
 #include "seraphis_main/scan_misc_utils.h"
-#include "seraphis_main/scanning_context.h"
 
 //third party headers
 
@@ -51,14 +51,14 @@ namespace sp
 //-------------------------------------------------------------------------------------------------------------------
 bool refresh_enote_store_nonledger(const SpEnoteOriginStatus expected_origin_status,
     const SpEnoteSpentStatus expected_spent_status,
-    scanning::ScanningContextNonLedger &scanning_context_inout,
+    scanning::ScanContextNonLedger &scan_context_inout,
     scanning::ChunkConsumer &chunk_consumer_inout)
 {
     try
     {
         // 1. get the scan chunk
         scanning::ChunkData nonledger_chunk;
-        scanning_context_inout.get_nonledger_chunk(nonledger_chunk);
+        scan_context_inout.get_nonledger_chunk(nonledger_chunk);
 
         scanning::check_chunk_data_semantics(nonledger_chunk, expected_origin_status, expected_spent_status, 0, -1);
 
@@ -68,7 +68,7 @@ bool refresh_enote_store_nonledger(const SpEnoteOriginStatus expected_origin_sta
         // - consume chunk if aborted and chunk is non-empty (it's possible for a scan context to be aborted after
         //   acquiring a chunk)
         if (scanning::chunk_data_is_empty(nonledger_chunk) &&
-            scanning_context_inout.is_aborted())
+            scan_context_inout.is_aborted())
             return false;
 
         // 3. consume the chunk
@@ -84,14 +84,14 @@ bool refresh_enote_store_nonledger(const SpEnoteOriginStatus expected_origin_sta
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool refresh_enote_store_ledger(const scanning::ScanMachineConfig &scan_machine_config,
-    scanning::ScanningContextLedger &ledger_scanning_context_inout,
+    scanning::ScanContextLedger &ledger_scan_context_inout,
     scanning::ChunkConsumer &chunk_consumer_inout)
 {
     // 1. prepare metadata
     scanning::ScanMachineState state{scanning::initialize_scan_machine_state(scan_machine_config)};
 
     // 2. advance the state machine until it terminates or encounters a failure
-    while (scanning::try_advance_state_machine(ledger_scanning_context_inout, chunk_consumer_inout, state) &&
+    while (scanning::try_advance_state_machine(ledger_scan_context_inout, chunk_consumer_inout, state) &&
         !scanning::is_terminal_state(state))
     {}
 
@@ -103,18 +103,18 @@ bool refresh_enote_store_ledger(const scanning::ScanMachineConfig &scan_machine_
 }
 //-------------------------------------------------------------------------------------------------------------------
 bool refresh_enote_store(const scanning::ScanMachineConfig &scan_machine_config,
-    scanning::ScanningContextNonLedger &nonledger_scanning_context_inout,
-    scanning::ScanningContextLedger &ledger_scanning_context_inout,
+    scanning::ScanContextNonLedger &nonledger_scan_context_inout,
+    scanning::ScanContextLedger &ledger_scan_context_inout,
     scanning::ChunkConsumer &chunk_consumer_inout)
 {
     // 1. perform a full scan
-    if (!refresh_enote_store_ledger(scan_machine_config, ledger_scanning_context_inout, chunk_consumer_inout))
+    if (!refresh_enote_store_ledger(scan_machine_config, ledger_scan_context_inout, chunk_consumer_inout))
         return false;
 
     // 2. perform an unconfirmed scan
     if (!refresh_enote_store_nonledger(SpEnoteOriginStatus::UNCONFIRMED,
             SpEnoteSpentStatus::SPENT_UNCONFIRMED,
-            nonledger_scanning_context_inout,
+            nonledger_scan_context_inout,
             chunk_consumer_inout))
         return false;
 
@@ -124,7 +124,7 @@ bool refresh_enote_store(const scanning::ScanMachineConfig &scan_machine_config,
     //   contain txs not seen by the unconfirmed pass (i.e. sneaky txs)
     // - we want scan results to be chronologically contiguous (it is better for the unconfirmed scan results to be stale
     //   than the on-chain scan results)
-    if (!refresh_enote_store_ledger(scan_machine_config, ledger_scanning_context_inout, chunk_consumer_inout))
+    if (!refresh_enote_store_ledger(scan_machine_config, ledger_scan_context_inout, chunk_consumer_inout))
         return false;
 
     return true;

@@ -49,18 +49,18 @@ namespace scanning
 {
 
 ////
-// ScanningContextNonLedger
+// ScanContextNonLedger
 // - manages a source of non-ledger-based enote scanning chunks
 ///
-class ScanningContextNonLedger
+class ScanContextNonLedger
 {
 public:
 //destructor
-    virtual ~ScanningContextNonLedger() = default;
+    virtual ~ScanContextNonLedger() = default;
 
 //overloaded operators
     /// disable copy/move (this is a virtual base class)
-    ScanningContextNonLedger& operator=(ScanningContextNonLedger&&) = delete;
+    ScanContextNonLedger& operator=(ScanContextNonLedger&&) = delete;
 
 //member functions
     /// get a scanning chunk for the nonledger txs associated with this context
@@ -71,18 +71,18 @@ public:
 };
 
 ////
-// ScanningContextLedger
+// ScanContextLedger
 // - manages a source of ledger-based enote scanning chunks (i.e. finding potentially owned enotes in a ledger)
 ///
-class ScanningContextLedger
+class ScanContextLedger
 {
 public:
 //destructor
-    virtual ~ScanningContextLedger() = default;
+    virtual ~ScanContextLedger() = default;
 
 //overloaded operators
     /// disable copy/move (this is a virtual base class)
-    ScanningContextLedger& operator=(ScanningContextLedger&&) = delete;
+    ScanContextLedger& operator=(ScanContextLedger&&) = delete;
 
 //member functions
     /// tell the scanning context a block index to start scanning from

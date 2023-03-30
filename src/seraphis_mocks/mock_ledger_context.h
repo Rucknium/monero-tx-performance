@@ -63,11 +63,6 @@ namespace mocks
 }
     struct SpTxCoinbaseV1;
     struct SpTxSquashedV1;
-namespace scanning
-{
-    struct ScanContext;
-    struct ScanData;
-}
 }
 
 namespace sp

@@ -50,7 +50,6 @@
 #include "seraphis_crypto/sp_composition_proof.h"
 #include "seraphis_crypto/sp_crypto_utils.h"
 #include "seraphis_impl/enote_store_utils.h"
-#include "seraphis_impl/scanning_context_simple.h"
 #include "seraphis_impl/tx_fee_calculator_squashed_v1.h"
 #include "seraphis_impl/tx_input_selection_output_context_v1.h"
 #include "seraphis_main/contextual_enote_record_utils.h"

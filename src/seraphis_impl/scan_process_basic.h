@@ -43,8 +43,8 @@ namespace sp
 namespace scanning
 {
     struct ScanMachineConfig;
-    class ScanningContextNonLedger;
-    class ScanningContextLedger;
+    class ScanContextNonLedger;
+    class ScanContextLedger;
     class ChunkConsumer;
 }
 }
@@ -56,35 +56,35 @@ namespace sp
 * brief: refresh_enote_store_nonledger - perform a non-ledger balance recovery process (e.g. scan the tx pool)
 * param: expected_origin_status -
 * param: expected_spent_status -
-* inoutparam: scanning_context_inout -
+* inoutparam: scan_context_inout -
 * inoutparam: chunk_consumer_inout -
 * return: false if the refresh was not completely successful
 */
 bool refresh_enote_store_nonledger(const SpEnoteOriginStatus expected_origin_status,
     const SpEnoteSpentStatus expected_spent_status,
-    scanning::ScanningContextNonLedger &scanning_context_inout,
+    scanning::ScanContextNonLedger &scan_context_inout,
     scanning::ChunkConsumer &chunk_consumer_inout);
 /**
 * brief: refresh_enote_store_ledger - perform an on-chain balance recovery process (i.e. scan the ledger)
 * param: scan_machine_config -
-* inoutparam: ledger_scanning_context_inout -
+* inoutparam: ledger_scan_context_inout -
 * inoutparam: chunk_consumer_inout -
 * return: false if the refresh was not completely successful
 */
 bool refresh_enote_store_ledger(const scanning::ScanMachineConfig &scan_machine_config,
-    scanning::ScanningContextLedger &ledger_scanning_context_inout,
+    scanning::ScanContextLedger &ledger_scan_context_inout,
     scanning::ChunkConsumer &chunk_consumer_inout);
 /**
 * brief: refresh_enote_store - perform a complete on-chain + unconfirmed cache balance recovery process
 * param: scan_machine_config -
-* inoutparam: nonledger_scanning_context_inout -
-* inoutparam: ledger_scanning_context_inout -
+* inoutparam: nonledger_scan_context_inout -
+* inoutparam: ledger_scan_context_inout -
 * inoutparam: chunk_consumer_inout -
 * return: false if the refresh was not completely successful
 */
 bool refresh_enote_store(const scanning::ScanMachineConfig &scan_machine_config,
-    scanning::ScanningContextNonLedger &nonledger_scanning_context_inout,
-    scanning::ScanningContextLedger &ledger_scanning_context_inout,
+    scanning::ScanContextNonLedger &nonledger_scan_context_inout,
+    scanning::ScanContextLedger &ledger_scan_context_inout,
     scanning::ChunkConsumer &chunk_consumer_inout);
 
 } //namespace sp
