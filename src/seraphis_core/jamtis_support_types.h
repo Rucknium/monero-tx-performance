@@ -142,6 +142,7 @@ address_index_t gen_address_index();
 /// convert between jamtis enote types and self-send types
 bool try_get_jamtis_enote_type(const JamtisSelfSendType self_send_type, JamtisEnoteType &enote_type_out);
 bool try_get_jamtis_self_send_type(const JamtisEnoteType enote_type, JamtisSelfSendType &self_send_type_out);
+bool is_jamtis_selfsend_type(const JamtisEnoteType enote_type);
 
 } //namespace jamtis
 } //namespace sp

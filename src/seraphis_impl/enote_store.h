@@ -26,17 +26,15 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// NOT FOR PRODUCTION
-
 // Enote store that supports full-featured balance recovery by managing enote-related caches.
 
 #pragma once
 
 //local headers
 #include "crypto/crypto.h"
-#include "enote_store_event_types.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_impl/checkpoint_cache.h"
+#include "seraphis_impl/enote_store_event_types.h"
 #include "seraphis_main/contextual_enote_record_types.h"
 
 //third party headers
@@ -78,22 +76,22 @@ public:
     /// config: get default spendable age
     std::uint64_t default_spendable_age() const { return m_default_spendable_age; }
 
-    /// get index of highest recorded block (refresh index - 1 if no recorded blocks)
+    /// get index of the highest recorded block (legacy refresh index - 1 if no recorded blocks)
     std::uint64_t top_block_index() const;
-    /// get index of highest block that was legacy fullscanned (view-scan + comprehensive key image checks)
-    std::uint64_t top_legacy_fullscanned_block_index()    const { return m_legacy_fullscan_index;    }
-    /// get index of highest block that was legacy partialscanned (view-scan only)
+    /// get index of the highest block that was legacy partialscanned (view-scan only)
     std::uint64_t top_legacy_partialscanned_block_index() const { return m_legacy_partialscan_index; }
-    /// get index of highest block that was seraphis view-balance scanned
+    /// get index of the highest block that was legacy fullscanned (view-scan + comprehensive key image checks)
+    std::uint64_t top_legacy_fullscanned_block_index()    const { return m_legacy_fullscan_index;    }
+    /// get index of the highest block that was seraphis view-balance scanned
     std::uint64_t top_sp_scanned_block_index()            const { return m_sp_scanned_index;         }
 
     /// get the next cached block index > the requested index (-1 on failure)
-    std::uint64_t next_legacy_fullscanned_block_index   (const std::uint64_t block_index) const;
     std::uint64_t next_legacy_partialscanned_block_index(const std::uint64_t block_index) const;
+    std::uint64_t next_legacy_fullscanned_block_index   (const std::uint64_t block_index) const;
     std::uint64_t next_sp_scanned_block_index           (const std::uint64_t block_index) const;
     /// get the nearest cached block index <= the requested index (refresh index - 1 on failure)
-    std::uint64_t nearest_legacy_fullscanned_block_index   (const std::uint64_t block_index) const;
     std::uint64_t nearest_legacy_partialscanned_block_index(const std::uint64_t block_index) const;
+    std::uint64_t nearest_legacy_fullscanned_block_index   (const std::uint64_t block_index) const;
     std::uint64_t nearest_sp_scanned_block_index           (const std::uint64_t block_index) const;
     /// try to get the cached block id for a given index and specified scan mode
     /// note: during scanning, different scan modes are assumed to 'not see' block ids obtained by a different scan mode;
@@ -105,34 +103,34 @@ public:
     bool try_get_block_id(const std::uint64_t block_index, rct::key &block_id_out) const;
     /// check if any stored enote has a given key image
     bool has_enote_with_key_image(const crypto::key_image &key_image) const;
-    /// get the legacy intermediate records map
-    /// - note: useful for collecting their onetime addresses and viewkey extensions for key image recovery
+    /// get the legacy [ legacy identifier : legacy intermediate record ] map
+    /// - note: useful for collecting onetime addresses and viewkey extensions for key image recovery
     const std::unordered_map<rct::key, LegacyContextualIntermediateEnoteRecordV1>& legacy_intermediate_records() const
     { return m_legacy_intermediate_contextual_enote_records; }
-    /// get the legacy full records map
+    /// get the legacy [ legacy identifier : legacy record ] map
     const std::unordered_map<rct::key, LegacyContextualEnoteRecordV1>& legacy_records() const
     { return m_legacy_contextual_enote_records; }
-    /// get the legacy [ Ko : [ legacy identifiers ] ] map
+    /// get the legacy [ Ko : [ legacy identifier ] ] map
     const std::unordered_map<rct::key, std::unordered_set<rct::key>>& legacy_onetime_address_identifier_map() const
     { return m_tracked_legacy_onetime_address_duplicates; }
     /// get the legacy [ KI : Ko ] map
     const std::unordered_map<crypto::key_image, rct::key>& legacy_key_images() const
     { return m_legacy_key_images; }
-    /// get the seraphis records
+    /// get the seraphis [ KI : sp record ] map
     const std::unordered_map<crypto::key_image, SpContextualEnoteRecordV1>& sp_records() const
     { return m_sp_contextual_enote_records; }
-    /// try to get a legacy enote with a specified key image
+    /// try to get the legacy enote with a specified key image
     /// - will only return the highest-amount legacy enote among duplicates, and will return false if the
     ///   highest-amount legacy enote is currently in the intermediate records map
     bool try_get_legacy_enote_record(const crypto::key_image &key_image,
         LegacyContextualEnoteRecordV1 &contextual_record_out) const;
-    /// try to get a seraphis enote with a specified key image
+    /// try to get the seraphis enote with a specified key image
     bool try_get_sp_enote_record(const crypto::key_image &key_image,
         SpContextualEnoteRecordV1 &contextual_record_out) const;
 
     /// try to import a legacy key image
-    /// PRECONDITION1: the legacy key image was computed from/for the input onetime address
-    /// returns false if the onetime address is unknown (e.g. due to a reorg)
+    /// - PRECONDITION1: the legacy key image was computed from/for the input onetime address
+    /// - returns false if the onetime address is unknown (e.g. due to a reorg that removed the corresponding record)
     bool try_import_legacy_key_image(const crypto::key_image &legacy_key_image,
         const rct::key &onetime_address,
         std::list<EnoteStoreEvent> &events_inout);
@@ -140,13 +138,12 @@ public:
     void update_legacy_fullscan_index_for_import_cycle(const std::uint64_t saved_index);
 
     /// setters for scan indices
-    /// WARNING: misuse of these will mess up the enote store's state (to recover: set index(s) below problem then
-    //           rescan)
+    /// WARNING: misuse of these will mess up the enote store's state (to recover: set index below problem then rescan)
     /// note: to repair the enote store in case of an exception or other error during an update, save all of the last
-    ///       scanned indices from before the update, reset the enote store with them (after the failure), and then re-scan
-    ///       to repair
-    void set_last_legacy_fullscan_index   (const std::uint64_t new_index);
+    ///       scanned indices from before the update, reset the enote store with them (after the failure), and then
+    ///       re-scan to repair
     void set_last_legacy_partialscan_index(const std::uint64_t new_index);
+    void set_last_legacy_fullscan_index   (const std::uint64_t new_index);
     void set_last_sp_scanned_index        (const std::uint64_t new_index);
 
     /// update the store with legacy enote records and associated context
@@ -190,11 +187,11 @@ public:
 
 private:
     /// update the store with a set of new block ids from the ledger
-    void update_with_new_blocks_from_ledger_legacy_intermediate(const rct::key &alignment_block_id,
+    void update_with_new_blocks_from_ledger_legacy_partialscan(const rct::key &alignment_block_id,
         const std::uint64_t first_new_block,
         const std::vector<rct::key> &new_block_ids,
         std::list<EnoteStoreEvent> &events_inout);
-    void update_with_new_blocks_from_ledger_legacy_full(const rct::key &alignment_block_id,
+    void update_with_new_blocks_from_ledger_legacy_fullscan(const rct::key &alignment_block_id,
         const std::uint64_t first_new_block,
         const std::vector<rct::key> &new_block_ids,
         std::list<EnoteStoreEvent> &events_inout);
@@ -212,13 +209,13 @@ private:
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
         const std::unordered_map<rct::key, std::unordered_set<rct::key>> &mapped_identifiers_of_removed_enotes,
         const std::unordered_map<rct::key, crypto::key_image> &mapped_key_images_of_removed_enotes,
-        const std::function<bool(const SpEnoteSpentContextV1&)> &spent_context_clearable_func,
+        const SpEnoteSpentStatus clearable_spent_status,
+        const std::uint64_t first_uncleared_block_index,
         std::list<EnoteStoreEvent> &events_inout);
     /// clean up legacy state to prepare for adding fresh legacy enotes and key images
     void clean_maps_for_legacy_nonledger_update(const SpEnoteOriginStatus nonledger_origin_status,
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
         std::list<EnoteStoreEvent> &events_inout);
-    /// clean up legacy state to prepare for adding fresh legacy enotes and key images
     void clean_maps_for_legacy_ledger_update(const std::uint64_t first_new_block,
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
         std::list<EnoteStoreEvent> &events_inout);
@@ -226,10 +223,9 @@ private:
     /// clean maps based on tx ids of removed seraphis enotes
     void clean_maps_for_removed_sp_enotes(const std::unordered_set<rct::key> &tx_ids_of_removed_enotes,
         std::list<EnoteStoreEvent> &events_inout);
-    /// clean up seraphis state to prepare for adding fresh non-ledger seraphis enotes and key images and legacy key images
+    /// clean up seraphis state to prepare for adding fresh seraphis enotes and key images and legacy key images
     void clean_maps_for_sp_nonledger_update(const SpEnoteOriginStatus nonledger_origin_status,
         std::list<EnoteStoreEvent> &events_inout);
-    /// clean up seraphis state to prepare for adding fresh seraphis enotes and key images and legacy key images
     void clean_maps_for_sp_ledger_update(const std::uint64_t first_new_block,
         std::list<EnoteStoreEvent> &events_inout);
 
@@ -250,29 +246,32 @@ private:
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &found_spent_key_images,
         std::list<EnoteStoreEvent> &events_inout);
 
-    /// cache legacy key images obtained from seraphis selfsends (i.e. ALL legacy key images spent by user in seraphis txs)
+    /// cache legacy key images obtained from seraphis selfsends
+    /// - these are the key images of legacy enotes spent by the user in seraphis txs; they are cached because
+    ///   the enote store may not have the corresponding legacy enotes' records loaded in yet (or only the intermediate
+    ///   records are known)
     void handle_legacy_key_images_from_sp_selfsends(
         const std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> &legacy_key_images_in_sp_selfsends,
         std::list<EnoteStoreEvent> &events_inout);
 
 //member variables
-    /// legacy intermediate enotes: [ H32(Ko, a) : legacy intermediate record ]
+    /// legacy intermediate enotes: [ legacy identifier : legacy intermediate record ]
     std::unordered_map<rct::key, LegacyContextualIntermediateEnoteRecordV1>
         m_legacy_intermediate_contextual_enote_records;
-    /// legacy enotes: [ H32(Ko, a) : legacy record ]
+    /// legacy enotes: [ legacy identifier : legacy record ]
     std::unordered_map<rct::key, LegacyContextualEnoteRecordV1> m_legacy_contextual_enote_records;
     /// seraphis enotes: [ seraphis KI : seraphis record ]
     std::unordered_map<crypto::key_image, SpContextualEnoteRecordV1> m_sp_contextual_enote_records;
 
-    /// saved legacy key images from txs with seraphis selfsends (i.e. txs we created)
-    /// [ legacy KI : seraphis selfsend spent context ]
+    /// saved legacy key images from txs with seraphis selfsends (i.e. from txs we created)
+    /// [ legacy KI : spent context ]
     std::unordered_map<crypto::key_image, SpEnoteSpentContextV1> m_legacy_key_images_in_sp_selfsends;
     /// legacy duplicate tracker for dealing with enotes that have duplicated key images
     /// note: the user can receive multiple legacy enotes with the same identifier, but those are treated as equivalent,
     ///       which should only cause problems for users if the associated tx memos are different (very unlikely scenario)
-    /// [ Ko : [ H32(Ko, a) ] ]
+    /// [ Ko : [ legacy identifier ] ]
     std::unordered_map<rct::key, std::unordered_set<rct::key>> m_tracked_legacy_onetime_address_duplicates;
-    /// all legacy onetime addresses attached to known legacy enotes
+    /// legacy onetime addresses attached to known legacy enotes
     /// note: might not include all entries in 'm_legacy_key_images_in_sp_selfsends' if some corresponding enotes are
     //        unknown
     /// [ legacy KI : legacy Ko ]
@@ -284,17 +283,16 @@ private:
     ///   [max(refresh index, first seraphis-enabled block), end of known seraphis-supporting chain]
     CheckpointCache m_sp_block_id_cache;
 
-    /// highest block that was legacy fullscanned (view-scan + comprehensive key image checks)
-    std::uint64_t m_legacy_fullscan_index{static_cast<std::uint64_t>(-1)};
     /// highest block that was legacy partialscanned (view-scan only)
     std::uint64_t m_legacy_partialscan_index{static_cast<std::uint64_t>(-1)};
+    /// highest block that was legacy fullscanned (view-scan + comprehensive key image checks)
+    std::uint64_t m_legacy_fullscan_index{static_cast<std::uint64_t>(-1)};
     /// highest block that was seraphis view-balance scanned
-    /// note: manually reduced this then re-scan to fix issues with seraphis scanning (e.g. due to data corruption)
     std::uint64_t m_sp_scanned_index{static_cast<std::uint64_t>(-1)};
 
-    /// configuration value: default spendable age; an enote is considered 'spendable' in the next block if it's
-    //      on-chain and the next index is >= 'origin index + max(1, default_spendable_age)'; legacy enotes also have
-    //      an unlock_time attribute on top of the default spendable age
+    /// configuration value: default spendable age; an enote is considered 'spendable' in the next block if it is
+    ///   on-chain and the next block's index is >= 'enote origin index + max(1, default_spendable_age)'; legacy
+    ///   enotes also have an unlock_time attribute on top of the default spendable age
     std::uint64_t m_default_spendable_age{0};
 };
 

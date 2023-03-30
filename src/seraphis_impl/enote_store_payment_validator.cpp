@@ -82,7 +82,7 @@ bool SpEnoteStorePaymentValidator::try_get_block_id_for_sp(const std::uint64_t b
 
     // 3. get the block id
     CHECK_AND_ASSERT_THROW_MES(m_sp_block_id_cache.try_get_block_id(block_index, block_id_out),
-        "sp enote store (try get block id sp scan): failed to get cached block id for index that is known.");
+        "sp payment validator (try get block id sp scan): failed to get cached block id for index that is known.");
 
     return true;
 }

@@ -164,5 +164,11 @@ bool try_get_jamtis_self_send_type(const JamtisEnoteType enote_type, JamtisSelfS
     };
 }
 //-------------------------------------------------------------------------------------------------------------------
+bool is_jamtis_selfsend_type(const JamtisEnoteType enote_type)
+{
+    JamtisSelfSendType dummy;
+    return try_get_jamtis_self_send_type(enote_type, dummy);
+}
+//-------------------------------------------------------------------------------------------------------------------
 } //namespace jamtis
 } //namespace sp
