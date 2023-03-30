@@ -44,7 +44,7 @@
 
 //local headers
 #include "crypto/crypto.h"
-#include "multisig_nonce_record.h"
+#include "multisig_nonce_cache.h"
 #include "ringct/rctTypes.h"
 
 //third party headers
@@ -177,7 +177,7 @@ bool try_make_clsag_multisig_partial_sig(const CLSAGMultisigProposal &proposal,
     const std::vector<MultisigPubNonces> &signer_pub_nonces_G,
     const std::vector<MultisigPubNonces> &signer_pub_nonces_Hp,
     const signer_set_filter filter,
-    MultisigNonceRecord &nonce_record_inout,
+    MultisigNonceCache &nonce_record_inout,
     CLSAGMultisigPartial &partial_sig_out);
 /**
 * brief: finalize_clsag_multisig_proof - create a CLSAG proof from multisig partial signatures

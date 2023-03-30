@@ -35,7 +35,7 @@ set(multisig_sources
   multisig_clsag_context.cpp
   multisig_kex_msg.cpp
   multisig_mocks.cpp
-  multisig_nonce_record.cpp
+  multisig_nonce_cache.cpp
   multisig_partial_cn_key_image_msg.cpp
   multisig_partial_sig_makers.cpp
   multisig_signer_set_filter.cpp

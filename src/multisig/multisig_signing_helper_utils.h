@@ -53,7 +53,7 @@
 //forward declarations
 namespace multisig
 {
-    class MultisigNonceRecord;
+    class MultisigNonceCache;
     class MultisigPartialSigMaker;
 }
 
@@ -119,7 +119,7 @@ void make_v1_multisig_init_set_v1(const std::uint32_t threshold,
     const rct::key &proof_message,
     const rct::key &main_proof_key,
     const rct::keyV &proof_key_base_points,
-    MultisigNonceRecord &nonce_record_inout,
+    MultisigNonceCache &nonce_record_inout,
     MultisigProofInitSetV1 &init_set_out);
 void make_v1_multisig_init_set_collection_v1(const std::uint32_t threshold,
     const std::vector<crypto::public_key> &multisig_signers,
@@ -127,7 +127,7 @@ void make_v1_multisig_init_set_collection_v1(const std::uint32_t threshold,
     const crypto::public_key &local_signer_id,
     const std::unordered_map<rct::key, rct::key> &proof_contexts,  //[ proof key : proof message ]
     const std::unordered_map<rct::key, rct::keyV> &proof_key_base_points,  //[ proof key : {proof key base points} ]
-    MultisigNonceRecord &nonce_record_inout,
+    MultisigNonceCache &nonce_record_inout,
     std::unordered_map<rct::key, MultisigProofInitSetV1> &init_set_collection_out); //[ proof key : init set ]
 /**
 * brief: check_v1_multisig_partial_sig_set_semantics_v1 - check semantics of a multisig partial signature set
@@ -168,7 +168,7 @@ bool try_make_v1_multisig_partial_sig_sets_v1(const multisig_account &signer_acc
     std::unordered_map<crypto::public_key, std::unordered_map<rct::key, MultisigProofInitSetV1>>
         other_init_set_collections,
     std::list<MultisigSigningErrorVariant> &multisig_errors_inout,
-    MultisigNonceRecord &nonce_record_inout,
+    MultisigNonceCache &nonce_record_inout,
     std::vector<MultisigPartialSigSetV1> &partial_sig_sets_out);
 /**
 * brief: filter_multisig_partial_signatures_for_combining_v1 - filter multisig partial signature sets into a convenient

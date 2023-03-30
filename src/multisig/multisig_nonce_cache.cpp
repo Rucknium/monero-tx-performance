@@ -27,7 +27,7 @@
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //paired header
-#include "multisig_nonce_record.h"
+#include "multisig_nonce_cache.h"
 
 //local headers
 #include "common/container_helpers.h"
@@ -80,7 +80,7 @@ void append_to_transcript(const MultisigPubNonces &container, sp::SpTranscriptBu
     transcript_inout.append("nonce2", container.signature_nonce_2_pub);
 }
 //-------------------------------------------------------------------------------------------------------------------
-MultisigNonceRecord::MultisigNonceRecord(const std::vector<
+MultisigNonceCache::MultisigNonceCache(const std::vector<
         std::tuple<rct::key, rct::key, signer_set_filter, MultisigNonces>
     > &raw_nonce_data)
 {
@@ -96,16 +96,16 @@ MultisigNonceRecord::MultisigNonceRecord(const std::vector<
     }
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool MultisigNonceRecord::has_record(const rct::key &message,
+bool MultisigNonceCache::has_record(const rct::key &message,
     const rct::key &proof_key,
     const signer_set_filter &filter) const
 {
-    return m_record.find(message) != m_record.end() &&
-        m_record.at(message).find(proof_key) != m_record.at(message).end() &&
-        m_record.at(message).at(proof_key).find(filter) != m_record.at(message).at(proof_key).end();
+    return m_cache.find(message) != m_cache.end() &&
+        m_cache.at(message).find(proof_key) != m_cache.at(message).end() &&
+        m_cache.at(message).at(proof_key).find(filter) != m_cache.at(message).at(proof_key).end();
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool MultisigNonceRecord::try_add_nonces(const rct::key &message,
+bool MultisigNonceCache::try_add_nonces(const rct::key &message,
     const rct::key &proof_key,
     const signer_set_filter &filter)
 {
@@ -118,7 +118,7 @@ bool MultisigNonceRecord::try_add_nonces(const rct::key &message,
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool MultisigNonceRecord::try_get_nonce_pubkeys_for_base(const rct::key &message,
+bool MultisigNonceCache::try_get_nonce_pubkeys_for_base(const rct::key &message,
     const rct::key &proof_key,
     const signer_set_filter &filter,
     const rct::key &pubkey_base,
@@ -130,7 +130,7 @@ bool MultisigNonceRecord::try_get_nonce_pubkeys_for_base(const rct::key &message
     if (!this->has_record(message, proof_key, filter))
         return false;
 
-    const MultisigNonces &nonces{m_record.at(message).at(proof_key).at(filter)};
+    const MultisigNonces &nonces{m_cache.at(message).at(proof_key).at(filter)};
 
     // pubkeys (store with (1/8))
     nonce_pubkeys_out.signature_nonce_1_pub =
@@ -141,7 +141,7 @@ bool MultisigNonceRecord::try_get_nonce_pubkeys_for_base(const rct::key &message
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool MultisigNonceRecord::try_get_recorded_nonce_privkeys(const rct::key &message,
+bool MultisigNonceCache::try_get_recorded_nonce_privkeys(const rct::key &message,
     const rct::key &proof_key,
     const signer_set_filter &filter,
     crypto::secret_key &nonce_privkey_1_out,
@@ -151,13 +151,13 @@ bool MultisigNonceRecord::try_get_recorded_nonce_privkeys(const rct::key &messag
         return false;
 
     // privkeys
-    nonce_privkey_1_out = m_record.at(message).at(proof_key).at(filter).signature_nonce_1_priv;
-    nonce_privkey_2_out = m_record.at(message).at(proof_key).at(filter).signature_nonce_2_priv;
+    nonce_privkey_1_out = m_cache.at(message).at(proof_key).at(filter).signature_nonce_1_priv;
+    nonce_privkey_2_out = m_cache.at(message).at(proof_key).at(filter).signature_nonce_2_priv;
 
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool MultisigNonceRecord::try_remove_record(const rct::key &message,
+bool MultisigNonceCache::try_remove_record(const rct::key &message,
     const rct::key &proof_key,
     const signer_set_filter &filter)
 {
@@ -165,21 +165,21 @@ bool MultisigNonceRecord::try_remove_record(const rct::key &message,
         return false;
 
     // cleanup
-    m_record[message][proof_key].erase(filter);
-    if (m_record[message][proof_key].empty())
-        m_record[message].erase(proof_key);
-    if (m_record[message].empty())
-        m_record.erase(message);
+    m_cache[message][proof_key].erase(filter);
+    if (m_cache[message][proof_key].empty())
+        m_cache[message].erase(proof_key);
+    if (m_cache[message].empty())
+        m_cache.erase(message);
 
     return true;
 }
 //-------------------------------------------------------------------------------------------------------------------
-std::vector<std::tuple<rct::key, rct::key, signer_set_filter, MultisigNonces>> MultisigNonceRecord::export_data() const
+std::vector<std::tuple<rct::key, rct::key, signer_set_filter, MultisigNonces>> MultisigNonceCache::export_data() const
 {
     // flatten the record and return it
     std::vector<std::tuple<rct::key, rct::key, signer_set_filter, MultisigNonces>> raw_data;
 
-    for (const auto &message_map : m_record)
+    for (const auto &message_map : m_cache)
     {
         for (const auto &key_map : message_map.second)
         {
@@ -191,7 +191,7 @@ std::vector<std::tuple<rct::key, rct::key, signer_set_filter, MultisigNonces>> M
     return raw_data;
 }
 //-------------------------------------------------------------------------------------------------------------------
-bool MultisigNonceRecord::try_add_nonces_impl(const rct::key &message,
+bool MultisigNonceCache::try_add_nonces_impl(const rct::key &message,
     const rct::key &proof_key,
     const signer_set_filter &filter,
     const MultisigNonces &nonces)
@@ -203,7 +203,7 @@ bool MultisigNonceRecord::try_add_nonces_impl(const rct::key &message,
         return false;
 
     // add record
-    m_record[message][proof_key][filter] = nonces;
+    m_cache[message][proof_key][filter] = nonces;
 
     return true;
 }

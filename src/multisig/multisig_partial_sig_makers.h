@@ -43,7 +43,7 @@
 //standard headers
 
 //forward declarations
-namespace multisig { class MultisigNonceRecord; }
+namespace multisig { class MultisigNonceCache; }
 
 namespace multisig
 {
@@ -51,7 +51,7 @@ namespace multisig
 ////
 // MultisigPartialSigMaker
 // - interface for producing multisig partial signatures, agnostic to the signature scheme (it must be Schnorr-like
-//   and use musig2-style multisig via MultisigNonceRecord)
+//   and use musig2-style multisig via MultisigNonceCache)
 // - must support wrapping multiple multisig signature proposals, which are accessed via the primary proof key
 ///
 class MultisigPartialSigMaker
@@ -89,7 +89,7 @@ public:
         const signer_set_filter signer_group_filter,
         const std::vector<std::vector<MultisigPubNonces>> &signer_group_pub_nonces,
         const crypto::secret_key &local_multisig_signing_key,
-        MultisigNonceRecord &nonce_record_inout,
+        MultisigNonceCache &nonce_record_inout,
         MultisigPartialSigVariant &partial_sig_out) const = 0;
 };
 
@@ -116,7 +116,7 @@ public:
         const signer_set_filter signer_group_filter,
         const std::vector<std::vector<MultisigPubNonces>> &signer_group_pub_nonces,
         const crypto::secret_key &local_multisig_signing_key,
-        MultisigNonceRecord &nonce_record_inout,
+        MultisigNonceCache &nonce_record_inout,
         MultisigPartialSigVariant &partial_sig_out) const override;
 
 //member variables
@@ -155,7 +155,7 @@ public:
         const signer_set_filter signer_group_filter,
         const std::vector<std::vector<MultisigPubNonces>> &signer_group_pub_nonces,
         const crypto::secret_key &local_multisig_signing_key,
-        MultisigNonceRecord &nonce_record_inout,
+        MultisigNonceCache &nonce_record_inout,
         MultisigPartialSigVariant &partial_sig_out) const override;
 
 //member variables

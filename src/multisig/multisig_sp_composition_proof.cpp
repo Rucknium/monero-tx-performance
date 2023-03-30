@@ -40,7 +40,7 @@ extern "C"
 #include "cryptonote_config.h"
 #include "misc_language.h"
 #include "misc_log_ex.h"
-#include "multisig_nonce_record.h"
+#include "multisig_nonce_cache.h"
 #include "ringct/rctOps.h"
 #include "ringct/rctTypes.h"
 #include "seraphis_crypto/sp_composition_proof.h"
@@ -261,7 +261,7 @@ bool try_make_sp_composition_multisig_partial_sig(const SpCompositionProofMultis
     const crypto::secret_key &z_e,
     const std::vector<MultisigPubNonces> &signer_pub_nonces,
     const signer_set_filter filter,
-    MultisigNonceRecord &nonce_record_inout,
+    MultisigNonceCache &nonce_record_inout,
     SpCompositionProofMultisigPartial &partial_sig_out)
 {
     // get the nonce privkeys to sign with

@@ -26,7 +26,7 @@
 // STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// Records Musig2-style nonces for multisig signing.
+// Caches Musig2-style nonces for multisig signing.
 
 #pragma once
 
@@ -78,12 +78,12 @@ bool operator==(const MultisigPubNonces &a, const MultisigPubNonces &b);
 inline std::size_t multisig_pub_nonces_size_bytes() { return 2*sizeof(rct::key); }
 
 ////
-// Multisig nonce record
+// Multisig nonce cache
 // - store a multisig signer's signature nonces
 // - nonces may be stored for multiple signing attempts on different messages, keys, and for different signer subgroups
 //   of which the signer is a member
 //
-// WARNING: a nonce removed from the record may still exist in persistent storage (a file somewhere); users should
+// WARNING: a nonce removed from the cache may still exist in persistent storage (a file somewhere); users should
 //          ALWAYS refresh that storage after making a signature and before exposing that signature outside the local
 //          context, to avoid a situation where the signature is exported then the local context crashes/closes without
 //          updating the nonces in storage; those nonces could be used to make another signature, thereby leaking the
@@ -97,25 +97,25 @@ struct MultisigNonces final
     crypto::secret_key signature_nonce_2_priv;
 };
 
-class MultisigNonceRecord final
+class MultisigNonceCache final
 {
 public:
 //constructors
     /// default constructor
-    MultisigNonceRecord() = default;
+    MultisigNonceCache() = default;
     /// import raw nonce data (e.g. from a file)
-    MultisigNonceRecord(const std::vector<
+    MultisigNonceCache(const std::vector<
             std::tuple<rct::key, rct::key, signer_set_filter, MultisigNonces>
         > &raw_nonce_data);
     /// copy constructor: disabled (don't want copies of the nonces floating around)
-    MultisigNonceRecord(const MultisigNonceRecord&) = delete;
+    MultisigNonceCache(const MultisigNonceCache&) = delete;
     /// move constructor: defaulted
-    MultisigNonceRecord(MultisigNonceRecord&&) = default;
+    MultisigNonceCache(MultisigNonceCache&&) = default;
 //overloaded operators
     /// copy assignment: disabled (don't want copies of the nonces floating around)
-    MultisigNonceRecord& operator=(const MultisigNonceRecord&) = delete;
+    MultisigNonceCache& operator=(const MultisigNonceCache&) = delete;
     /// move assignment: defaulted
-    MultisigNonceRecord& operator=(MultisigNonceRecord&&) = default;
+    MultisigNonceCache& operator=(MultisigNonceCache&&) = default;
 
 //member functions
     /// true if there is a nonce record for a given signing scenario
@@ -158,7 +158,7 @@ private:
                 MultisigNonces      //the local signer's private nonce material for this signing attempt
             >
         >
-    > m_record;
+    > m_cache;
 };
 
 } //namespace multisig

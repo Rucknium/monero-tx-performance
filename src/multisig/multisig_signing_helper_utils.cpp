@@ -35,7 +35,7 @@
 #include "misc_language.h"
 #include "misc_log_ex.h"
 #include "multisig/multisig_signer_set_filter.h"
-#include "multisig_nonce_record.h"
+#include "multisig_nonce_cache.h"
 #include "multisig_partial_sig_makers.h"
 #include "multisig_signing_errors.h"
 #include "multisig_signing_helper_types.h"
@@ -172,7 +172,7 @@ static MultisigSigningErrorVariant try_make_v1_multisig_partial_signatures_v1(
     const std::unordered_map<crypto::public_key, std::size_t> &signer_nonce_trackers,
     const MultisigPartialSigMaker &partial_sig_maker,
     const crypto::secret_key &local_signer_privkey,
-    MultisigNonceRecord &nonce_record_inout,
+    MultisigNonceCache &nonce_record_inout,
     std::unordered_map<rct::key, MultisigPartialSigVariant> &partial_signatures_out)
 {
     /// make partial signatures for one group of signers of size threshold that is presumed to include the local signer
@@ -305,7 +305,7 @@ static void make_v1_multisig_partial_sig_sets_v1(const multisig_account &signer_
         &all_init_set_collections,
     const MultisigPartialSigMaker &partial_sig_maker,
     std::list<MultisigSigningErrorVariant> &multisig_errors_inout,
-    MultisigNonceRecord &nonce_record_inout,
+    MultisigNonceCache &nonce_record_inout,
     std::vector<MultisigPartialSigSetV1> &partial_sig_sets_out)
 {
     /// make partial signatures for every available group of signers of size threshold that includes the local signer
@@ -645,7 +645,7 @@ void make_v1_multisig_init_set_v1(const std::uint32_t threshold,
     const rct::key &proof_message,
     const rct::key &main_proof_key,
     const rct::keyV &proof_key_base_points,
-    MultisigNonceRecord &nonce_record_inout,
+    MultisigNonceCache &nonce_record_inout,
     MultisigProofInitSetV1 &init_set_out)
 {
     // 1. enforce canonical proof keys (NOTE: this is only a sanity check)
@@ -720,7 +720,7 @@ void make_v1_multisig_init_set_collection_v1(const std::uint32_t threshold,
     const crypto::public_key &local_signer_id,
     const std::unordered_map<rct::key, rct::key> &proof_contexts,  //[ proof key : proof message ]
     const std::unordered_map<rct::key, rct::keyV> &proof_key_base_points,  //[ proof key : {proof key base points} ]
-    MultisigNonceRecord &nonce_record_inout,
+    MultisigNonceCache &nonce_record_inout,
     std::unordered_map<rct::key, MultisigProofInitSetV1> &init_set_collection_out) //[ proof key : init set ]
 {
     // make an init set for every proof context provided
@@ -785,7 +785,7 @@ bool try_make_v1_multisig_partial_sig_sets_v1(const multisig_account &signer_acc
     std::unordered_map<crypto::public_key, std::unordered_map<rct::key, MultisigProofInitSetV1>>
         other_init_set_collections,
     std::list<MultisigSigningErrorVariant> &multisig_errors_inout,
-    MultisigNonceRecord &nonce_record_inout,
+    MultisigNonceCache &nonce_record_inout,
     std::vector<MultisigPartialSigSetV1> &partial_sig_sets_out)
 {
     CHECK_AND_ASSERT_THROW_MES(signer_account.multisig_is_ready(),

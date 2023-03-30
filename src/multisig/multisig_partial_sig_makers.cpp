@@ -37,7 +37,7 @@ extern "C"
 }
 #include "misc_log_ex.h"
 #include "multisig_clsag.h"
-#include "multisig_nonce_record.h"
+#include "multisig_nonce_cache.h"
 #include "multisig_signing_helper_types.h"
 #include "multisig_signer_set_filter.h"
 #include "multisig_sp_composition_proof.h"
@@ -67,7 +67,7 @@ static CLSAGMultisigPartial attempt_make_clsag_multisig_partial_sig(const rct::k
     const std::vector<MultisigPubNonces> &signer_pub_nonces_G,
     const std::vector<MultisigPubNonces> &signer_pub_nonces_Hp,
     const multisig::signer_set_filter filter,
-    MultisigNonceRecord &nonce_record_inout)
+    MultisigNonceCache &nonce_record_inout)
 {
     // prepare the main signing privkey: (1/threshold)*k_offset + k_e
     // note: k_offset is assumed to be a value known by all signers, so each signer adds (1/threshold)*k_offset to ensure
@@ -108,7 +108,7 @@ static SpCompositionProofMultisigPartial attempt_make_sp_composition_multisig_pa
     const SpCompositionProofMultisigProposal &proof_proposal,
     const std::vector<MultisigPubNonces> &signer_pub_nonces,
     const multisig::signer_set_filter filter,
-    MultisigNonceRecord &nonce_record_inout)
+    MultisigNonceCache &nonce_record_inout)
 {
     // prepare the signing privkey: z_multiplier*((1/threshold)*z_offset + z_e)
     // note: z_offset is assumed to be a value known by all signers, so each signer adds (1/threshold)*z_offset to ensure
@@ -163,7 +163,7 @@ void MultisigPartialSigMakerCLSAG::attempt_make_partial_sig(const rct::key &proo
     const multisig::signer_set_filter signer_group_filter,
     const std::vector<std::vector<MultisigPubNonces>> &signer_group_pub_nonces,
     const crypto::secret_key &local_multisig_signing_key,
-    MultisigNonceRecord &nonce_record_inout,
+    MultisigNonceCache &nonce_record_inout,
     MultisigPartialSigVariant &partial_sig_out) const
 {
     CHECK_AND_ASSERT_THROW_MES(m_cached_proof_keys.find(proof_key) != m_cached_proof_keys.end(),
@@ -225,7 +225,7 @@ void MultisigPartialSigMakerSpCompositionProof::attempt_make_partial_sig(const r
     const multisig::signer_set_filter signer_group_filter,
     const std::vector<std::vector<MultisigPubNonces>> &signer_group_pub_nonces,
     const crypto::secret_key &local_multisig_signing_key,
-    MultisigNonceRecord &nonce_record_inout,
+    MultisigNonceCache &nonce_record_inout,
     MultisigPartialSigVariant &partial_sig_out) const
 {
     CHECK_AND_ASSERT_THROW_MES(m_cached_proof_keys.find(proof_key) != m_cached_proof_keys.end(),

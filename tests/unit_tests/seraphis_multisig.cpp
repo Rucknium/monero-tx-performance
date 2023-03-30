@@ -36,7 +36,7 @@
 #include "multisig/multisig.h"
 #include "multisig/multisig_account.h"
 #include "multisig/multisig_mocks.h"
-#include "multisig/multisig_nonce_record.h"
+#include "multisig/multisig_nonce_cache.h"
 #include "multisig/multisig_signer_set_filter.h"
 #include "multisig/multisig_signing_errors.h"
 #include "multisig/multisig_signing_helper_types.h"
@@ -588,7 +588,7 @@ static void seraphis_multisig_tx_v1_test(const std::uint32_t threshold,
 
 
     /// 4) get seraphis input proof inits from all requested signers
-    std::vector<multisig::MultisigNonceRecord> signer_nonce_records;
+    std::vector<multisig::MultisigNonceCache> signer_nonce_records;
     std::unordered_map<crypto::public_key, std::unordered_map<rct::key, multisig::MultisigProofInitSetV1>>
         legacy_input_init_collections_per_signer;
     std::unordered_map<crypto::public_key, std::unordered_map<rct::key, multisig::MultisigProofInitSetV1>>

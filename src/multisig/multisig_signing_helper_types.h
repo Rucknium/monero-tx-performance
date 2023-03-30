@@ -34,7 +34,7 @@
 #include "common/variant.h"
 #include "crypto/crypto.h"
 #include "multisig_clsag.h"
-#include "multisig_nonce_record.h"
+#include "multisig_nonce_cache.h"
 #include "multisig_signer_set_filter.h"
 #include "multisig_sp_composition_proof.h"
 #include "ringct/rctTypes.h"

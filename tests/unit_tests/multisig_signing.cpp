@@ -33,7 +33,7 @@
 #include "multisig/multisig_account.h"
 #include "multisig/multisig_clsag.h"
 #include "multisig/multisig_mocks.h"
-#include "multisig/multisig_nonce_record.h"
+#include "multisig/multisig_nonce_cache.h"
 #include "multisig/multisig_partial_sig_makers.h"
 #include "multisig/multisig_signer_set_filter.h"
 #include "multisig/multisig_signing_helper_types.h"
@@ -146,7 +146,7 @@ static void prepare_nonce_records(const std::vector<multisig::multisig_account> 
     const std::vector<multisig::signer_set_filter> &filter_permutations,
     const rct::key &proof_message,
     const rct::key &proof_key,
-    std::vector<multisig::MultisigNonceRecord> &signer_nonce_records_inout)
+    std::vector<multisig::MultisigNonceCache> &signer_nonce_records_inout)
 {
     ASSERT_TRUE(accounts.size() == signer_nonce_records_inout.size());
 
@@ -168,7 +168,7 @@ static void prepare_nonce_records(const std::vector<multisig::multisig_account> 
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 static void assemble_nonce_pubkeys_for_signing(const std::vector<multisig::multisig_account> &accounts,
-    const std::vector<multisig::MultisigNonceRecord> &signer_nonce_records,
+    const std::vector<multisig::MultisigNonceCache> &signer_nonce_records,
     const rct::key &base_key_for_nonces,
     const rct::key &proof_message,
     const rct::key &proof_key,
@@ -230,7 +230,7 @@ static bool multisig_framework_test_impl(const std::vector<multisig::multisig_ac
         /// make proofs
 
         // 1. each signer responds to the proposals with a proof initialization set
-        std::vector<multisig::MultisigNonceRecord> signer_nonce_records(num_signers);
+        std::vector<multisig::MultisigNonceCache> signer_nonce_records(num_signers);
         std::unordered_map<crypto::public_key, std::unordered_map<rct::key, multisig::MultisigProofInitSetV1>>
             init_set_collection_per_signer;  //[ signer id : [ proof key : init set ] ]
 
@@ -385,7 +385,7 @@ static bool clsag_multisig_test(const std::uint32_t threshold,
             filter_permutations);
 
         // 6. each signer prepares for each signer group it is a member of
-        std::vector<multisig::MultisigNonceRecord> signer_nonce_records(num_signers);
+        std::vector<multisig::MultisigNonceCache> signer_nonce_records(num_signers);
         prepare_nonce_records(accounts,
             filter_permutations,
             multisig_proof_proposal.message,
@@ -510,7 +510,7 @@ static bool composition_proof_multisig_test(const std::uint32_t threshold, const
             filter_permutations);
 
         // 5. each signer prepares for each signer group it is a member of
-        std::vector<multisig::MultisigNonceRecord> signer_nonce_records(num_signers);
+        std::vector<multisig::MultisigNonceCache> signer_nonce_records(num_signers);
         prepare_nonce_records(accounts,
             filter_permutations,
             multisig_proof_proposal.message,

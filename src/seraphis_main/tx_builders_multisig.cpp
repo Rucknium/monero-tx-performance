@@ -43,7 +43,7 @@
 #include "misc_language.h"
 #include "misc_log_ex.h"
 #include "multisig/multisig_clsag.h"
-#include "multisig/multisig_nonce_record.h"
+#include "multisig/multisig_nonce_cache.h"
 #include "multisig/multisig_partial_sig_makers.h"
 #include "multisig/multisig_signer_set_filter.h"
 #include "multisig/multisig_signing_helper_types.h"
@@ -1276,7 +1276,7 @@ void make_v1_multisig_init_sets_for_inputs_v1(const crypto::public_key &signer_i
     const crypto::secret_key &legacy_view_privkey,
     const rct::key &jamtis_spend_pubkey,
     const crypto::secret_key &k_view_balance,
-    multisig::MultisigNonceRecord &nonce_record_inout,
+    multisig::MultisigNonceCache &nonce_record_inout,
     //[ proof key : init set ]
     std::unordered_map<rct::key, multisig::MultisigProofInitSetV1> &legacy_input_init_set_collection_out,
     //[ proof key : init set ]
@@ -1362,7 +1362,7 @@ bool try_make_v1_multisig_partial_sig_sets_for_legacy_inputs_v1(const multisig::
     std::unordered_map<crypto::public_key, std::unordered_map<rct::key, multisig::MultisigProofInitSetV1>>
         other_input_init_set_collections,
     std::list<multisig::MultisigSigningErrorVariant> &multisig_errors_inout,
-    multisig::MultisigNonceRecord &nonce_record_inout,
+    multisig::MultisigNonceCache &nonce_record_inout,
     std::vector<multisig::MultisigPartialSigSetV1> &legacy_input_partial_sig_sets_out)
 {
     legacy_input_partial_sig_sets_out.clear();
@@ -1462,7 +1462,7 @@ bool try_make_v1_multisig_partial_sig_sets_for_sp_inputs_v1(const multisig::mult
     std::unordered_map<crypto::public_key, std::unordered_map<rct::key, multisig::MultisigProofInitSetV1>>
         other_input_init_set_collections,
     std::list<multisig::MultisigSigningErrorVariant> &multisig_errors_inout,
-    multisig::MultisigNonceRecord &nonce_record_inout,
+    multisig::MultisigNonceCache &nonce_record_inout,
     std::vector<multisig::MultisigPartialSigSetV1> &sp_input_partial_sig_sets_out)
 {
     sp_input_partial_sig_sets_out.clear();
