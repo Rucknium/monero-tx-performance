@@ -88,7 +88,7 @@ static bool test_grootle_proof(const std::size_t n,  // size base: N = n^m
         // prepare key vectors
         std::vector<rct::keyV> M;                       // ref sets for each proof
         M.resize(N_proofs, rct::keyV(N));
-        std::vector<crypto::secret_key> proof_privkeys; // privkey per-proof (at secret indices in M)
+        std::vector<crypto::secret_key> proof_privkeys; // privkey per-proof (at secret indices in each S)
         proof_privkeys.resize(N_proofs);
         rct::keyV proof_messages = rct::keyV(N_proofs); // message per-proof
         rct::keyV proof_offsets;                        // commitment offset per-proof

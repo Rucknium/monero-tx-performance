@@ -115,25 +115,25 @@ static void grootle_matrix_commitment(const rct::key &x,  //blinding factor
 }
 //-------------------------------------------------------------------------------------------------------------------
 // Fiat-Shamir challenge
-// c = H_n(message, n, m, {M}, C_offset, A, B, {X})
+// c = H_n(message, n, m, {S}, C_offset, A, B, {X})
 //
 // note: c == xi
 //-------------------------------------------------------------------------------------------------------------------
 static rct::key compute_challenge(const rct::key &message,
     const std::size_t n,
     const std::size_t m,
-    const rct::keyV &M,
+    const rct::keyV &S,
     const rct::key &C_offset,
     const rct::key &A,
     const rct::key &B,
     const rct::keyV &X)
 {
     // hash data
-    SpFSTranscript transcript{config::HASH_KEY_GROOTLE_CHALLENGE, 2*4 + (M.size() + X.size() + 4)*sizeof(rct::key)};
+    SpFSTranscript transcript{config::HASH_KEY_GROOTLE_CHALLENGE, 2*4 + (S.size() + X.size() + 4)*sizeof(rct::key)};
     transcript.append("message", message);
     transcript.append("n", n);
     transcript.append("m", m);
-    transcript.append("M", M);
+    transcript.append("S", S);
     transcript.append("C_offset", C_offset);
     transcript.append("A", A);
     transcript.append("B", B);
@@ -150,7 +150,7 @@ static rct::key compute_challenge(const rct::key &message,
 //-------------------------------------------------------------------------------------------------------------------
 static void build_verification_multiexps_for_proof(const GrootleProof &proof,
     const rct::key &message,
-    const rct::keyV &M,
+    const rct::keyV &S,
     const rct::key &proof_offset,
     const std::size_t n,
     const std::size_t m,
@@ -168,18 +168,18 @@ static void build_verification_multiexps_for_proof(const GrootleProof &proof,
     // 1 .. 2*m*n                         alternate(Hi_A[i], Hi_B[i])   {f, f*(xi - f)}
     // ... other proof data: A, B
 
-    // builer 2: sum_k( t_k*(M[k] - C_offset) ) - sum_j( xi^j*X[j] ) - z G == 0
+    // builer 2: sum_k( t_k*(S[k] - C_offset) ) - sum_j( xi^j*X[j] ) - z G == 0
     // per-index storage (builder 2):
     // 0                                  G                             (z*G)
-    // 1                                  M[0]   + 1                    (f-coefficients)
+    // 1                                  S[0]   + 1                    (f-coefficients)
     // ...
-    // (N-1) + 1                          M[N-1] + 1
+    // (N-1) + 1                          S[N-1] + 1
     // ... other proof data: C_offset, {X}
     const std::size_t N = std::pow(n, m);
     rct::key temp;
 
     // Transcript challenge
-    const rct::key xi{compute_challenge(message, n, m, M, proof_offset, proof.A, proof.B, proof.X)};
+    const rct::key xi{compute_challenge(message, n, m, S, proof_offset, proof.A, proof.B, proof.X)};
 
     // Challenge powers (negated)
     const rct::keyV minus_xi_pow{powers_of_scalar(xi, m, true)};
@@ -256,11 +256,11 @@ static void build_verification_multiexps_for_proof(const GrootleProof &proof,
 
     // One-of-many sub-proof
     //   t_k = mul_all_j(f[j][decomp_k[j]])
-    //   weight2 * [ sum_k( t_k*(M[k] - C_offset) ) - sum_j( xi^j*X[j] ) - z G == 0  ]
+    //   weight2 * [ sum_k( t_k*(S[k] - C_offset) ) - sum_j( xi^j*X[j] ) - z G == 0  ]
     //
-    // {M}
-    //   weight2 * [ sum_k( t_k*M[k] ) - sum_k( t_k )*C_offset - [ sum(...) + z G ] == 0 ]
-    // M[k]: weight2 * t_k
+    // {S}
+    //   weight2 * [ sum_k( t_k*S[k] ) - sum_k( t_k )*C_offset - [ sum(...) + z G ] == 0 ]
+    // S[k]: weight2 * t_k
     std::vector<std::size_t> decomp_k;
     decomp_k.resize(m);
     rct::key w2_sum_t = ZERO;
@@ -276,7 +276,7 @@ static void build_verification_multiexps_for_proof(const GrootleProof &proof,
         }
 
         sc_add(w2_sum_t.bytes, w2_sum_t.bytes, w2_t_k.bytes);  //weight2 * sum_k( t_k )
-        builder2_inout.add_element(w2_t_k, M[k]);  //weight2 * t_k*M[k]
+        builder2_inout.add_element(w2_t_k, S[k]);  //weight2 * t_k*S[k]
     }
 
     // C_offset
@@ -330,10 +330,10 @@ void append_to_transcript(const GrootleProof &container, SpTranscriptBuilder &tr
 }
 //-------------------------------------------------------------------------------------------------------------------
 void make_grootle_proof(const rct::key &message,  // message to insert in Fiat-Shamir transform hash
-    const rct::keyV &M,        // referenced commitments
-    const std::size_t l,       // secret index into {M}
+    const rct::keyV &S,        // referenced commitments
+    const std::size_t l,       // secret index into {S}
     const rct::key &C_offset,  // offset for commitment to zero at index l
-    const crypto::secret_key &privkey,  // privkey of commitment to zero 'M[l] - C_offset'
+    const crypto::secret_key &privkey,  // privkey of commitment to zero 'S[l] - C_offset'
     const std::size_t n,       // decomposition of the reference set size: n^m
     const std::size_t m,
     GrootleProof &proof_out)
@@ -346,14 +346,14 @@ void make_grootle_proof(const rct::key &message,  // message to insert in Fiat-S
     // ref set size
     const std::size_t N = std::pow(n, m);
 
-    CHECK_AND_ASSERT_THROW_MES(M.size() == N, "grootle proof proving: commitment column is wrong size!");
+    CHECK_AND_ASSERT_THROW_MES(S.size() == N, "grootle proof proving: commitment column is wrong size!");
 
     // commitment to zero signing key position
     CHECK_AND_ASSERT_THROW_MES(l < N, "grootle proof proving: signing index out of bounds!");
 
-    // verify: commitment to zero C_zero = M[l] - C_offset = k*G
+    // verify: commitment to zero C_zero = S[l] - C_offset = privkey*G
     rct::key C_zero_reproduced;
-    rct::subKeys(C_zero_reproduced, M[l], C_offset);
+    rct::subKeys(C_zero_reproduced, S[l], C_offset);
     CHECK_AND_ASSERT_THROW_MES(rct::scalarmultBase(rct::sk2rct(privkey)) == C_zero_reproduced,
         "grootle proof proving: bad signing private key!");
 
@@ -477,8 +477,8 @@ void make_grootle_proof(const rct::key &message,  // message to insert in Fiat-S
 
         for (std::size_t k = 0; k < N; ++k)
         {
-            // X[j] += p[k][j] * (M[k] - C_offset)
-            rct::subKeys(C_zero_nominal_temp, M[k], C_offset);  // M[k] - C_offset
+            // X[j] += p[k][j] * (S[k] - C_offset)
+            rct::subKeys(C_zero_nominal_temp, S[k], C_offset);  // S[k] - C_offset
             data_X.push_back({p[k][j], C_zero_nominal_temp});
         }
 
@@ -500,7 +500,7 @@ void make_grootle_proof(const rct::key &message,  // message to insert in Fiat-S
     /// one-of-many sub-proof challenges
 
     // xi: challenge
-    const rct::key xi{compute_challenge(message, n, m, M, C_offset, proof.A, proof.B, proof.X)};
+    const rct::key xi{compute_challenge(message, n, m, S, C_offset, proof.A, proof.B, proof.X)};
 
     // xi^j: challenge powers
     const rct::keyV xi_pow{powers_of_scalar(xi, m + 1)};
@@ -521,8 +521,8 @@ void make_grootle_proof(const rct::key &message,  // message to insert in Fiat-S
     }
 
     // z-terms: responses
-    // zA = rB*xi + rA
-    sc_muladd(proof.zA.bytes, rB.bytes, xi.bytes, rA.bytes);
+    // zA = xi*rB + rA
+    sc_muladd(proof.zA.bytes, xi.bytes, rB.bytes, rA.bytes);
     CHECK_AND_ASSERT_THROW_MES(!(proof.zA == ZERO), "grootle proof proving: proof scalar element should not be zero (zA)!");
 
     // z = privkey*xi^m - rho[0]*xi^0 - ... - rho[m - 1]*xi^(m - 1)
@@ -572,9 +572,9 @@ void get_grootle_verification_data(const std::vector<const GrootleProof*> &proof
 
     CHECK_AND_ASSERT_THROW_MES(M.size() == num_proofs,
         "grootle proof verifying: public key vectors don't line up with proofs!");
-    for (const rct::keyV &proof_M : M)
+    for (const rct::keyV &proof_S : M)
     {
-        CHECK_AND_ASSERT_THROW_MES(proof_M.size() == N,
+        CHECK_AND_ASSERT_THROW_MES(proof_S.size() == N,
             "grootle proof verifying: public key vector for a proof is wrong size!");
     }
 

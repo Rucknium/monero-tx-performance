@@ -93,16 +93,16 @@ std::size_t grootle_size_bytes(const GrootleProof &proof);
 /**
 * brief: make_grootle_proof - create a grootle proof
 * param: message - message to insert in Fiat-Shamir transform hash
-* param: M - referenced commitments
-* param: l - secret index into {M}
+* param: S - referenced commitments
+* param: l - secret index into {S}
 * param: C_offset - offset for commitment to zero at index l
-* param: privkey - privkey of commitment to zero 'M[l] - C_offset' (proof signing key)
+* param: privkey - privkey of commitment to zero 'S[l] - C_offset' (proof signing key)
 * param: n - decomposition of the reference set size: n^m
 * param: m - ...
 * outparam: proof_out - Grootle proof
 */
 void make_grootle_proof(const rct::key &message,
-    const rct::keyV &M,
+    const rct::keyV &S,
     const std::size_t l,
     const rct::key &C_offset,
     const crypto::secret_key &privkey,
@@ -113,7 +113,7 @@ void make_grootle_proof(const rct::key &message,
 * brief: verify_grootle_proofs - verify a batch of grootle proofs
 * param: proofs - batch of proofs to verify
 * param: message - (per-proof) message to insert in Fiat-Shamir transform hash
-* param: M - (per-proof) referenced commitments
+* param: S - (per-proof) referenced commitments
 * param: proof_offsets - (per-proof) offset for commitment to zero at unknown indices in each proof
 * param: n - decomposition of the reference set size: n^m
 * param: m - ...
@@ -121,7 +121,7 @@ void make_grootle_proof(const rct::key &message,
 */
 void get_grootle_verification_data(const std::vector<const GrootleProof*> &proofs,
     const rct::keyV &messages,
-    const std::vector<rct::keyV> &M,
+    const std::vector<rct::keyV> &S,
     const rct::keyV &proof_offsets,
     const std::size_t n,
     const std::size_t m,
