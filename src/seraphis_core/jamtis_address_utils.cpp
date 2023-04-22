@@ -33,7 +33,6 @@
 #include "crypto/crypto.h"
 #include "crypto/x25519.h"
 #include "cryptonote_config.h"
-#include "jamtis_address_tag_utils.h"
 #include "jamtis_core_utils.h"
 #include "jamtis_support_types.h"
 #include "ringct/rctOps.h"
@@ -60,7 +59,7 @@ void make_jamtis_index_extension_generator(const crypto::secret_key &s_generate_
     const address_index_t &j,
     crypto::secret_key &generator_out)
 {
-    // k^j_gen = H_32[s_ga](j)
+    // s^j_gen = H_32[s_ga](j)
     SpKDFTranscript transcript{config::HASH_KEY_JAMTIS_INDEX_EXTENSION_GENERATOR, ADDRESS_INDEX_BYTES};
     transcript.append("j", j.bytes);
 
@@ -73,7 +72,7 @@ void make_jamtis_spendkey_extension(const boost::string_ref domain_separator,
     const crypto::secret_key &generator,
     crypto::secret_key &extension_out)
 {
-    // k^j_? = H_n(K_s, j, k^j_gen)
+    // k^j_? = H_n(K_s, j, s^j_gen)
     SpKDFTranscript transcript{domain_separator, 2*32 + ADDRESS_INDEX_BYTES};
     transcript.append("K_s", spend_pubkey);
     transcript.append("j", j.bytes);
@@ -88,7 +87,7 @@ void make_jamtis_spendkey_extension(const boost::string_ref domain_separator,
     const address_index_t &j,
     crypto::secret_key &extension_out)
 {
-    // k^j_gen
+    // s^j_gen
     crypto::secret_key generator;
     make_jamtis_index_extension_generator(s_generate_address, j, generator);
 
@@ -140,7 +139,7 @@ void make_jamtis_address_privkey(const rct::key &spend_pubkey,
     const address_index_t &j,
     crypto::x25519_secret_key &address_privkey_out)
 {
-    // k^j_gen
+    // s^j_gen
     crypto::secret_key generator;
     make_jamtis_index_extension_generator(s_generate_address, j, generator);
 

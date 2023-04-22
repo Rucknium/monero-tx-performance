@@ -74,7 +74,7 @@ struct AddressOwnershipProofV1
 
 ////
 // AddressIndexProofV1
-// - proof that a jamtis address with spendkey K_1 was constructed from an index j
+// - proof that a jamtis address with spendkey K_1 was constructed from an index j from base spend key K_s
 //
 // - VERIFIER: recompute K_1 ?= [G/X/U spendkey extensions from {j, generator, K_s}] + K_s
 ///

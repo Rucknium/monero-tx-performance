@@ -50,21 +50,21 @@ namespace jamtis
 {
 
 /**
-* brief: make_jamtis_index_extension_generator - k^j_gen
-*   - k^j_gen = H_32[s_ga](j)
+* brief: make_jamtis_index_extension_generator - s^j_gen
+*   - s^j_gen = H_32[s_ga](j)
 * param: s_generate_address - s_ga
 * param: j - address index
-* outparam: generator_out - k^j_gen
+* outparam: generator_out - s^j_gen
 */
 void make_jamtis_index_extension_generator(const crypto::secret_key &s_generate_address,
     const address_index_t &j,
     crypto::secret_key &generator_out);
 /**
 * brief: make_jamtis_spendkey_extension - k^j_?
-*   - k^j_? = H_n("domain separator", K_s, j, k^j_gen)
+*   - k^j_? = H_n("domain separator", K_s, j, s^j_gen)
 * param: spend_pubkey - K_s = k_vb X + k_m U
 * param: j - address index
-* param: generator - k^j_gen
+* param: generator - s^j_gen
 * outparam: extension_out - k^j_g
 */
 void make_jamtis_spendkey_extension(const boost::string_ref domain_separator,
@@ -79,7 +79,7 @@ void make_jamtis_spendkey_extension(const boost::string_ref domain_separator,
     crypto::secret_key &extension_out);
 /**
 * brief: make_jamtis_spendkey_extension_g - k^j_g
-*   - k^j_g = H_n("..g..", K_s, j, k^j_gen)
+*   - k^j_g = H_n("..g..", K_s, j, s^j_gen)
 * param: spend_pubkey - K_s = k_vb X + k_m U
 * param: s_generate_address - s_ga
 * param: j - address index
@@ -91,7 +91,7 @@ void make_jamtis_spendkey_extension_g(const rct::key &spend_pubkey,
     crypto::secret_key &extension_out);
 /**
 * brief: make_jamtis_spendkey_extension_x - k^j_x
-*   - k^j_x = H_n("..x..", K_s, j, k^j_gen)
+*   - k^j_x = H_n("..x..", K_s, j, s^j_gen)
 * param: spend_pubkey - K_s = k_vb X + k_m U
 * param: s_generate_address - s_ga
 * param: j - address index
@@ -103,7 +103,7 @@ void make_jamtis_spendkey_extension_x(const rct::key &spend_pubkey,
     crypto::secret_key &extension_out);
 /**
 * brief: make_jamtis_spendkey_extension_u - k^j_u
-*   - k^j_u = H_n("..u..", K_s, j, k^j_gen)
+*   - k^j_u = H_n("..u..", K_s, j, s^j_gen)
 * param: spend_pubkey - K_s = k_vb X + k_m U
 * param: s_generate_address - s_ga
 * param: j - address index
@@ -115,7 +115,7 @@ void make_jamtis_spendkey_extension_u(const rct::key &spend_pubkey,
     crypto::secret_key &extension_out);
 /**
 * brief: make_jamtis_address_privkey - xk^j_a
-*   - xk^j_a = H_n_x25519(K_s, j, k^j_gen)
+*   - xk^j_a = H_n_x25519(K_s, j, s^j_gen)
 * param: spend_pubkey - K_s = k_vb X + k_m U
 * param: s_generate_address - s_ga
 * param: j - address index
