@@ -483,7 +483,8 @@ SemanticConfigLegacyRefSetV1 semantic_config_legacy_ref_sets_v1(
     return config;
 }
 //-------------------------------------------------------------------------------------------------------------------
-SemanticConfigSpRefSetV1 semantic_config_sp_ref_sets_v1(const SpTxSquashedV1::SemanticRulesVersion tx_semantic_rules_version)
+SemanticConfigSpRefSetV1 semantic_config_sp_ref_sets_v1(
+    const SpTxSquashedV1::SemanticRulesVersion tx_semantic_rules_version)
 {
     SemanticConfigSpRefSetV1 config{};
 
