@@ -27,14 +27,47 @@
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include "eclib_test.h"
+#pragma once
+
+extern "C"
+{
+#include "crypto-ops.h"
+}
+#include "crypto.h"
+#include "eclib_utils.h"
 
 namespace crypto
 {
-//-------------------------------------------------------------------------------------------------------------------
-void eclib_test::core_func(const eclib_test::key &k, eclib_test::key &key_out)
+
+struct eclib_ed25519 final
 {
-    key_out = k*10;
-}
-//-------------------------------------------------------------------------------------------------------------------
+/// crypto utils
+using utils = eclib_utils<eclib_ed25519>;
+
+/// core group element types
+using ge_deserialized  = ge_p3;
+using ge_intermediate1 = ge_p2;
+using ge_intermediate2 = ge_p1p1;
+using ge_precomp       = ge_precomp;
+using ge_cached        = ge_cached;
+
+/// crypto types
+using scalar         = crypto::ec_scalar;
+using secret_key     = crypto::secret_key;
+using public_key     = crypto::public_key;
+using key_image      = crypto::key_image;
+using key_derivation = crypto::key_derivation;
+
+/// byte access
+static inline unsigned char* to_bytes(scalar &sc)                 { return ::to_bytes(sc); }
+static inline const unsigned char* to_bytes(const scalar &sc)     { return ::to_bytes(sc); }
+static inline unsigned char* to_bytes(public_key &pk)             { return ::to_bytes(pk); }
+static inline const unsigned char* to_bytes(const public_key &pk) { return ::to_bytes(pk); }
+
+/// crypto ops
+
+static void test_func(const secret_key &k, secret_key &key_out);
+
+}; //eclib_ed25519
+
 } //namespace crypto

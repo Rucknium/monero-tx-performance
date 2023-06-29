@@ -35,11 +35,7 @@ namespace crypto
 template <typename LIBT>
 struct eclib_utils
 {
-static void util_func(const typename LIBT::key &k, typename LIBT::key &key_inout);
+static void util_test_func(const typename LIBT::secret_key &k, typename LIBT::secret_key &key_out);
 };
-
-
-//template <typename LIBT>
-//void eclib_utils<LIBT>::util_func(const typename LIBT::key &k, typename LIBT::key &key_inout);
 
 } //namespace crypto

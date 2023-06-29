@@ -33,9 +33,9 @@ namespace crypto
 {
 //-------------------------------------------------------------------------------------------------------------------
 template <typename LIBT>
-void eclib_utils<LIBT>::util_func(const typename LIBT::key &k, typename LIBT::key &key_inout)
+void eclib_utils<LIBT>::util_test_func(const typename LIBT::secret_key &k, typename LIBT::secret_key &key_out)
 {
-    key_inout = k + 20;
+    key_out = k;
 }
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace crypto

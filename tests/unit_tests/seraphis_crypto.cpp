@@ -31,7 +31,7 @@ extern "C"
 {
 #include "crypto/crypto-ops.h"
 }
-#include "crypto/eclib_test.h"
+#include "crypto/eclib_ed25519.h"
 #include "crypto/generators.h"
 #include "crypto/x25519.h"
 #include "device/device.hpp"
@@ -296,14 +296,14 @@ TEST(seraphis_crypto, multiexp_utility)
 //-------------------------------------------------------------------------------------------------------------------
 TEST(seraphis_crypto, eclib_test)
 {
-    using eclib = crypto::eclib_test;
+    using eclib = crypto::eclib_ed25519;
 
-    const eclib::key constant{20};
-    eclib::key temp;
+    const eclib::secret_key constant{};
+    eclib::secret_key temp;
 
-    eclib::core_func(constant, temp);
-    EXPECT_TRUE(temp == 200);
-    eclib::utils::util_func(constant, temp);
-    EXPECT_TRUE(temp == 40);
+    eclib::test_func(constant, temp);
+    EXPECT_TRUE(temp == constant);
+    eclib::utils::util_test_func(constant, temp);
+    EXPECT_TRUE(temp == constant);
 }
 //-------------------------------------------------------------------------------------------------------------------

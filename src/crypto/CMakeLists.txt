@@ -34,8 +34,8 @@ set(crypto_sources
   crypto-ops-data.c
   crypto-ops.c
   crypto.cpp
+  eclib_ed25519.cpp
   eclib_interface.cpp
-  eclib_test.cpp
   generators.cpp
   groestl.c
   hash-extra-blake.c

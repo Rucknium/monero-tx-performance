@@ -27,7 +27,7 @@
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include "eclib_test.h"
+#include "eclib_ed25519.h"
 #include "eclib_utils.h"
 #include "eclib_utils.inl"  //should be included in ONLY this file
 
@@ -38,15 +38,62 @@ namespace crypto
 template <typename LIBT>
 static void eclib_interface()
 {
+    // dummy variables
+    unsigned char* uchar_ptr = nullptr;
+    const unsigned char* const_uchar_ptr = nullptr;
+    bool boolean = false;
+
+    // core group element types
+          typename LIBT::ge_deserialized       GE_DESERIALIZED{};
+    const typename LIBT::ge_deserialized CONST_GE_DESERIALIZED{};
+
+          typename LIBT::ge_intermediate1       GE_INTERMEDIATE1{};
+    const typename LIBT::ge_intermediate1 CONST_GE_INTERMEDIATE1{};
+
+          typename LIBT::ge_intermediate2       GE_INTERMEDIATE2{};
+    const typename LIBT::ge_intermediate2 CONST_GE_INTERMEDIATE2{};
+
+          typename LIBT::ge_precomp       GE_PRECOMP{};
+    const typename LIBT::ge_precomp CONST_GE_PRECOMP{};
+
+          typename LIBT::ge_cached       GE_CACHED{};
+    const typename LIBT::ge_cached CONST_GE_CACHED{};
+
     // eclib types
-          typename LIBT::key       KEY{};
-    const typename LIBT::key CONST_KEY{};
+          typename LIBT::scalar       SCALAR{};
+    const typename LIBT::scalar CONST_SCALAR{};
+
+          typename LIBT::secret_key       SECRET_KEY{};
+    const typename LIBT::secret_key CONST_SECRET_KEY{};
+
+          typename LIBT::public_key       PUBLIC_KEY{};
+    const typename LIBT::public_key CONST_PUBLIC_KEY{};
+
+          typename LIBT::key_image       KEY_IMAGE{};
+    const typename LIBT::key_image CONST_KEY_IMAGE{};
+
+          typename LIBT::key_derivation       KEY_DERIVATION{};
+    const typename LIBT::key_derivation CONST_KEY_DERIVATION{};
+
+    // operators that should be implemented
+    boolean = PUBLIC_KEY < PUBLIC_KEY;
+    boolean = PUBLIC_KEY > PUBLIC_KEY;
+    boolean = KEY_IMAGE < KEY_IMAGE;
+    boolean = KEY_IMAGE > KEY_IMAGE;
+
+    // byte access
+    uchar_ptr       = LIBT::to_bytes(SCALAR);
+    const_uchar_ptr = LIBT::to_bytes(CONST_SCALAR);
+    uchar_ptr       = LIBT::to_bytes(SECRET_KEY);
+    const_uchar_ptr = LIBT::to_bytes(CONST_SECRET_KEY);
+    uchar_ptr       = LIBT::to_bytes(PUBLIC_KEY);
+    const_uchar_ptr = LIBT::to_bytes(CONST_PUBLIC_KEY);
 
     // eclib functions
-    LIBT::core_func(CONST_KEY, KEY);
+    LIBT::test_func(CONST_SECRET_KEY, SECRET_KEY);
 
     // eclib::utils functions
-    LIBT::utils::util_func(CONST_KEY, KEY);
+    LIBT::utils::util_test_func(CONST_SECRET_KEY, SECRET_KEY);
 }
 //-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
@@ -54,17 +101,13 @@ static void eclib_interface()
 //-------------------------------------------------------------------------------------------------------------------
 // instantiate the utils for each eclib type
 //-------------------------------------------------------------------------------------------------------------------
-template struct eclib_utils<eclib_test>;
-//-------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------------------------------------------------------------------------
-
+template struct eclib_utils<eclib_ed25519>;
 //-------------------------------------------------------------------------------------------------------------------
 // expect the interface to compile for each eclib type
 //-------------------------------------------------------------------------------------------------------------------
 void eclib_interfaces_impl()
 {
-    eclib_interface<eclib_test>();
+    eclib_interface<eclib_ed25519>();
 }
-//-------------------------------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------------------------------
 } //namespace crypto

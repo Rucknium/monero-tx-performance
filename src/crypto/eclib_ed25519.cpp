@@ -27,22 +27,20 @@
 // THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#pragma once
+#include "eclib_ed25519.h"
 
-#include "eclib_utils.h"
+extern "C"
+{
+#include "crypto-ops.h"
+}
+#include "crypto.h"
 
 namespace crypto
 {
-
-struct eclib_test final
+//-------------------------------------------------------------------------------------------------------------------
+void eclib_ed25519::test_func(const eclib_ed25519::secret_key &k, eclib_ed25519::secret_key &key_out)
 {
-
-using utils = eclib_utils<eclib_test>;
-
-using key = unsigned char;
-
-static void core_func(const key &k, key &key_out);
-
-}; //eclib_test
-
+    key_out = k;
+}
+//-------------------------------------------------------------------------------------------------------------------
 } //namespace crypto
