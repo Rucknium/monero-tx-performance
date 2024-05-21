@@ -225,6 +225,27 @@ int main(int argc, char** argv)
 
   //// TEST SET 4
   /// TEST 1: MockTxCLSAG
+  // This test set is for estimating verification time effects if CLSAG ring size increases
+
+  incrementer = {
+      {1}, //batch sizes
+      {0}, //rangeproof splits
+      {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150}, //in counts
+      {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}, //out counts
+      {2}, //decomp n
+      {6} //decomp m limits
+    };
+  while (incrementer.next(p_mock_tx))
+  {
+      TEST_PERFORMANCE1(filter, p_mock_tx, test_mock_tx, mock_tx::MockTxCLSAG);
+  }
+  // test done, save results
+  if (p.core_params.td.get())
+    p.core_params.td->save(true);
+
+  /*
+  //// TEST SET 4
+  /// TEST 1: MockTxCLSAG
 
   // TEST 1.1: MockTxCLSAG {inputs}
   incrementer = {
@@ -283,7 +304,7 @@ int main(int argc, char** argv)
   // test done, save results
   if (p.core_params.td.get())
     p.core_params.td->save(false);
-
+*/
 
 
   /// TEST 2: MockTxTriptych
