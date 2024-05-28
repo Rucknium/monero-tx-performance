@@ -1,3 +1,17 @@
+# Running the performance tests
+
+To run the performance tests, first build Monero and the tests. Then run the `performance_tests` binary with the appropraite flags. Terminal commands for Linux:
+
+```bash
+git submodule init
+git submodule update --init
+make
+
+mkdir ~/CLSAG-performance
+
+./build/Linux/seraphis_perf/release/tests/performance_tests/performance_tests --filter=\*mock_tx::MockTxCLSAG\* --stats --loop-multiplier=5 --timings-database=~/CLSAG-performance/CLSAG-performance.txt > ~/CLSAG-performance/stdout-CLSAG-performance.txt
+```
+
 # Monero
 
 Copyright (c) 2014-2021 The Monero Project.   
